@@ -1,4 +1,5 @@
 # Contributing
+
 `Sportsipy` is an open-source project created for the community where
 contributions are encouraged. I ask that anyone who wishes to contribute to
 please read and follow the guidelines listed below. As the project grows and
@@ -6,17 +7,20 @@ changes, so too will this document. If any items are no longer relevant or need
 to be adjusted, feel free to suggest changes in a Pull Request or Issue.
 
 ## Code of Conduct
+
 By using this repository, you are expected to abide by the rules listed in the
 [Code of Conduct](CODE_OF_CONDUCT.md). Any behavior that is not in-line with the
 Code of Conduct should be reported to the project maintainers.
 
 ## How Can I Contribute?
+
 Contributions from the community make open-source projects awesome and
 developers, data scientists, hobbyists, and more are encouraged to contribute to
 `sportsipy`. The following are some examples on how to contribute to this
 project.
 
 ### Reporting bugs
+
 The biggest way to contribute to this project is by reporting any and all bugs
 that are encountered while using the tool. The best way to report a bug is to
 file an issue on GitHub with as much detailed information as possible on what's
@@ -26,6 +30,7 @@ including but not limited to the maintainers, will follow up to address the
 issue and create an update if deemed necessary.
 
 ### Suggesting new features
+
 Another way to improve the project is by suggesting new features. When
 suggesting a new feature, a GitHub issue should be opened with information on
 what the feature is, what makes it valuable, and examples or suggestions on how
@@ -34,12 +39,14 @@ Pull Request so the community can discuss the proper way to incoporate the idea,
 or if it should be tweaked at all.
 
 ### Updating documentation and tests
+
 One of the easiest ways to become a contributor to this project is by updating
 documenation and enhancing or expanding tests. Documenation updates include
 expanding the current documentation, adding more examples of how to use the
 package, and spelling and/or grammatical fixes.
 
 ### Creating a pull request
+
 Pull Requests should have a common theme or idea for the contents of an update.
 If updates span several different areas, they should be split into separate Pull
 Requests for each theme.
@@ -50,16 +57,19 @@ were made the way they were committed, and if it resolves any outstanding
 issues.
 
 ## Styling
+
 To ensure the highest level of quality not only with the code but also with the
 overall structure of the project, several styling guidelines should be followed.
 
 ### Git commit message
+
 The git commit message is a crucial part of any code update and should follow
 certain guidelines to describe what the commit is for, why it the changes are
 being made, and who wrote the commit. A great resource on writing a strong
 commit message can be found [here](https://chris.beams.io/posts/git-commit/).
 The seven rules should be followed unless a compelling circumstance arises.
 These rules are as follows (taken from the linked page):
+
   1. Separate subject from body with a blank line
   2. Limit the subject line to 50 characters
   3. Capitalize the subject line
@@ -72,7 +82,7 @@ In addition to these rules, a few others should be considered. First, all commit
 bodys should end with `Signed-Off-By: First Last <email@domain.com>`. The
 following example shows how the signature should be applied:
 
-```
+```text
 Fix failing NCAAB functional test
 
 The NCAAB functional test fails whenever a team has an ampersand in
@@ -86,7 +96,7 @@ Lastly, commits should be separated only when necessary. For example, instead of
 having two commits where the second fixes an issue created by the first, rebase
 the two commits to a single commit. Take the following visual example:
 
-```
+```text
 $ git log --oneline
 
 e15d67b Add a Code of Conduct
@@ -103,6 +113,7 @@ commits; one for creating the Code of Conduct, and one for fixing the unit test
 issue.
 
 ### Python style
+
 In general, all Python code should follow the Python Enhanced Proposals (PEPs).
 The continuous integration tool used to qualify the project runs `pycodestyle`
 which attempts to verify the code against the PEP rules and warn if any
@@ -112,10 +123,12 @@ Otherwise, all code must pass `pycodestyle` prior to being merged with the
 upstream code.
 
 ## General Practice
+
 Outside of the above guidelines, several general best practices should be
 followed for all code contributions.
 
 ### Documentation
+
 Whenever new features are included, the API changes, or the functionality of
 existing classes or modules changes, documenation should be modified
 appropriately to reflect those updates. This includes, but is not limited to,
@@ -125,6 +138,7 @@ classes, and update existing documentation when classes have been modified in a
 way that they no longer follow the description in the existing documenation.
 
 ### Unit/Functional tests
+
 Whenever new code is added to the repository, either functional tests or unit
 tests should be included to ensure the new code is fully tested over different
 scenarios. Examples can be found in the tests directory.
