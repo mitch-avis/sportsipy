@@ -1,15 +1,16 @@
-import mock
 import os
+from datetime import datetime
+
+import mock
 import pandas as pd
 import pytest
-from datetime import datetime
 from flexmock import flexmock
+
 from sportsipy import utils
 from sportsipy.constants import NEUTRAL, REGULAR_SEASON, WIN
 from sportsipy.ncaab.boxscore import Boxscore
 from sportsipy.ncaab.constants import SCHEDULE_URL
 from sportsipy.ncaab.schedule import Schedule
-
 
 MONTH = 11
 YEAR = 2017
@@ -18,8 +19,8 @@ NUM_GAMES_IN_SCHEDULE = 39
 
 
 def read_file(filename):
-    filepath = os.path.join(os.path.dirname(__file__), 'ncaab', filename)
-    return open('%s' % filepath, 'r', encoding='utf8').read()
+    filepath = os.path.join(os.path.dirname(__file__), "ncaab", filename)
+    return open("%s" % filepath, "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -30,9 +31,9 @@ def mock_pyquery(url, timeout=None):
             self.text = html_contents
 
         def __call__(self, div):
-            return read_file('table.html')
+            return read_file("table.html")
 
-    schedule = read_file('%s-schedule.html' % (YEAR + 1))
+    schedule = read_file("%s-schedule.html" % (YEAR + 1))
     return MockPQ(schedule)
 
 
@@ -44,9 +45,9 @@ def mock_request(url):
             self.text = html_contents
 
     if str(YEAR) in url:
-        return MockRequest('good')
+        return MockRequest("good")
     else:
-        return MockRequest('bad', status_code=404)
+        return MockRequest("bad", status_code=404)
 
 
 class MockDateTime:
@@ -56,40 +57,34 @@ class MockDateTime:
 
 
 class TestNCAABSchedule:
-    @mock.patch('requests.get', side_effect=mock_pyquery)
+    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
-            'game': 2,
-            'boxscore_index': '2017-11-14-21-kansas',
-            'date': 'Tue, Nov 14, 2017',
-            'time': '9:30 pm/est',
-            'datetime': datetime(2017, 11, 14, 21, 30),
-            'type': REGULAR_SEASON,
-            'location': NEUTRAL,
-            'opponent_abbr': 'kentucky',
-            'opponent_name': 'Kentucky',
-            'opponent_rank': 7,
-            'opponent_conference': 'SEC',
-            'result': WIN,
-            'points_for': 65,
-            'points_against': 61,
-            'overtimes': 0,
-            'season_wins': 2,
-            'season_losses': 0,
-            'streak': 'W 2',
-            'arena': 'United Center'
+            "game": 2,
+            "boxscore_index": "2017-11-14-21-kansas",
+            "date": "Tue, Nov 14, 2017",
+            "time": "9:30 pm/est",
+            "datetime": datetime(2017, 11, 14, 21, 30),
+            "type": REGULAR_SEASON,
+            "location": NEUTRAL,
+            "opponent_abbr": "kentucky",
+            "opponent_name": "Kentucky",
+            "opponent_rank": 7,
+            "opponent_conference": "SEC",
+            "result": WIN,
+            "points_for": 65,
+            "points_against": 61,
+            "overtimes": 0,
+            "season_wins": 2,
+            "season_losses": 0,
+            "streak": "W 2",
+            "arena": "United Center",
         }
-        flexmock(utils) \
-            .should_receive('_todays_date') \
-            .and_return(MockDateTime(YEAR, MONTH))
-        flexmock(Boxscore) \
-            .should_receive('_parse_game_data') \
-            .and_return(None)
-        flexmock(Boxscore) \
-            .should_receive('dataframe') \
-            .and_return(pd.DataFrame([{'key': 'value'}]))
+        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
+        flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
 
-        self.schedule = Schedule('KANSAS')
+        self.schedule = Schedule("KANSAS")
 
     def test_ncaab_schedule_returns_correct_number_of_games(self):
         assert len(self.schedule) == NUM_GAMES_IN_SCHEDULE
@@ -107,7 +102,7 @@ class TestNCAABSchedule:
             assert getattr(match_two, attribute) == value
 
     def test_ncaab_schedule_dataframe_returns_dataframe(self):
-        df = pd.DataFrame([self.results], index=['KANSAS'])
+        df = pd.DataFrame([self.results], index=["KANSAS"])
 
         match_two = self.schedule[1]
         # Pandas doesn't natively allow comparisons of DataFrames.
@@ -122,7 +117,7 @@ class TestNCAABSchedule:
         assert df1.empty
 
     def test_ncaab_schedule_dataframe_extended_returns_dataframe(self):
-        df = pd.DataFrame([{'key': 'value'}])
+        df = pd.DataFrame([{"key": "value"}])
 
         result = self.schedule[1].dataframe_extended
 
@@ -132,7 +127,6 @@ class TestNCAABSchedule:
         assert df1.empty
 
     def test_ncaab_schedule_all_dataframe_returns_dataframe(self):
-
         result = self.schedule.dataframe.drop_duplicates(keep=False)
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
@@ -147,23 +141,19 @@ class TestNCAABSchedule:
         with pytest.raises(ValueError):
             self.schedule(datetime.now())
 
-    @mock.patch('requests.get', side_effect=mock_pyquery)
+    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
-        flexmock(utils) \
-            .should_receive('_no_data_found') \
-            .once()
-        flexmock(utils) \
-            .should_receive('_get_stats_table') \
-            .and_return(None)
+        flexmock(utils).should_receive("_no_data_found").once()
+        flexmock(utils).should_receive("_get_stats_table").and_return(None)
 
-        schedule = Schedule('KANSAS')
+        schedule = Schedule("KANSAS")
 
         assert len(schedule) == 0
 
     def test_game_string_representation(self):
         game = self.schedule[0]
 
-        assert game.__repr__() == 'Fri, Nov 10, 2017 - tennessee-state'
+        assert game.__repr__() == "Fri, Nov 10, 2017 - tennessee-state"
 
     def test_schedule_string_representation(self):
         expected = """Fri, Nov 10, 2017 - tennessee-state
@@ -210,43 +200,35 @@ Sat, Mar 31, 2018 - villanova"""
 
 
 class TestNCAABScheduleInvalidYear:
-    @mock.patch('requests.get', side_effect=mock_pyquery)
-    @mock.patch('requests.head', side_effect=mock_request)
-    def test_invalid_default_year_reverts_to_previous_year(self,
-                                                           *args,
-                                                           **kwargs):
+    @mock.patch("requests.get", side_effect=mock_pyquery)
+    @mock.patch("requests.head", side_effect=mock_request)
+    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         results = {
-            'game': 2,
-            'boxscore_index': '2017-11-14-21-kansas',
-            'date': 'Tue, Nov 14, 2017',
-            'time': '9:30 pm/est',
-            'datetime': datetime(2017, 11, 14, 21, 30),
-            'type': REGULAR_SEASON,
-            'location': NEUTRAL,
-            'opponent_abbr': 'kentucky',
-            'opponent_name': 'Kentucky',
-            'opponent_rank': 7,
-            'opponent_conference': 'SEC',
-            'result': WIN,
-            'points_for': 65,
-            'points_against': 61,
-            'overtimes': 0,
-            'season_wins': 2,
-            'season_losses': 0,
-            'streak': 'W 2',
-            'arena': 'United Center'
+            "game": 2,
+            "boxscore_index": "2017-11-14-21-kansas",
+            "date": "Tue, Nov 14, 2017",
+            "time": "9:30 pm/est",
+            "datetime": datetime(2017, 11, 14, 21, 30),
+            "type": REGULAR_SEASON,
+            "location": NEUTRAL,
+            "opponent_abbr": "kentucky",
+            "opponent_name": "Kentucky",
+            "opponent_rank": 7,
+            "opponent_conference": "SEC",
+            "result": WIN,
+            "points_for": 65,
+            "points_against": 61,
+            "overtimes": 0,
+            "season_wins": 2,
+            "season_losses": 0,
+            "streak": "W 2",
+            "arena": "United Center",
         }
-        flexmock(utils) \
-            .should_receive('_find_year_for_season') \
-            .and_return(2018)
-        flexmock(Boxscore) \
-            .should_receive('_parse_game_data') \
-            .and_return(None)
-        flexmock(Boxscore) \
-            .should_receive('dataframe') \
-            .and_return(pd.DataFrame([{'key': 'value'}]))
+        flexmock(utils).should_receive("_find_year_for_season").and_return(2018)
+        flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
+        flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
 
-        schedule = Schedule('KANSAS')
+        schedule = Schedule("KANSAS")
 
         for attribute, value in results.items():
             assert getattr(schedule[1], attribute) == value

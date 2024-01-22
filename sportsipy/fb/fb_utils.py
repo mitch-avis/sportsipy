@@ -1,4 +1,5 @@
 from difflib import get_close_matches
+
 from .squad_ids import SQUAD_IDS
 
 
@@ -20,9 +21,9 @@ def _parse_squad_name(team_id):
     string
         Returns a ``string`` of the parsed team's name.
     """
-    irrelevant = [' FC', ' CF', 'FC ', 'CF ']
+    irrelevant = [" FC", " CF", "FC ", "CF "]
     for val in irrelevant:
-        team_id = team_id.replace(val, '')
+        team_id = team_id.replace(val, "")
     name = team_id.lower().strip()
     return name
 
@@ -84,10 +85,10 @@ def lookup_squad_id(name, quiet=False):
         return SQUAD_IDS[filtered_name]
     closest_matches = get_close_matches(filtered_name, SQUAD_IDS.keys(), 5)
     squad_match_ids = {}
-    output = 'Exact match not found - Printing closest matches:\n'
+    output = "Exact match not found - Printing closest matches:\n"
     print(closest_matches)
     for team in closest_matches:
-        output += team.title() + ' - ' + SQUAD_IDS[team] + '\n'
+        output += team.title() + " - " + SQUAD_IDS[team] + "\n"
         squad_match_ids[team.title()] = SQUAD_IDS[team]
     if not quiet:
         print(output)
@@ -120,8 +121,10 @@ def _lookup_team(team_id):
     if team_id.lower() in SQUAD_IDS.values():
         return team_id.lower()
     name = lookup_squad_id(team_id)
-    if type(name) == str:
+    if isinstance(name, str):
         return name
-    error_message = ('Team ID of "%s" not found. Did you mean one of the '
-                     'following?\n%s' % (team_id, name))
+    error_message = 'Team ID of "%s" not found. Did you mean one of the ' "following?\n%s" % (
+        team_id,
+        name,
+    )
     raise ValueError(error_message)

@@ -1,9 +1,11 @@
+from urllib.error import HTTPError
+
 import mock
 import pytest
 from flexmock import flexmock
 from pyquery import PyQuery as pq
-from sportsipy.fb.roster import SquadPlayer, Roster
-from urllib.error import HTTPError
+
+from sportsipy.fb.roster import Roster, SquadPlayer
 
 
 class MockSquadPlayer:
@@ -12,7 +14,7 @@ class MockSquadPlayer:
         self.player_id = player_id
 
     def __call__(self, obj):
-        return pq('<tr></tr>')
+        return pq("<tr></tr>")
 
 
 def mock_httperror(url, timeout=None):
@@ -30,17 +32,13 @@ def mock_httperror(url, timeout=None):
 
 class TestFBRoster:
     def setup_method(self):
-        flexmock(Roster) \
-            .should_receive('__init__') \
-            .and_return(None)
-        flexmock(SquadPlayer) \
-            .should_receive('_parse_player_stats') \
-            .and_return(None)
+        flexmock(Roster).should_receive("__init__").and_return(None)
+        flexmock(SquadPlayer).should_receive("_parse_player_stats").and_return(None)
         self.roster = Roster(None)
         self.player = SquadPlayer(None, None)
 
     def test_no_country_returns_none(self):
-        result = self.player._parse_nationality(pq('<tr></tr>'))
+        result = self.player._parse_nationality(pq("<tr></tr>"))
 
         assert not result
 
@@ -48,7 +46,7 @@ class TestFBRoster:
         self.roster._players = [MockSquadPlayer()]
 
         with pytest.raises(ValueError):
-            self.roster('')
+            self.roster("")
 
     def test_invalid_player_id_returns_none(self):
         result = self.roster._player_id(pq('<th data-stat="player"></th>'))
@@ -60,13 +58,11 @@ class TestFBRoster:
 
         assert result == {}
 
-    @mock.patch('requests.get', side_effect=mock_httperror)
+    @mock.patch("requests.get", side_effect=mock_httperror)
     def test_invalid_http_page_error(self, *args, **kwargs):
-        flexmock(Roster) \
-            .should_receive('__init__') \
-            .and_return(None)
+        flexmock(Roster).should_receive("__init__").and_return(None)
         roster = Roster(None)
-        roster._squad_id = ''
+        roster._squad_id = ""
 
         output = roster._pull_stats(None)
 

@@ -1,13 +1,14 @@
 import re
-from .constants import SQUAD_URL
-from ..decorators import float_property_decorator, int_property_decorator
-from .fb_utils import _lookup_team
+from urllib.error import HTTPError
+
 from pyquery import PyQuery as pq
+
+from .. import utils
+from ..decorators import float_property_decorator, int_property_decorator
+from .constants import SQUAD_URL
+from .fb_utils import _lookup_team
 from .roster import Roster
 from .schedule import Schedule
-from .squad_ids import SQUAD_IDS
-from urllib.error import HTTPError
-from .. import utils
 
 
 class Team:
@@ -35,6 +36,7 @@ class Team:
         instead of downloading from sports-reference.com. This file should be
         of the Squad page for the designated year.
     """
+
     def __init__(self, team_id, squad_page=None):
         self._squad_id = None
         self._name = None
@@ -73,7 +75,7 @@ class Team:
         """
         Return the string representation of the class.
         """
-        return f'{self.name} ({self.squad_id}) - {self.season}'
+        return f"{self.name} ({self.squad_id}) - {self.season}"
 
     def __repr__(self):
         """
@@ -94,23 +96,23 @@ class Team:
             A PyQuery object of the squad's entire HTML page.
         """
         name = doc('div[data-template="Partials/Teams/Summary"]')
-        name = name('h1')
-        name = name('span').text()
+        name = name("h1")
+        name = name("span").text()
         # Name is in format "YYYY-YYYY Team Name Stats"
         # or "YYYY Team Name Stats"
         # ie. "2019-2020 Tottenham Hotspur Stats (Premier League)"
         # or "2020 Sporting KC Stats"
         # The season will always be the first part of the string.
-        match = re.findall('^.* Stats\s*', name)
+        match = re.findall(r"^.* Stats\s*", name)
         if len(match) == 1:
-            match = match[0].strip().split(' ')
+            match = match[0].strip().split(" ")
             season = match[0]
-            name = ' '.join(match[1:-1])
+            name = " ".join(match[1:-1])
         else:
             season = None
-        
+
         # Short name used in some other places can be obtained from standings table at bottom
-        short_name = doc('tr.hilite.bold')
+        short_name = doc("tr.hilite.bold")
         if len(short_name) > 0:
             short_name = short_name.eq(0)('td[data-stat="team"]').text()
         else:
@@ -143,16 +145,15 @@ class Team:
         """
         home_record, away_record = None, None
         home_points, away_points = None, None
-        records = record_line.lower().replace('home record: ', '')
-        records = records.replace('away record: ', '')
-        match_records = re.findall(r'\d+-\d+-\d+', records)
-        p = re.compile(r'[\(\)]')
+        records = record_line.lower().replace("home record: ", "")
+        records = records.replace("away record: ", "")
+        match_records = re.findall(r"\d+-\d+-\d+", records)
         if len(match_records) == 2:
             home_record = match_records[0]
             away_record = match_records[1]
-        points = re.findall(r'\d+ points', records)
+        points = re.findall(r"\d+ points", records)
         if len(points) == 2:
-            home_points, away_points = [int(p.replace(' points', '')) for p in points]
+            home_points, away_points = [int(p.replace(" points", "")) for p in points]
         return home_record, away_record, home_points, away_points
 
     def _records(self, record_line):
@@ -175,16 +176,16 @@ class Team:
             A ``tuple`` of the parsed results in the following format: (record,
             points, position, league name).
         """
-        records = record_line.lower().replace('record: ', '')
-        records_split = records.split(',')
+        records = record_line.lower().replace("record: ", "")
+        records_split = records.split(",")
         if len(records_split) != 3:
             return None, None, None, None
         record, points, position = records_split
-        points = re.sub(' point.*', '', points).strip()
-        position = re.sub(r'\(.*\)', '', position).strip()
-        league = re.sub('.* in ', '', position).title()
+        points = re.sub(" point.*", "", points).strip()
+        position = re.sub(r"\(.*\)", "", position).strip()
+        league = re.sub(".* in ", "", position).title()
         try:
-            position = re.findall(r'\d+', position)[0]
+            position = re.findall(r"\d+", position)[0]
         except IndexError:
             position = None
         return record, points, position, league
@@ -209,8 +210,8 @@ class Team:
             Returns a ``tuple`` of the teams goals in the following format:
             (goals scored, goals against, goal difference).
         """
-        goals = re.sub(r'\(.*?\)', '', goals_line.lower())
-        goals = re.findall(r'\d+', goals)
+        goals = re.sub(r"\(.*?\)", "", goals_line.lower())
+        goals = re.findall(r"\d+", goals)
         if len(goals) != 3:
             return None, None, None
         return goals
@@ -238,10 +239,10 @@ class Team:
             format: (expected goals scored, expected goals against, expected
             goal difference).
         """
-        goals = goals_line.replace('xG: ', '')
-        goals = goals.replace(', xGA: ', ' ')
-        goals = goals.replace(', Diff: ', ' ')
-        goals = goals.split(' ')
+        goals = goals_line.replace("xG: ", "")
+        goals = goals.replace(", xGA: ", " ")
+        goals = goals.replace(", Diff: ", " ")
+        goals = goals.split(" ")
         if len(goals) != 3:
             return None, None, None
         return goals
@@ -269,9 +270,9 @@ class Team:
             home page.
         """
         header = doc('div[data-template="Partials/Teams/Summary"]')
-        for header_line in header('p'):
+        for header_line in header("p"):
             line = pq(header_line).text()
-            if 'home record' in line.lower():
+            if "home record" in line.lower():
                 # Returns in the format (home_record, away_record, home_points,
                 # away_points).
                 records = self._location_records(line)
@@ -279,31 +280,31 @@ class Team:
                 self._away_record = records[1]
                 self._home_points = records[2]
                 self._away_points = records[3]
-            elif 'record' in line.lower():
+            elif "record" in line.lower():
                 # Returns in format (record, points, position, league).
                 records = self._records(line)
                 self._record = records[0]
                 self._points = records[1]
                 self._position = records[2]
                 self._league = records[3]
-            elif 'goals' in line.lower():
+            elif "goals" in line.lower():
                 # Returns in format (scored, against, difference).
                 goals = self._goals(line)
                 self._goals_scored = goals[0]
                 self._goals_against = goals[1]
                 self._goal_difference = goals[2]
-            elif 'xGA' in line and 'Diff' in line:
+            elif "xGA" in line and "Diff" in line:
                 # Returns in format (expected, against, difference).
                 goals = self._parse_expected_goals(line)
                 self._expected_goals = goals[0]
                 self._expected_goals_against = goals[1]
                 self._expected_goal_difference = goals[2]
-            elif 'manager' in line.lower():
-                self._manager = line.replace('Manager: ', '')
-            elif 'governing country' in line.lower():
-                self._country = pq(header_line)('a').text()
-            elif 'gender' in line.lower():
-                self._gender = line.replace('Gender: ', '')
+            elif "manager" in line.lower():
+                self._manager = line.replace("Manager: ", "")
+            elif "governing country" in line.lower():
+                self._country = pq(header_line)("a").text()
+            elif "gender" in line.lower():
+                self._gender = line.replace("Gender: ", "")
 
     def _pull_team_page(self, squad_page=None):
         """
@@ -358,7 +359,7 @@ class Team:
         Returns an instance of the Schedule class containing the team's
         complete schedule for the season.
         """
-        if not hasattr(self, '_doc'):
+        if not hasattr(self, "_doc"):
             self._doc = None
         return Schedule(self.squad_id, self._doc)
 
@@ -368,7 +369,7 @@ class Team:
         Returns an instance of the Roster class containing instances of every
         player on the team.
         """
-        if not hasattr(self, '_doc'):
+        if not hasattr(self, "_doc"):
             self._doc = None
         return Roster(self._squad_id, self._doc)
 
@@ -535,7 +536,7 @@ class Team:
         season.
         """
         try:
-            record = self._home_record.split('-')
+            record = self._home_record.split("-")
             wins = record[0]
             wins = int(wins)
         except ValueError:
@@ -552,7 +553,7 @@ class Team:
         season.
         """
         try:
-            record = self._home_record.split('-')
+            record = self._home_record.split("-")
             draws = record[1]
             draws = int(draws)
         except IndexError:
@@ -571,7 +572,7 @@ class Team:
         season.
         """
         try:
-            record = self._home_record.split('-')
+            record = self._home_record.split("-")
             losses = record[2]
             losses = int(losses)
         except IndexError:
@@ -590,7 +591,7 @@ class Team:
         season.
         """
         try:
-            record = self._away_record.split('-')
+            record = self._away_record.split("-")
             wins = record[0]
             wins = int(wins)
         except ValueError:
@@ -607,7 +608,7 @@ class Team:
         season.
         """
         try:
-            record = self._away_record.split('-')
+            record = self._away_record.split("-")
             draws = record[1]
             draws = int(draws)
         except IndexError:
@@ -626,7 +627,7 @@ class Team:
         season.
         """
         try:
-            record = self._away_record.split('-')
+            record = self._away_record.split("-")
             losses = record[2]
             losses = int(losses)
         except IndexError:

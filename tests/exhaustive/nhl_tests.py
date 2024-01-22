@@ -1,4 +1,6 @@
-import sys, os
+import os
+import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(sys.path[0])))
 from sportsipy.nhl.teams import Teams
 

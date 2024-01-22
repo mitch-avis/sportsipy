@@ -1,6 +1,7 @@
 import pytest
 from flexmock import flexmock
-from mock import patch, PropertyMock
+from mock import PropertyMock, patch
+
 from sportsipy.ncaaf.player import AbstractPlayer
 from sportsipy.ncaaf.roster import Player
 
@@ -9,7 +10,7 @@ def mock_pyquery(url, timeout=None):
     class MockPQ:
         def __init__(self, html_contents):
             self.url = url
-            self.reason = 'Bad URL'  # Used when throwing HTTPErrors
+            self.reason = "Bad URL"  # Used when throwing HTTPErrors
             self.headers = {}  # Used when throwing HTTPErrors
             self.status_code = 404
             self.html_contents = html_contents
@@ -20,19 +21,13 @@ def mock_pyquery(url, timeout=None):
 
 class TestNCAAFPlayer:
     def setup_method(self):
-        flexmock(AbstractPlayer) \
-            .should_receive('_parse_player_data') \
-            .and_return(None)
-        flexmock(Player) \
-            .should_receive('_pull_player_data') \
-            .and_return(None)
-        flexmock(Player) \
-            .should_receive('_find_initial_index') \
-            .and_return(None)
+        flexmock(AbstractPlayer).should_receive("_parse_player_data").and_return(None)
+        flexmock(Player).should_receive("_pull_player_data").and_return(None)
+        flexmock(Player).should_receive("_find_initial_index").and_return(None)
 
-    @patch('requests.get', side_effect=mock_pyquery)
+    @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
-        mock_id = PropertyMock(return_value='BAD')
+        mock_id = PropertyMock(return_value="BAD")
         player = Player(None)
         type(player)._player_id = mock_id
 
@@ -40,7 +35,7 @@ class TestNCAAFPlayer:
 
         assert result is None
 
-    @patch('requests.get', side_effect=mock_pyquery)
+    @patch("requests.get", side_effect=mock_pyquery)
     def test_missing_weight_returns_none(self, *args, **kwargs):
         mock_weight = PropertyMock(return_value=None)
         player = Player(None)

@@ -1,8 +1,7 @@
-import pandas as pd
 from functools import wraps
-from lxml.etree import ParserError, XMLSyntaxError
+
 from pyquery import PyQuery as pq
-from urllib.error import HTTPError
+
 from .. import utils
 from .constants import BOXSCORE_RETRY, PLAYER_SCHEME
 
@@ -18,6 +17,7 @@ def _int_property_decorator(func):
         except (ValueError, TypeError, IndexError):
             # If there is no value, default to None
             return None
+
     return wrapper
 
 
@@ -32,6 +32,7 @@ def _float_property_decorator(func):
         except (ValueError, TypeError, IndexError):
             # If there is no value, default to None
             return None
+
     return wrapper
 
 
@@ -66,6 +67,7 @@ class AbstractPlayer:
         page. If the player appears in multiple tables, all of their
         information will appear in one single string concatenated together.
     """
+
     def __init__(self, player_id, player_name, player_data):
         self._player_id = player_id
         self._name = player_name
@@ -143,18 +145,20 @@ class AbstractPlayer:
         """
         for field in self.__dict__:
             short_field = str(field)[1:]
-            if short_field == 'player_id' or \
-               short_field == 'index' or \
-               short_field == 'most_recent_season' or \
-               short_field == 'name' or \
-               short_field == 'weight' or \
-               short_field == 'height' or \
-               short_field == 'season':
+            if (
+                short_field == "player_id"
+                or short_field == "index"
+                or short_field == "most_recent_season"
+                or short_field == "name"
+                or short_field == "weight"
+                or short_field == "height"
+                or short_field == "season"
+            ):
                 continue
             field_stats = []
-            if type(player_data) == dict:
-                for year, data in player_data.items():
-                    stats = pq(data['data'])
+            if isinstance(player_data, dict):
+                for data in player_data.values():
+                    stats = pq(data["data"])
                     value = self._parse_value(stats, short_field)
                     field_stats.append(value)
             else:

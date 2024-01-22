@@ -1,6 +1,7 @@
 from flexmock import flexmock
-from mock import patch, PropertyMock
+from mock import PropertyMock, patch
 from pyquery import PyQuery as pq
+
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME
 from sportsipy.nhl.boxscore import Boxscore, Boxscores
@@ -40,15 +41,13 @@ def mock_pyquery(url, timeout=None):
             self.html_contents = html_contents
             self.text = html_contents
 
-    return MockPQ('')
+    return MockPQ("")
 
 
 class TestNHLBoxscore:
-    @patch('requests.get', side_effect=mock_pyquery)
+    @patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
-        flexmock(Boxscore) \
-            .should_receive('_parse_game_data') \
-            .and_return(None)
+        flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
 
         self.boxscore = Boxscore(None)
 
@@ -69,7 +68,7 @@ class TestNHLBoxscore:
         assert self.boxscore.winner == HOME
 
     def test_winning_name_is_home(self):
-        expected_name = 'Home Name'
+        expected_name = "Home Name"
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_home_name = PropertyMock(return_value=MockName(expected_name))
@@ -79,7 +78,7 @@ class TestNHLBoxscore:
         assert self.boxscore.winning_name == expected_name
 
     def test_winning_name_is_away(self):
-        expected_name = 'Away Name'
+        expected_name = "Away Name"
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_away_name = PropertyMock(return_value=MockName(expected_name))
@@ -89,11 +88,9 @@ class TestNHLBoxscore:
         assert self.boxscore.winning_name == expected_name
 
     def test_winning_abbr_is_home(self):
-        expected_name = 'HOME'
+        expected_name = "HOME"
 
-        flexmock(utils) \
-            .should_receive('_parse_abbreviation') \
-            .and_return(expected_name)
+        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -103,11 +100,9 @@ class TestNHLBoxscore:
         assert self.boxscore.winning_abbr == expected_name
 
     def test_winning_abbr_is_away(self):
-        expected_name = 'AWAY'
+        expected_name = "AWAY"
 
-        flexmock(utils) \
-            .should_receive('_parse_abbreviation') \
-            .and_return(expected_name)
+        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -117,7 +112,7 @@ class TestNHLBoxscore:
         assert self.boxscore.winning_abbr == expected_name
 
     def test_losing_name_is_home(self):
-        expected_name = 'Home Name'
+        expected_name = "Home Name"
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_home_name = PropertyMock(return_value=MockName(expected_name))
@@ -127,7 +122,7 @@ class TestNHLBoxscore:
         assert self.boxscore.losing_name == expected_name
 
     def test_losing_name_is_away(self):
-        expected_name = 'Away Name'
+        expected_name = "Away Name"
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_away_name = PropertyMock(return_value=MockName(expected_name))
@@ -137,11 +132,9 @@ class TestNHLBoxscore:
         assert self.boxscore.losing_name == expected_name
 
     def test_losing_abbr_is_home(self):
-        expected_name = 'HOME'
+        expected_name = "HOME"
 
-        flexmock(utils) \
-            .should_receive('_parse_abbreviation') \
-            .and_return(expected_name)
+        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -151,11 +144,9 @@ class TestNHLBoxscore:
         assert self.boxscore.losing_abbr == expected_name
 
     def test_losing_abbr_is_away(self):
-        expected_name = 'AWAY'
+        expected_name = "AWAY"
 
-        flexmock(utils) \
-            .should_receive('_parse_abbreviation') \
-            .and_return(expected_name)
+        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -165,7 +156,7 @@ class TestNHLBoxscore:
         assert self.boxscore.losing_abbr == expected_name
 
     def test_invalid_away_game_winning_goals_returns_default(self):
-        goals = ['0', '1', 'bad']
+        goals = ["0", "1", "bad"]
 
         fake_goals = PropertyMock(return_value=goals)
         fake_num_skaters = PropertyMock(return_value=3)
@@ -177,7 +168,7 @@ class TestNHLBoxscore:
         assert self.boxscore.away_game_winning_goals == 1
 
     def test_invalid_away_even_strength_assists_returns_default(self):
-        assists = ['0', '1', 'bad']
+        assists = ["0", "1", "bad"]
 
         fake_assists = PropertyMock(return_value=assists)
         fake_num_skaters = PropertyMock(return_value=3)
@@ -189,7 +180,7 @@ class TestNHLBoxscore:
         assert self.boxscore.away_even_strength_assists == 1
 
     def test_invalid_home_even_strength_assists_returns_default(self):
-        assists = ['0', '1', 'bad']
+        assists = ["0", "1", "bad"]
 
         fake_assists = PropertyMock(return_value=assists)
         fake_num_skaters = PropertyMock(return_value=0)
@@ -201,7 +192,7 @@ class TestNHLBoxscore:
         assert self.boxscore.home_even_strength_assists == 1
 
     def test_invalid_away_power_play_assists_returns_default(self):
-        assists = ['0', '1', 'bad']
+        assists = ["0", "1", "bad"]
 
         fake_assists = PropertyMock(return_value=assists)
         fake_num_skaters = PropertyMock(return_value=3)
@@ -213,7 +204,7 @@ class TestNHLBoxscore:
         assert self.boxscore.away_power_play_assists == 1
 
     def test_invalid_home_power_play_assits_returns_default(self):
-        assists = ['0', '1', 'bad']
+        assists = ["0", "1", "bad"]
 
         fake_assists = PropertyMock(return_value=assists)
         fake_num_skaters = PropertyMock(return_value=0)
@@ -225,7 +216,7 @@ class TestNHLBoxscore:
         assert self.boxscore.home_power_play_assists == 1
 
     def test_invalid_away_short_handed_assists_returns_default(self):
-        assists = ['0', '1', 'bad']
+        assists = ["0", "1", "bad"]
 
         fake_assists = PropertyMock(return_value=assists)
         fake_num_skaters = PropertyMock(return_value=3)
@@ -237,7 +228,7 @@ class TestNHLBoxscore:
         assert self.boxscore.away_short_handed_assists == 1
 
     def test_invalid_home_short_handed_assits_returns_default(self):
-        assists = ['0', '1', 'bad']
+        assists = ["0", "1", "bad"]
 
         fake_assists = PropertyMock(return_value=assists)
         fake_num_skaters = PropertyMock(return_value=0)
@@ -248,20 +239,20 @@ class TestNHLBoxscore:
 
         assert self.boxscore.home_short_handed_assists == 1
 
-    @patch('requests.get', side_effect=mock_pyquery)
+    @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
-        result = Boxscore(None)._retrieve_html_page('')
+        result = Boxscore(None)._retrieve_html_page("")
 
         assert result is None
 
     def test_regular_season_information(self):
         fields = {
-            'date': 'October 5, 2017',
-            'playoff_round': None,
-            'time': '7:00 PM',
-            'attendance': 17565,
-            'arena': 'TD Garden',
-            'duration': '2:39'
+            "date": "October 5, 2017",
+            "playoff_round": None,
+            "time": "7:00 PM",
+            "attendance": 17565,
+            "arena": "TD Garden",
+            "duration": "2:39",
         }
 
         mock_field = """October 5, 2017, 7:00 PM
@@ -279,12 +270,12 @@ Logos via Sports Logos.net / About logos
 
     def test_playoffs_information(self):
         fields = {
-            'date': 'June 7, 2018',
-            'playoff_round': 'Stanley Cup Final',
-            'time': '8:00 PM',
-            'attendance': 18529,
-            'arena': 'T-Mobile Arena',
-            'duration': '2:45'
+            "date": "June 7, 2018",
+            "playoff_round": "Stanley Cup Final",
+            "time": "8:00 PM",
+            "attendance": 18529,
+            "arena": "T-Mobile Arena",
+            "duration": "2:45",
         }
 
         mock_field = """June 7, 2018, 8:00 PM
@@ -303,15 +294,15 @@ Logos via Sports Logos.net / About logos
 
     def test_no_game_information(self):
         fields = {
-            'date': '',
-            'playoff_round': None,
-            'time': None,
-            'attendance': None,
-            'arena': None,
-            'duration': None
+            "date": "",
+            "playoff_round": None,
+            "time": None,
+            "attendance": None,
+            "arena": None,
+            "duration": None,
         }
 
-        mock_field = '\n'
+        mock_field = "\n"
 
         m = MockBoxscoreData(MockField(mock_field))
 
@@ -321,12 +312,12 @@ Logos via Sports Logos.net / About logos
 
     def test_limited_game_information(self):
         fields = {
-            'date': 'June 7, 2018',
-            'playoff_round': 'Stanley Cup Final',
-            'time': None,
-            'attendance': None,
-            'arena': 'T-Mobile Arena',
-            'duration': None
+            "date": "June 7, 2018",
+            "playoff_round": "Stanley Cup Final",
+            "time": None,
+            "attendance": None,
+            "arena": "T-Mobile Arena",
+            "duration": None,
         }
 
         mock_field = """June 7, 2018
@@ -342,7 +333,7 @@ Logos via Sports Logos.net / About logos
             assert getattr(self.boxscore, field) == value
 
     def test_away_shutout_single_goalies(self):
-        shutout = ['1', '0']
+        shutout = ["1", "0"]
 
         fake_shutout = PropertyMock(return_value=shutout)
         fake_num_goalies = PropertyMock(return_value=1)
@@ -352,7 +343,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.away_shutout == 1
 
     def test_away_shutout_multiple_goalies(self):
-        shutout = ['0', '1', '0']
+        shutout = ["0", "1", "0"]
 
         fake_shutout = PropertyMock(return_value=shutout)
         fake_num_goalies = PropertyMock(return_value=2)
@@ -362,7 +353,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.away_shutout == 1
 
     def test_away_shutout_multiple_goalies_empty_field(self):
-        shutout = ['', '1', '0']
+        shutout = ["", "1", "0"]
 
         fake_shutout = PropertyMock(return_value=shutout)
         fake_num_goalies = PropertyMock(return_value=2)
@@ -372,7 +363,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.away_shutout == 1
 
     def test_home_shutout_single_goalies(self):
-        shutout = ['0', '1']
+        shutout = ["0", "1"]
 
         fake_shutout = PropertyMock(return_value=shutout)
         fake_num_goalies = PropertyMock(return_value=1)
@@ -382,7 +373,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.home_shutout == 1
 
     def test_home_shutout_multiple_goalies(self):
-        shutout = ['0', '0', '1']
+        shutout = ["0", "0", "1"]
 
         fake_shutout = PropertyMock(return_value=shutout)
         fake_num_goalies = PropertyMock(return_value=1)
@@ -392,7 +383,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.home_shutout == 1
 
     def test_home_shutout_multiple_goalies_empty_field(self):
-        shutout = ['0', '', '1']
+        shutout = ["0", "", "1"]
 
         fake_shutout = PropertyMock(return_value=shutout)
         fake_num_goalies = PropertyMock(return_value=1)
@@ -402,7 +393,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.home_shutout == 1
 
     def test_away_saves_single_goalies(self):
-        saves = ['29', '30']
+        saves = ["29", "30"]
 
         fake_saves = PropertyMock(return_value=saves)
         fake_num_goalies = PropertyMock(return_value=1)
@@ -412,7 +403,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.away_saves == 29
 
     def test_away_saves_multiple_goalies_empty_field(self):
-        saves = ['29', '3', '30']
+        saves = ["29", "3", "30"]
 
         fake_saves = PropertyMock(return_value=saves)
         fake_num_goalies = PropertyMock(return_value=2)
@@ -422,7 +413,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.away_saves == 32
 
     def test_away_saves_multiple_goalies_empty_field(self):
-        saves = ['29', '', '30']
+        saves = ["29", "", "30"]
 
         fake_saves = PropertyMock(return_value=saves)
         fake_num_goalies = PropertyMock(return_value=2)
@@ -432,7 +423,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.away_saves == 29
 
     def test_home_saves_single_goalies(self):
-        saves = ['29', '30']
+        saves = ["29", "30"]
 
         fake_saves = PropertyMock(return_value=saves)
         fake_num_goalies = PropertyMock(return_value=1)
@@ -442,7 +433,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.home_saves == 30
 
     def test_home_saves_multiple_goalies_empty_field(self):
-        saves = ['29', '3', '30']
+        saves = ["29", "3", "30"]
 
         fake_saves = PropertyMock(return_value=saves)
         fake_num_goalies = PropertyMock(return_value=1)
@@ -452,7 +443,7 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.home_saves == 33
 
     def test_home_saves_multiple_goalies_empty_field(self):
-        saves = ['29', '30', '']
+        saves = ["29", "30", ""]
 
         fake_saves = PropertyMock(return_value=saves)
         fake_num_goalies = PropertyMock(return_value=1)
@@ -501,25 +492,24 @@ Logos via Sports Logos.net / About logos
         assert self.boxscore.dataframe is None
 
     def test_no_players_during_extraction(self):
-        table = pq('<tbody><tr></tr><tr></tr></tbody>')
-        player_dict = self.boxscore._extract_player_stats(table, {}, 'Home')
+        table = pq("<tbody><tr></tr><tr></tr></tbody>")
+        player_dict = self.boxscore._extract_player_stats(table, {}, "Home")
 
         assert player_dict == {}
 
 
 class TestMLBBoxscores:
-    @patch('requests.get', side_effect=mock_pyquery)
+    @patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
-        flexmock(Boxscores) \
-            .should_receive('_find_games') \
-            .and_return(None)
+        flexmock(Boxscores).should_receive("_find_games").and_return(None)
         self.boxscores = Boxscores(None)
 
     def test_improper_loser_boxscore_format_skips_game(self):
-        flexmock(Boxscores) \
-            .should_receive('_get_team_details') \
-            .and_return((None, None, None, None, None, None))
-        mock_html = pq("""<table class="teams">
+        flexmock(Boxscores).should_receive("_get_team_details").and_return(
+            (None, None, None, None, None, None)
+        )
+        mock_html = pq(
+            """<table class="teams">
 <tbody>
 <tr class="loser">
     <td class="right">1</td>
@@ -533,16 +523,18 @@ class TestMLBBoxscores:
     </td>
 </tr>
 </tbody>
-</table>""")
+</table>"""
+        )
         games = self.boxscores._extract_game_info([mock_html])
 
         assert len(games) == 0
 
     def test_improper_winner_boxscore_format_skips_game(self):
-        flexmock(Boxscores) \
-            .should_receive('_get_team_details') \
-            .and_return((None, None, None, None, None, None))
-        mock_html = pq("""<table class="teams">
+        flexmock(Boxscores).should_receive("_get_team_details").and_return(
+            (None, None, None, None, None, None)
+        )
+        mock_html = pq(
+            """<table class="teams">
 <tbody>
 <tr class="loser">
     <td><a href="/teams/LAK/2019.html">Los Angeles Kings</a></td>
@@ -557,13 +549,15 @@ class TestMLBBoxscores:
     </td>
 </tr>
 </tbody>
-</table>""")
+</table>"""
+        )
         games = self.boxscores._extract_game_info([mock_html])
 
         assert len(games) == 0
 
     def test_boxscore_with_no_score_returns_none(self):
-        mock_html = pq("""<table class="teams">
+        mock_html = pq(
+            """<table class="teams">
 <tbody>
 <tr class="loser">
     <td><a href="/teams/LAK/2019.html">Los Angeles Kings</a></td>
@@ -577,21 +571,22 @@ class TestMLBBoxscores:
     </td>
 </tr>
 </tbody>
-</table>""")
+</table>"""
+        )
         games = self.boxscores._extract_game_info([mock_html])
 
         assert games == [
             {
-                'away_abbr': 'LAK',
-                'away_name': 'Los Angeles Kings',
-                'away_score': None,
-                'boxscore': '201812100DET',
-                'home_abbr': 'DET',
-                'home_name': 'Detroit Red Wings',
-                'home_score': None,
-                'losing_abbr': None,
-                'losing_name': None,
-                'winning_abbr': None,
-                'winning_name': None
+                "away_abbr": "LAK",
+                "away_name": "Los Angeles Kings",
+                "away_score": None,
+                "boxscore": "201812100DET",
+                "home_abbr": "DET",
+                "home_name": "Detroit Red Wings",
+                "home_score": None,
+                "losing_abbr": None,
+                "losing_name": None,
+                "winning_abbr": None,
+                "winning_name": None,
             }
         ]
