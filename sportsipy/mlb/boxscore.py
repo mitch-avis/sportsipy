@@ -468,10 +468,10 @@ class Boxscore:
         """
         url = BOXSCORE_URL % uri
         try:
-            url_data = pq(url=url)
+            url_data = utils.rate_limit_pq(url=url)
         except HTTPError:
             return None
-        return pq(utils._remove_html_comment_tags(url_data))
+        return pq(utils.remove_html_comment_tags(url_data))
 
     def _parse_game_date_and_location(self, boxscore):
         """
@@ -802,22 +802,22 @@ class Boxscore:
         for field in self.__dict__:
             # Remove the '_' from the name
             short_field = str(field)[1:]
-            if (
-                short_field == "winner"
-                or short_field == "winning_name"
-                or short_field == "winning_abbr"
-                or short_field == "losing_name"
-                or short_field == "losing_abbr"
-                or short_field == "uri"
-                or short_field == "date"
-                or short_field == "time"
-                or short_field == "venue"
-                or short_field == "attendance"
-                or short_field == "time_of_day"
-                or short_field == "duration"
+            if short_field in (
+                "winner",
+                "winning_name",
+                "winning_abbr",
+                "losing_name",
+                "losing_abbr",
+                "uri",
+                "date",
+                "time",
+                "venue",
+                "attendance",
+                "time_of_day",
+                "duration",
             ):
                 continue
-            if short_field == "away_name" or short_field == "home_name":
+            if short_field in ("away_name", "home_name"):
                 value = self._parse_name(short_field, boxscore)
                 setattr(self, field, value)
                 continue
@@ -825,10 +825,8 @@ class Boxscore:
                 value = self._parse_summary(boxscore)
                 setattr(self, field, value)
                 continue
-            index = 0
-            if short_field in BOXSCORE_ELEMENT_INDEX.keys():
-                index = BOXSCORE_ELEMENT_INDEX[short_field]
-            value = utils._parse_field(BOXSCORE_SCHEME, boxscore, short_field, index)
+            index = BOXSCORE_ELEMENT_INDEX.get(short_field, 0)
+            value = utils.parse_field(BOXSCORE_SCHEME, boxscore, short_field, index)
             setattr(self, field, value)
         self._parse_game_date_and_location(boxscore)
         self._away_players, self._home_players = self._find_players(boxscore)
@@ -1035,8 +1033,8 @@ class Boxscore:
         for the Houston Astros.
         """
         if self.winner == HOME:
-            return utils._parse_abbreviation(self._home_name)
-        return utils._parse_abbreviation(self._away_name)
+            return utils.parse_abbreviation(self._home_name)
+        return utils.parse_abbreviation(self._away_name)
 
     @property
     def losing_name(self):
@@ -1055,8 +1053,8 @@ class Boxscore:
         for the Los Angeles Dodgers.
         """
         if self.winner == HOME:
-            return utils._parse_abbreviation(self._away_name)
-        return utils._parse_abbreviation(self._home_name)
+            return utils.parse_abbreviation(self._away_name)
+        return utils.parse_abbreviation(self._home_name)
 
     @int_property_decorator
     def away_at_bats(self):
@@ -1724,7 +1722,7 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return pq(url=url)
+        return utils.rate_limit_pq(url=url)
 
     def _get_boxscore_uri(self, url):
         """
@@ -1832,7 +1830,7 @@ class Boxscores:
             teams in the following order: Away Name, Away Abbreviation, Away
             Score, Home Name, Home Abbreviation, Home Score.
         """
-        links = [i for i in game("td a").items()]
+        links = list(game("td a").items())
         # The away team is the first link in the boxscore
         away = links[0]
         # The home team is the last (3rd) link in the boxscore
@@ -1868,7 +1866,7 @@ class Boxscores:
         tuple
             Returns a tuple of the team's name followed by the abbreviation.
         """
-        link = [i for i in team_result_html("td a").items()]
+        link = list(team_result_html("td a").items())
         # If there are no links, the boxscore is likely misformed and can't be
         # parsed. In this case, the boxscore should be skipped.
         if len(link) < 1:
@@ -1903,7 +1901,7 @@ class Boxscores:
             away_name, away_abbr, away_score, home_name, home_abbr, home_score = details
             boxscore_url = game('td[class="right gamelink"] a')
             boxscore_uri = self._get_boxscore_uri(boxscore_url)
-            losers = [loser for loser in game('tr[class="loser"]').items()]
+            losers = list(game('tr[class="loser"]').items())
             winner = self._get_team_results(game('tr[class="winner"]'))
             loser = self._get_team_results(game('tr[class="loser"]'))
             # Occurs when the boxscore format is invalid and the game should be
@@ -1977,6 +1975,6 @@ class Boxscores:
             page = self._get_requested_page(url)
             games = page('table[class="teams"]').items()
             boxscores = self._extract_game_info(games)
-            timestamp = "%s-%s-%s" % (date_step.month, date_step.day, date_step.year)
+            timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"
             self._boxscores[timestamp] = boxscores
             date_step += timedelta(days=1)

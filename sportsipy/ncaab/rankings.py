@@ -1,8 +1,6 @@
 import re
 from urllib.error import HTTPError
 
-from pyquery import PyQuery as pq
-
 from .. import utils
 from .constants import RANKINGS_SCHEME, RANKINGS_URL
 
@@ -57,7 +55,7 @@ class Rankings:
             Returns a PyQuery object of the rankings HTML page.
         """
         try:
-            return pq(url=RANKINGS_URL % year)
+            return utils.rate_limit_pq(url=RANKINGS_URL % year)
         except HTTPError:
             return None
 
@@ -104,20 +102,18 @@ class Rankings:
             A string of the requested year to pull rankings from.
         """
         if not year:
-            year = utils._find_year_for_season("ncaab")
+            year = utils.find_year_for_season("ncaab")
             # If stats for the requested season do not exist yet (as is the
             # case right before a new season begins), attempt to pull the
             # previous year's stats. If it exists, use the previous year
             # instead.
-            if not utils._url_exists(RANKINGS_URL % year) and utils._url_exists(
+            if not utils.url_exists(RANKINGS_URL % year) and utils.url_exists(
                 RANKINGS_URL % str(int(year) - 1)
             ):
                 year = str(int(year) - 1)
         page = self._pull_rankings_page(year)
         if not page:
-            output = (
-                "Can't pull rankings page. Ensure the following URL " "exists: %s" % RANKINGS_URL
-            )
+            output = f"Can't pull rankings page. Ensure the following URL exists: {RANKINGS_URL}"
             raise ValueError(output)
         rankings = page("table#ap tbody tr").items()
         weekly_rankings = []
@@ -128,11 +124,11 @@ class Rankings:
                 weekly_rankings = []
                 continue
             abbreviation, name = self._get_team(team)
-            rank = utils._parse_field(RANKINGS_SCHEME, team, "rank")
-            week = utils._parse_field(RANKINGS_SCHEME, team, "week")
-            date = utils._parse_field(RANKINGS_SCHEME, team, "date")
-            previous = utils._parse_field(RANKINGS_SCHEME, team, "previous")
-            change = utils._parse_field(RANKINGS_SCHEME, team, "change")
+            rank = utils.parse_field(RANKINGS_SCHEME, team, "rank")
+            week = utils.parse_field(RANKINGS_SCHEME, team, "week")
+            date = utils.parse_field(RANKINGS_SCHEME, team, "date")
+            previous = utils.parse_field(RANKINGS_SCHEME, team, "previous")
+            change = utils.parse_field(RANKINGS_SCHEME, team, "change")
             if "decrease" in str(team(RANKINGS_SCHEME["change"])):
                 change = int(change) * -1
             elif "increase" in str(team(RANKINGS_SCHEME["change"])):

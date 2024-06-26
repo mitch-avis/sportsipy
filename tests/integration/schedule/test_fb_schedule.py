@@ -16,7 +16,7 @@ NUM_GAMES_IN_SCHEDULE = 52
 
 def read_file(filename):
     filepath = path.join(path.dirname(__file__), "fb_stats", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -82,18 +82,19 @@ class TestFBSchedule:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
-        flexmock(utils).should_receive("_no_data_found").once()
-        flexmock(utils).should_receive("_get_stats_table").and_return(None)
+        flexmock(utils).should_receive("no_data_found").once()
+        flexmock(utils).should_receive("get_stats_table").and_return(None)
 
         schedule = Schedule("Tottenham Hotspur")
 
         assert len(schedule) == 0
 
     def test_schedule_iter_returns_correct_number_of_games(self):
-        for count, _ in enumerate(self.schedule):
-            pass
+        count = 0
+        for _, _ in enumerate(self.schedule):
+            count += 1
 
-        assert count + 1 == NUM_GAMES_IN_SCHEDULE
+        assert count == NUM_GAMES_IN_SCHEDULE
 
     def test_fb_schedule_dataframe_returns_dataframe(self):
         df = pd.DataFrame([self.results], index=["a4ba771e"])
@@ -178,9 +179,9 @@ class TestFBSchedule:
 2020-07-19 - Leicester City
 2020-07-26 - Crystal Palace"""
 
-        assert self.schedule.__repr__() == expected
+        assert repr(self.schedule) == expected
 
     def test_fb_game_string_representation(self):
         game = self.schedule[0]
 
-        assert game.__repr__() == "2019-08-10 - Aston Villa"
+        assert repr(game) == "2019-08-10 - Aston Villa"

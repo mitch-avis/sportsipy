@@ -90,7 +90,7 @@ class TestNHLBoxscore:
     def test_winning_abbr_is_home(self):
         expected_name = "HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -102,7 +102,7 @@ class TestNHLBoxscore:
     def test_winning_abbr_is_away(self):
         expected_name = "AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -134,7 +134,7 @@ class TestNHLBoxscore:
     def test_losing_abbr_is_home(self):
         expected_name = "HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -146,7 +146,7 @@ class TestNHLBoxscore:
     def test_losing_abbr_is_away(self):
         expected_name = "AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -402,7 +402,7 @@ Logos via Sports Logos.net / About logos
 
         assert self.boxscore.away_saves == 29
 
-    def test_away_saves_multiple_goalies_empty_field(self):
+    def test_away_saves_multiple_goalies(self):
         saves = ["29", "3", "30"]
 
         fake_saves = PropertyMock(return_value=saves)
@@ -432,7 +432,7 @@ Logos via Sports Logos.net / About logos
 
         assert self.boxscore.home_saves == 30
 
-    def test_home_saves_multiple_goalies_empty_field(self):
+    def test_home_saves_multiple_goalies(self):
         saves = ["29", "3", "30"]
 
         fake_saves = PropertyMock(return_value=saves)
@@ -495,7 +495,7 @@ Logos via Sports Logos.net / About logos
         table = pq("<tbody><tr></tr><tr></tr></tbody>")
         player_dict = self.boxscore._extract_player_stats(table, {}, "Home")
 
-        assert player_dict == {}
+        assert not player_dict
 
 
 class TestMLBBoxscores:

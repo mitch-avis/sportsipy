@@ -176,6 +176,4 @@ class TestFBSchedule:
         schedule = Schedule(None)
         schedule._squad_id = ""
 
-        output = schedule._pull_schedule("Tottenham Hotspur", None)
-
-        assert not output
+        assert not schedule._pull_schedule("Tottenham Hotspur", None)

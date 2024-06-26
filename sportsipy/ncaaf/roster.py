@@ -14,6 +14,7 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
+        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -29,6 +30,7 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
+        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -129,7 +131,7 @@ class Player(AbstractPlayer):
         player_data = self._pull_player_data()
         if not player_data:
             return
-        self._find_initial_index()
+        self.find_initial_index()
         AbstractPlayer.__init__(self, player_id, self._name, player_data)
 
     def __str__(self):
@@ -174,10 +176,10 @@ class Player(AbstractPlayer):
         """
         url = self._build_url()
         try:
-            url_data = pq(url=url)
+            url_data = utils.rate_limit_pq(url=url)
         except HTTPError:
             return None
-        return pq(utils._remove_html_comment_tags(url_data))
+        return pq(utils.remove_html_comment_tags(url_data))
 
     def _parse_season(self, row):
         """
@@ -198,7 +200,7 @@ class Player(AbstractPlayer):
             A string representation of the season in the format 'YYYY', such as
             '2017'.
         """
-        season = utils._parse_field(PLAYER_SCHEME, row, "season")
+        season = utils.parse_field(PLAYER_SCHEME, row, "season")
         return season.replace("*", "").replace("+", "")
 
     def _combine_season_stats(self, table_rows, career_stats, all_stats_dict):
@@ -270,8 +272,8 @@ class Player(AbstractPlayer):
         all_stats_dict = {}
 
         for table_id in ["passing", "rushing", "defense", "scoring", "receiving", "kicking"]:
-            table_items = utils._get_stats_table(player_info, "table#%s" % table_id)
-            career_items = utils._get_stats_table(player_info, "table#%s" % table_id, footer=True)
+            table_items = utils.get_stats_table(player_info, f"table#{table_id}")
+            career_items = utils.get_stats_table(player_info, f"table#{table_id}", footer=True)
             all_stats_dict = self._combine_season_stats(table_items, career_items, all_stats_dict)
         return all_stats_dict
 
@@ -290,7 +292,7 @@ class Player(AbstractPlayer):
         """
         for field in ["_height", "_weight", "_name"]:
             short_field = str(field)[1:]
-            value = utils._parse_field(PLAYER_SCHEME, player_info, short_field)
+            value = utils.parse_field(PLAYER_SCHEME, player_info, short_field)
             setattr(self, field, value)
 
     def _pull_player_data(self):
@@ -311,13 +313,13 @@ class Player(AbstractPlayer):
         """
         player_info = self._retrieve_html_page()
         if not player_info:
-            return
+            return None
         self._parse_player_information(player_info)
         all_stats = self._combine_all_stats(player_info)
         setattr(self, "_season", list(all_stats.keys()))
         return all_stats
 
-    def _find_initial_index(self):
+    def find_initial_index(self):
         """
         Find the index of the career stats.
 
@@ -326,11 +328,12 @@ class Player(AbstractPlayer):
         element should be the index value.
         """
         index = 0
-        for season in self._season:
-            if season == "Career":
-                self._index = index
-                break
-            index += 1
+        if self._season is not None:
+            for season in self._season:
+                if season == "Career":
+                    self._index = index
+                    break
+                index += 1
 
     def __call__(self, requested_season=""):
         """
@@ -356,11 +359,12 @@ class Player(AbstractPlayer):
         index = 0
         if not self._season:
             return self
-        for season in self._season:
-            if season == requested_season:
-                self._index = index
-                break
-            index += 1
+        if self._season is not None:
+            for season in self._season:
+                if season == requested_season:
+                    self._index = index
+                    break
+                index += 1
         return self
 
     def _dataframe_fields(self):
@@ -447,10 +451,11 @@ class Player(AbstractPlayer):
         indices = []
         if not self._season:
             return None
-        for season in self._season:
-            self._index = self._season.index(season)
-            rows.append(self._dataframe_fields())
-            indices.append(season)
+        if self._season is not None:
+            for season in self._season:
+                self._index = self._season.index(season)
+                rows.append(self._dataframe_fields())
+                indices.append(season)
         self._index = temp_index
         return pd.DataFrame(rows, index=[indices])
 
@@ -461,7 +466,9 @@ class Player(AbstractPlayer):
         '2017'. If no season was requested, the career stats will be returned
         for the player and the season will default to 'Career'.
         """
-        return self._season[self._index]
+        if self._season is not None:
+            return self._season[self._index]
+        return None
 
     @property
     def team_abbreviation(self):
@@ -469,7 +476,9 @@ class Player(AbstractPlayer):
         Returns a ``string`` of the team's abbreviation, such as 'PURDUE' for
         the Purdue Boilermakers.
         """
-        return self._team_abbreviation[self._index]
+        if self._team_abbreviation is not None:
+            return self._team_abbreviation[self._index]
+        return None
 
     @property
     def position(self):
@@ -480,10 +489,12 @@ class Player(AbstractPlayer):
         # the player as not having a position. Since player stats default to
         # career, this will make it appear no players have a position. Instead,
         # default to the most recent season.
-        if self.season == "Career" and self._position[self._index] == "":
-            index = self._season.index(self._most_recent_season)
-            return self._position[index]
-        return self._position[self._index]
+        if self._position is not None:
+            if self.season == "Career" and self._position[self._index] == "":
+                index = self._season.index(self._most_recent_season)
+                return self._position[index]
+            return self._position[self._index]
+        return None
 
     @property
     def height(self):
@@ -509,7 +520,9 @@ class Player(AbstractPlayer):
         Returns a ``string`` of the player's class designation, such as'FR' for
         freshmen.
         """
-        return self._year[self._index]
+        if self._year is not None:
+            return self._year[self._index]
+        return None
 
     @_int_property_decorator
     def games(self):
@@ -912,7 +925,7 @@ class Roster:
             Returns a PyQuery object of the team's HTML page.
         """
         try:
-            return pq(utils._remove_html_comment_tags(pq(url=url)))
+            return pq(utils.remove_html_comment_tags(utils.rate_limit_pq(url=url)))
         except HTTPError:
             return None
 
@@ -996,10 +1009,12 @@ class Roster:
         string
             Returns a string of the coach's name.
         """
+        coach_name = None
         for line in page.find("p").items():
             strong = line.find("strong")
             if hasattr(strong, "text") and strong.text().strip() == "Coach:":
-                return line.find("a").text()
+                coach_name = line.find("a").text()
+        return coach_name
 
     def _find_players_with_coach(self, year):
         """
@@ -1018,19 +1033,19 @@ class Roster:
             from.
         """
         if not year:
-            year = utils._find_year_for_season("ncaaf")
+            year = utils.find_year_for_season("ncaaf")
             # If stats for the requested season do not exist yet (as is the
             # case right before a new season begins), attempt to pull the
             # previous year's stats. If it exists, use the previous year
             # instead.
-            if not utils._url_exists(self._create_url(year)) and utils._url_exists(
+            if not utils.url_exists(self._create_url(year)) and utils.url_exists(
                 self._create_url(str(int(year) - 1))
             ):
                 year = str(int(year) - 1)
         url = self._create_url(year)
         page = self._pull_team_page(url)
         if not page:
-            output = "Can't pull requested team page. Ensure the following " "URL exists: %s" % url
+            output = f"Can't pull requested team page. Ensure the following URL exists: {url}"
             raise ValueError(output)
         for player in page("table#roster tbody tr").items():
             player_id = self._get_id(player)

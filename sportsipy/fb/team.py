@@ -322,7 +322,7 @@ class Team:
             be of the Squad page for the designated year.
         """
         try:
-            doc = utils._pull_page(SQUAD_URL % self.squad_id, squad_page)
+            doc = utils.pull_page(SQUAD_URL % self.squad_id, squad_page)
         except HTTPError:
             return
         self._doc = doc

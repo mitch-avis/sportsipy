@@ -1,7 +1,7 @@
 from flexmock import flexmock
 from mock import PropertyMock
 
-from sportsipy.constants import AWAY, HOME, LOSS, NEUTRAL, POST_SEASON, REGULAR_SEASON, WIN
+from sportsipy.constants import AWAY, HOME, LOSS, WIN
 from sportsipy.nhl.constants import OVERTIME_LOSS, SHOOTOUT
 from sportsipy.nhl.schedule import Game, Schedule
 
@@ -12,7 +12,7 @@ class TestNHLSchedule:
     def setup_method(self, *args, **kwargs):
         flexmock(Game).should_receive("_parse_game_data").and_return(None)
 
-        self.game = Game(None, YEAR)
+        self.game = Game(None)
 
     def test_away_game_returns_away_location(self):
         fake_location = PropertyMock(return_value="@")
@@ -137,24 +137,6 @@ class TestNHLSchedule:
         type(self.game)._opp_short_handed_goals = fake_goals
 
         assert self.game.opp_short_handed_goals is None
-
-    def test_bad_penalties_in_minutes_returns_default_number(self):
-        fake_penalties = PropertyMock(return_value="")
-        type(self.game)._penalties_in_minutes = fake_penalties
-
-        assert self.game.penalties_in_minutes is None
-
-    def test_bad_power_play_goals_returns_default_number(self):
-        fake_power_play_goals = PropertyMock(return_value="")
-        type(self.game)._power_play_goals = fake_power_play_goals
-
-        assert self.game.power_play_goals is None
-
-    def test_bad_power_play_opportunities_returns_default_number(self):
-        fake_power_play_opps = PropertyMock(return_value="")
-        type(self.game)._power_play_opportunities = fake_power_play_opps
-
-        assert self.game.power_play_opportunities is None
 
     def test_bad_corsi_for_returns_default_number(self):
         fake_corsi = PropertyMock(return_value="")

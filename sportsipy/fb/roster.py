@@ -4,7 +4,7 @@ from urllib.error import HTTPError
 import pandas as pd
 from pyquery import PyQuery as pq
 
-from sportsipy.utils import _get_stats_table, _parse_field, _remove_html_comment_tags
+from sportsipy.utils import get_stats_table, parse_field, rate_limit_pq, remove_html_comment_tags
 
 from ..decorators import float_property_decorator, int_property_decorator
 from .constants import ROSTER_SCHEME, SQUAD_URL
@@ -243,7 +243,7 @@ class SquadPlayer:
             if short_field == "nationality":
                 value = self._parse_nationality(player_data)
             else:
-                value = _parse_field(ROSTER_SCHEME, player_data, short_field)
+                value = parse_field(ROSTER_SCHEME, player_data, short_field)
             setattr(self, field, value)
 
     @property
@@ -1477,7 +1477,7 @@ class Roster:
         self._squad_id = _lookup_team(squad_id)
         player_data_dict = self._pull_stats(doc)
         if not player_data_dict:
-            return None
+            return
         self._instantiate_players(player_data_dict)
 
     def __call__(self, player):
@@ -1637,8 +1637,8 @@ class Roster:
             if hasattr(strong, "text") and strong.text().strip() == "Record:":
                 href = pq(strong).nextAll("a").attr("href")
                 try:
-                    id = re.compile(r"/comps/(\d+)/").search(href).group(1)
-                    return id
+                    comp_id = re.compile(r"/comps/(\d+)/").search(href).group(1)
+                    return comp_id
                 except AttributeError:
                     continue
         return None
@@ -1666,8 +1666,8 @@ class Roster:
         """
         if not doc:
             try:
-                doc = pq(url=SQUAD_URL % self._squad_id)
-                doc = pq(_remove_html_comment_tags(doc))
+                doc = rate_limit_pq(url=SQUAD_URL % self._squad_id)
+                doc = pq(remove_html_comment_tags(doc))
             except HTTPError:
                 return None
         player_data_dict = {}
@@ -1690,9 +1690,9 @@ class Roster:
             "table#stats_defense_",
             "table#stats_misc_",
         ]:
-            table = _get_stats_table(doc, table_id + "ks_combined")
+            table = get_stats_table(doc, table_id + "ks_combined")
             if not table:
-                table = _get_stats_table(doc, table_id + postfix)
+                table = get_stats_table(doc, table_id + postfix)
                 if not table:
                     continue
             player_data_dict = self._add_stats_data(table, player_data_dict)

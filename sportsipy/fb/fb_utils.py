@@ -123,8 +123,5 @@ def _lookup_team(team_id):
     name = lookup_squad_id(team_id)
     if isinstance(name, str):
         return name
-    error_message = 'Team ID of "%s" not found. Did you mean one of the ' "following?\n%s" % (
-        team_id,
-        name,
-    )
+    error_message = f'Team ID of "{team_id}" not found. Did you mean one of the following?\n{name}'
     raise ValueError(error_message)

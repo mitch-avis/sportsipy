@@ -23,7 +23,7 @@ class TestMLBPlayer:
     def setup_method(self):
         flexmock(AbstractPlayer).should_receive("_parse_player_data").and_return(None)
         flexmock(Player).should_receive("_pull_player_data").and_return(None)
-        flexmock(Player).should_receive("_find_initial_index").and_return(None)
+        flexmock(Player).should_receive("find_initial_index").and_return(None)
 
     def test_no_int_returns_default_value(self):
         mock_runs = PropertyMock(return_value=[""])

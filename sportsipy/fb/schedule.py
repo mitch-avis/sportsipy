@@ -3,7 +3,6 @@ from datetime import datetime
 from urllib.error import HTTPError
 
 import pandas as pd
-from pyquery import PyQuery as pq
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, DRAW, HOME, LOSS, NEUTRAL, WIN
@@ -182,7 +181,7 @@ class Game:
                 value = self._parse_match_report(game_data)
                 setattr(self, field, value)
                 continue
-            value = utils._parse_field(SCHEDULE_SCHEME, game_data, short_name)
+            value = utils.parse_field(SCHEDULE_SCHEME, game_data, short_name)
             setattr(self, field, value)
 
     @property
@@ -310,12 +309,16 @@ class Game:
         """
         if not self._venue:
             return None
-        if self._venue.upper() == "HOME":
-            return HOME
-        if self._venue.upper() == "AWAY":
-            return AWAY
-        if self._venue.upper() == "NEUTRAL":
-            return NEUTRAL
+        match self._venue.upper():
+            case "HOME":
+                venue_string = HOME
+            case "AWAY":
+                venue_string = AWAY
+            case "NEUTRAL":
+                venue_string = NEUTRAL
+            case _:
+                venue_string = None
+        return venue_string
 
     @property
     def result(self):
@@ -325,12 +328,16 @@ class Game:
         """
         if not self._result:
             return None
-        if self._result.upper() == "W":
-            return WIN
-        if self._result.upper() == "D":
-            return DRAW
-        if self._result.upper() == "L":
-            return LOSS
+        match self._result.upper():
+            case "W":
+                result_string = WIN
+            case "L":
+                result_string = LOSS
+            case "D":
+                result_string = DRAW
+            case _:
+                result_string = None
+        return result_string
 
     @int_property_decorator
     def goals_for(self):
@@ -338,7 +345,7 @@ class Game:
         Returns an ``int`` of the number of goals the team scored.
         """
         # If the game went to a shootout, remove the penalties.
-        if "(" in self._goals_for and ")" in self._goals_for:
+        if "(" in str(self._goals_for) and ")" in str(self._goals_for):
             return re.sub(" .*", "", self._goals_for)
         return self._goals_for
 
@@ -348,7 +355,7 @@ class Game:
         Returns an ``int`` of the number of goals the team conceded.
         """
         # If the game went to a shootout, remove the penalties.
-        if "(" in self._goals_against and ")" in self._goals_against:
+        if "(" in str(self._goals_against) and ")" in str(self._goals_against):
             return re.sub(" .*", "", self._goals_against)
         return self._goals_against
 
@@ -614,12 +621,12 @@ class Schedule:
         if not doc:
             squad_id = _lookup_team(team_id)
             try:
-                doc = pq(url=SQUAD_URL % squad_id)
+                doc = utils.rate_limit_pq(url=SQUAD_URL % squad_id)
             except HTTPError:
                 return
-        schedule = utils._get_stats_table(doc, "table#matchlogs_for")
+        schedule = utils.get_stats_table(doc, "table#matchlogs_for")
 
         if not schedule:
-            utils._no_data_found()
+            utils.no_data_found()
             return
         self._add_games_to_schedule(schedule)

@@ -4,7 +4,6 @@ from flexmock import flexmock
 from mock import PropertyMock
 from pyquery import PyQuery as pq
 
-from sportsipy import utils
 from sportsipy.constants import (
     AWAY,
     CONFERENCE_TOURNAMENT,
@@ -149,6 +148,7 @@ class TestNCAABSchedule:
         assert self.game.datetime == datetime(2018, 12, 13, 0, 0)
 
     def test_empty_schedule_class_returns_dataframe_of_none(self):
+        # pylint: disable=no-member
         fake_points = PropertyMock(return_value=None)
         type(self.game)._home_points = fake_points
         type(self.game)._away_points = fake_points
@@ -158,6 +158,7 @@ class TestNCAABSchedule:
         assert self.game.dataframe is None
 
     def test_empty_schedule_class_returns_dataframe_extended_of_none(self):
+        # pylint: disable=no-member
         fake_points = PropertyMock(return_value=None)
         type(self.game)._home_points = fake_points
         type(self.game)._away_points = fake_points
@@ -189,14 +190,14 @@ class TestNCAABSchedule:
 
 class TestNCAABScheduleNames:
     def test_non_major_school_returns_name_for_abbreviation(self):
-        text = '<td class="left " data-stat="opp_name">' "City College of New York</td>"
+        text = '<td class="left " data-stat="opp_name">City College of New York</td>'
         game_data = pq(text)
 
         game = Game(game_data)
 
         assert game.opponent_abbr == "City College of New York"
 
-    def test_non_major_school_returns_non_dI_for_conference(self):
+    def test_non_major_school_returns_non_d1_for_conference(self):
         game_data = pq('<td class="left " data-stat="conf_abbr"></td>')
 
         game = Game(game_data)

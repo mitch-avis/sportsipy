@@ -1,4 +1,3 @@
-import pytest
 from flexmock import flexmock
 from mock import PropertyMock, patch
 
@@ -23,7 +22,7 @@ class TestNCAAFPlayer:
     def setup_method(self):
         flexmock(AbstractPlayer).should_receive("_parse_player_data").and_return(None)
         flexmock(Player).should_receive("_pull_player_data").and_return(None)
-        flexmock(Player).should_receive("_find_initial_index").and_return(None)
+        flexmock(Player).should_receive("find_initial_index").and_return(None)
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):

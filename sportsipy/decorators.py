@@ -1,7 +1,10 @@
-from functools import wraps
+from functools import partial, wraps
 
 
-def int_property_decorator(func):
+def int_property_decorator(func=None):
+    if not func:
+        return partial(int_property_decorator)
+
     @property
     @wraps(func)
     def wrapper(*args):
@@ -21,7 +24,10 @@ def int_property_decorator(func):
     return wrapper
 
 
-def float_property_decorator(func):
+def float_property_decorator(func=None):
+    if not func:
+        return partial(float_property_decorator)
+
     @property
     @wraps(func)
     def wrapper(*args):

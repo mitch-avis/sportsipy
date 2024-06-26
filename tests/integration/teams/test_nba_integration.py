@@ -6,7 +6,6 @@ import pytest
 from flexmock import flexmock
 
 from sportsipy import utils
-from sportsipy.nba.constants import SEASON_PAGE_URL
 from sportsipy.nba.teams import Team, Teams
 
 MONTH = 1
@@ -15,10 +14,10 @@ YEAR = 2021
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "nba_stats", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -27,8 +26,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 def mock_pyquery(url, timeout=None):
@@ -40,11 +38,10 @@ def mock_pyquery(url, timeout=None):
 
         def __call__(self, div):
             if div == "div#div_totals-team":
-                return read_file("%s_team.html" % YEAR)
-            else:
-                return read_file("%s_opponent.html" % YEAR)
+                return read_file(f"{YEAR}_team.html")
+            return read_file(f"{YEAR}_opponent.html")
 
-    html_contents = read_file("NBA_%s.html" % YEAR)
+    html_contents = read_file(f"NBA_{YEAR}.html")
     return MockPQ(html_contents)
 
 
@@ -141,7 +138,7 @@ class TestNBAIntegration:
             "LAL",
             "PHO",
         ]
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.teams = Teams()
 
@@ -185,8 +182,8 @@ class TestNBAIntegration:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nba_empty_page_returns_no_teams(self, *args, **kwargs):
-        flexmock(utils).should_receive("_no_data_found").once()
-        flexmock(utils).should_receive("_get_stats_table").and_return(None)
+        flexmock(utils).should_receive("no_data_found").once()
+        flexmock(utils).should_receive("get_stats_table").and_return(None)
 
         teams = Teams()
 
@@ -202,7 +199,7 @@ class TestNBAIntegration:
     def test_team_string_representation(self):
         detroit = self.teams("DET")
 
-        assert detroit.__repr__() == "Detroit Pistons (DET) - 2021"
+        assert repr(detroit) == "Detroit Pistons (DET) - 2021"
 
 
 class TestNBAIntegrationAllTeams:
@@ -241,14 +238,14 @@ Cleveland Cavaliers (CLE)"""
 
         teams = Teams()
 
-        assert teams.__repr__() == expected
+        assert repr(teams) == expected
 
 
 class TestNBAIntegrationInvalidDate:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2022)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2022)
 
         teams = Teams()
 

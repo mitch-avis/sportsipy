@@ -23,7 +23,7 @@ class TestNCAABPlayer:
     def setup_method(self):
         flexmock(AbstractPlayer).should_receive("_parse_player_data").and_return(None)
         flexmock(Player).should_receive("_pull_player_data").and_return(None)
-        flexmock(Player).should_receive("_find_initial_index").and_return(None)
+        flexmock(Player).should_receive("find_initial_index").and_return(None)
 
     def test_no_int_return_default_value_abstract_class(self):
         mock_field_goals = PropertyMock(return_value=[""])
@@ -93,7 +93,7 @@ class TestNCAABPlayer:
         player = Player(None)
         result = player._combine_season_stats(None, None, {})
 
-        assert result == {}
+        assert not result
 
     def test_player_with_no_weight_returns_none(self):
         mock_weight = PropertyMock(return_value=None)

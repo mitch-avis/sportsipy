@@ -9,7 +9,7 @@ from flexmock import flexmock
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME, LOSS, WIN
 from sportsipy.mlb.boxscore import Boxscore
-from sportsipy.mlb.constants import DAY, NIGHT, SCHEDULE_URL
+from sportsipy.mlb.constants import NIGHT
 from sportsipy.mlb.schedule import Schedule
 
 MONTH = 4
@@ -20,7 +20,7 @@ NUM_GAMES_IN_SCHEDULE = 162
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "mlb", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -33,11 +33,11 @@ def mock_pyquery(url, timeout=None):
         def __call__(self, div):
             return read_file("table.html")
 
-    schedule = read_file("%s-schedule-scores.html" % YEAR)
+    schedule = read_file(f"{YEAR}-schedule-scores.html")
     return MockPQ(schedule)
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -46,8 +46,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class MockDateTime:
@@ -84,7 +83,7 @@ class TestMLBSchedule:
         }
         flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
         flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.schedule = Schedule("NYY")
 
@@ -173,8 +172,8 @@ class TestMLBSchedule:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
-        flexmock(utils).should_receive("_no_data_found").once()
-        flexmock(utils).should_receive("_get_stats_table").and_return(None)
+        flexmock(utils).should_receive("no_data_found").once()
+        flexmock(utils).should_receive("get_stats_table").and_return(None)
 
         schedule = Schedule("NYY")
 
@@ -183,7 +182,7 @@ class TestMLBSchedule:
     def test_game_string_representation(self):
         game = self.schedule[0]
 
-        assert game.__repr__() == "Sunday, Apr 2 - TBR"
+        assert repr(game) == "Sunday, Apr 2 - TBR"
 
     def test_schedule_string_representation(self):
         expected = """Sunday, Apr 2 - TBR
@@ -349,7 +348,7 @@ Friday, Sep 29 - TOR
 Saturday, Sep 30 - TOR
 Sunday, Oct 1 - TOR"""
 
-        assert self.schedule.__repr__() == expected
+        assert repr(self.schedule) == expected
 
 
 class TestMLBScheduleInvalidYear:
@@ -381,7 +380,7 @@ class TestMLBScheduleInvalidYear:
         }
         flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
         flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2018)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         schedule = Schedule("NYY")
 

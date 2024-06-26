@@ -90,7 +90,7 @@ class TestNBAPlayer:
 
         player = Player(None)
 
-        result = player._parse_contract(player_info)
+        player._parse_contract(player_info)
 
         assert player._contract is None
 

@@ -7,9 +7,8 @@ import pytest
 from flexmock import flexmock
 
 from sportsipy import utils
-from sportsipy.constants import HOME, REGULAR_SEASON, WIN
+from sportsipy.constants import HOME, WIN
 from sportsipy.ncaaf.boxscore import Boxscore
-from sportsipy.ncaaf.constants import SCHEDULE_URL
 from sportsipy.ncaaf.schedule import Schedule
 
 MONTH = 9
@@ -20,7 +19,7 @@ NUM_GAMES_IN_SCHEDULE = 13
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "ncaaf", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -31,13 +30,13 @@ def mock_pyquery(url, timeout=None):
             self.text = html_contents
 
         def __call__(self, div):
-            return read_file("table.html" % YEAR)
+            return read_file("table.html")
 
-    schedule = read_file("%s-schedule.html" % YEAR)
+    schedule = read_file(f"{YEAR}-schedule.html")
     return MockPQ(schedule)
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -46,8 +45,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class MockDateTime:
@@ -79,7 +77,7 @@ class TestNCAAFSchedule:
             "losses": 0,
             "streak": "W 2",
         }
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
         flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
         flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
 
@@ -142,8 +140,8 @@ class TestNCAAFSchedule:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
-        flexmock(utils).should_receive("_no_data_found").once()
-        flexmock(utils).should_receive("_get_stats_table").and_return(None)
+        flexmock(utils).should_receive("no_data_found").once()
+        flexmock(utils).should_receive("get_stats_table").and_return(None)
 
         schedule = Schedule("MICHIGAN")
 
@@ -152,7 +150,7 @@ class TestNCAAFSchedule:
     def test_game_string_representation(self):
         game = self.schedule[0]
 
-        assert game.__repr__() == "Sep 2, 2017 - florida"
+        assert repr(game) == "Sep 2, 2017 - florida"
 
     def test_schedule_string_representation(self):
         expected = """Sep 2, 2017 - florida
@@ -169,7 +167,7 @@ Nov 18, 2017 - wisconsin
 Nov 25, 2017 - ohio-state
 Jan 1, 2018 - south-carolina"""
 
-        assert self.schedule.__repr__() == expected
+        assert repr(self.schedule) == expected
 
 
 class TestNCAAFScheduleInvalidYear:
@@ -198,7 +196,7 @@ class TestNCAAFScheduleInvalidYear:
         }
         flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
         flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2018)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         schedule = Schedule("MICHIGAN")
 

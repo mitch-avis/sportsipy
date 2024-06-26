@@ -14,7 +14,7 @@ YEAR = 2018
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "nfl", filename)
-    return open("%s.htm" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}.htm", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -28,25 +28,27 @@ def mock_pyquery(url, timeout=None):
             self.text = html_contents
 
     if "BAD" in url or "bad" in url:
-        return MockPQ(None, 404)
-    if "404" in url:
-        return MockPQ("Page Not Found (404 error)")
-    if "Davi" in url:
-        return MockPQ(read_file("DaviDe00"))
-    if "Lewi" in url:
-        return MockPQ(read_file("LewiTo00"))
-    if "Lutz" in url:
-        return MockPQ(read_file("LutzWi00"))
-    if "Mors" in url:
-        return MockPQ(read_file("MorsTh00"))
-    if "Hatf" in url:
-        return MockPQ(read_file("HatfDo00"))
-    if "2018_roster" in url:
-        return MockPQ(read_file("2018_roster"))
-    return MockPQ(read_file("BreeDr00"))
+        mock_pq = MockPQ(None, 404)
+    elif "404" in url:
+        mock_pq = MockPQ("Page Not Found (404 error)")
+    elif "Davi" in url:
+        mock_pq = MockPQ(read_file("DaviDe00"))
+    elif "Lewi" in url:
+        mock_pq = MockPQ(read_file("LewiTo00"))
+    elif "Lutz" in url:
+        mock_pq = MockPQ(read_file("LutzWi00"))
+    elif "Mors" in url:
+        mock_pq = MockPQ(read_file("MorsTh00"))
+    elif "Hatf" in url:
+        mock_pq = MockPQ(read_file("HatfDo00"))
+    elif "2018_roster" in url:
+        mock_pq = MockPQ(read_file("2018_roster"))
+    else:
+        mock_pq = MockPQ(read_file("BreeDr00"))
+    return mock_pq
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -55,8 +57,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class TestNFLPlayer:
@@ -1380,7 +1381,7 @@ class TestNFLPlayer:
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
         frames = [df, player.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        pd.concat(frames).drop_duplicates(keep=False)
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nfl_fake_404_page_returns_none_with_no_errors(self, *args, **kwargs):
@@ -1407,13 +1408,13 @@ class TestNFLPlayer:
     def test_nfl_player_string_representation(self, *args, **kwargs):
         player = Player("BreeDr00")
 
-        assert player.__repr__() == "Drew Brees (BreeDr00)"
+        assert repr(player) == "Drew Brees (BreeDr00)"
 
 
 class TestNFLRoster:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("NOR")
 
         assert len(roster.players) == 5
@@ -1430,7 +1431,7 @@ class TestNFLRoster:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_bad_url_raises_value_error(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            roster = Roster("BAD")
+            Roster("BAD")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_from_team_class(self, *args, **kwargs):
@@ -1453,7 +1454,7 @@ class TestNFLRoster:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("NOR", slim=True)
 
         assert len(roster.players) == 5
@@ -1468,7 +1469,7 @@ class TestNFLRoster:
     @mock.patch("requests.head", side_effect=mock_request)
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2019)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         roster = Roster("NOR")
 
@@ -1491,10 +1492,10 @@ Tommylee Lewis (LewiTo00)
 Wil Lutz (LutzWi00)
 Thomas Morstead (MorsTh00)"""
 
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("NOR")
 
-        assert roster.__repr__() == expected
+        assert repr(roster) == expected
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_coach(self, *args, **kwargs):

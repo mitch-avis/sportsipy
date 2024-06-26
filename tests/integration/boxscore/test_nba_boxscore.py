@@ -8,7 +8,7 @@ from flexmock import flexmock
 from sportsipy import utils
 from sportsipy.constants import AWAY
 from sportsipy.nba.boxscore import Boxscore, Boxscores
-from sportsipy.nba.constants import BOXSCORE_URL, BOXSCORES_URL
+from sportsipy.nba.constants import BOXSCORES_URL
 
 MONTH = 10
 YEAR = 2020
@@ -18,7 +18,7 @@ BOXSCORE = "202002220UTA"
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "nba", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -32,7 +32,7 @@ def mock_pyquery(url, timeout=None):
         return MockPQ(read_file("boxscores-2-22-2020.html"))
     if url == BOXSCORES_URL % (2, 23, YEAR):
         return MockPQ(read_file("boxscores-2-23-2020.html"))
-    boxscore = read_file("%s.html" % BOXSCORE)
+    boxscore = read_file(f"{BOXSCORE}.html")
     return MockPQ(boxscore)
 
 
@@ -129,7 +129,7 @@ class TestNBABoxscore:
             "home_offensive_rating": 106.6,
             "home_defensive_rating": 116.3,
         }
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.boxscore = Boxscore(BOXSCORE)
 
@@ -175,9 +175,9 @@ class TestNBABoxscore:
             assert not player.dataframe.empty
 
     def test_nba_boxscore_string_representation(self):
-        expected = "Boxscore for Houston Rockets at Utah Jazz " "(9:00 PM, February 22, 2020)"
+        expected = "Boxscore for Houston Rockets at Utah Jazz (9:00 PM, February 22, 2020)"
 
-        assert self.boxscore.__repr__() == expected
+        assert repr(self.boxscore) == expected
 
     def test_nba_boxscore_home_win_and_losses(self):
         self.boxscore._home_record = "36-20"
@@ -494,4 +494,4 @@ class TestNBABoxscores:
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 2, 22))
 
-        assert result.__repr__() == "NBA games for 2-22-2020"
+        assert repr(result) == "NBA games for 2-22-2020"

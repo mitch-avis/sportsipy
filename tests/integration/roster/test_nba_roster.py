@@ -15,7 +15,7 @@ YEAR = 2018
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "nba", filename)
-    return open("%s.html" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}.html", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -29,21 +29,23 @@ def mock_pyquery(url, timeout=None):
             self.text = html_contents
 
     if "HOU" in url:
-        return MockPQ(read_file("2018"))
-    if "anderry01" in url:
-        return MockPQ(read_file("anderry01"))
-    if "arizatr01" in url:
-        return MockPQ(read_file("arizatr01"))
-    if "blackta01" in url:
-        return MockPQ(read_file("blackta01"))
-    if "youngtr01" in url:
-        return MockPQ(read_file("youngtr01"))
-    if "BAD" in url:
-        return MockPQ(None, 404)
-    return MockPQ(read_file("hardeja01"))
+        mock_pq = MockPQ(read_file("2018"))
+    elif "anderry01" in url:
+        mock_pq = MockPQ(read_file("anderry01"))
+    elif "arizatr01" in url:
+        mock_pq = MockPQ(read_file("arizatr01"))
+    elif "blackta01" in url:
+        mock_pq = MockPQ(read_file("blackta01"))
+    elif "youngtr01" in url:
+        mock_pq = MockPQ(read_file("youngtr01"))
+    elif "BAD" in url:
+        mock_pq = MockPQ(None, 404)
+    else:
+        mock_pq = MockPQ(read_file("hardeja01"))
+    return mock_pq
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -52,8 +54,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class TestNBAPlayer:
@@ -1249,7 +1250,7 @@ class TestNBAPlayer:
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
         frames = [df, player.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        pd.concat(frames).drop_duplicates(keep=False)
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nba_player_with_no_stats_handled_without_error(self, *args, **kwargs):
@@ -1261,13 +1262,13 @@ class TestNBAPlayer:
         # Request the career stats
         player = self.player("")
 
-        assert player.__repr__() == "James Harden (hardeja01)"
+        assert repr(player) == "James Harden (hardeja01)"
 
 
 class TestNBARoster:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
 
         assert len(roster.players) == 4
@@ -1278,7 +1279,7 @@ class TestNBARoster:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_bad_url_raises_value_error(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            roster = Roster("BAD")
+            Roster("BAD")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_from_team_class(self, *args, **kwargs):
@@ -1296,7 +1297,7 @@ class TestNBARoster:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU", slim=True)
 
         assert len(roster.players) == 4
@@ -1310,7 +1311,7 @@ class TestNBARoster:
     @mock.patch("requests.head", side_effect=mock_request)
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2019)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         roster = Roster("HOU")
 
@@ -1321,7 +1322,7 @@ class TestNBARoster:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_rows_are_skipped(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         flexmock(Roster).should_receive("_get_id").and_return(None)
 
         roster = Roster("HOU")
@@ -1335,10 +1336,10 @@ Trevor Ariza (arizatr01)
 Tarik Black (blackta01)
 James Harden (hardeja01)"""
 
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
 
-        assert roster.__repr__() == expected
+        assert repr(roster) == expected
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_coach(self, *args, **kwargs):

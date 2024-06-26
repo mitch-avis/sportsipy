@@ -17,6 +17,7 @@ def nhl_int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
+        # pylint: disable=protected-access
         value = func(*args)
         num_skaters = args[0]._away_skaters
         num_goalies = args[0]._away_goalies
@@ -32,9 +33,9 @@ def nhl_int_property_decorator(func):
         value_subset = value[:index]
         if "home" in func.__name__:
             value_subset = value[index:]
-        for x in value_subset:
+        for i in value_subset:
             try:
-                num += int(x)
+                num += int(i)
             except ValueError:
                 continue
         return num
@@ -146,8 +147,9 @@ class BoxscorePlayer(AbstractPlayer):
         Returns a ``float`` of the percentage of starts that took place in the
         player's defensive zone. Percentage ranges from 0-100.
         """
-        if self.offensive_zone_start_percentage:
+        if self.offensive_zone_start_percentage is not None:
             return [100.0 - self.offensive_zone_start_percentage]
+        return None
 
     @_int_property_decorator
     def defensive_zone_starts(self):
@@ -203,7 +205,9 @@ class BoxscorePlayer(AbstractPlayer):
         Returns a ``string`` of the total time the player has spent on ice in
         the format 'MM:SS'.
         """
-        return self._time_on_ice[self._index]
+        if self._time_on_ice is not None:
+            return self._time_on_ice[self._index]
+        return None
 
 
 class Boxscore:
@@ -307,10 +311,10 @@ class Boxscore:
         """
         url = BOXSCORE_URL % uri
         try:
-            url_data = pq(url=url)
+            url_data = utils.rate_limit_pq(url=url)
         except (HTTPError, AttributeError):
             return None
-        return pq(utils._remove_html_comment_tags(url_data))
+        return pq(utils.remove_html_comment_tags(url_data))
 
     def _parse_game_date_and_location(self, boxscore):
         """
@@ -631,22 +635,22 @@ class Boxscore:
         for field in self.__dict__:
             # Remove the '_' from the name
             short_field = str(field)[1:]
-            if (
-                short_field == "winner"
-                or short_field == "winning_name"
-                or short_field == "winning_abbr"
-                or short_field == "losing_name"
-                or short_field == "losing_abbr"
-                or short_field == "uri"
-                or short_field == "date"
-                or short_field == "time"
-                or short_field == "arena"
-                or short_field == "attendance"
-                or short_field == "time_of_day"
-                or short_field == "duration"
+            if short_field in (
+                "winner",
+                "winning_name",
+                "winning_abbr",
+                "losing_name",
+                "losing_abbr",
+                "uri",
+                "date",
+                "time",
+                "arena",
+                "attendance",
+                "time_of_day",
+                "duration",
             ):
                 continue
-            if short_field == "away_name" or short_field == "home_name":
+            if short_field in ("away_name", "home_name"):
                 value = self._parse_name(short_field, boxscore)
                 setattr(self, field, value)
                 continue
@@ -655,10 +659,8 @@ class Boxscore:
                 value = [i.text() for i in boxscore(scheme).items()]
                 setattr(self, field, value)
                 continue
-            index = 0
-            if short_field in BOXSCORE_ELEMENT_INDEX.keys():
-                index = BOXSCORE_ELEMENT_INDEX[short_field]
-            value = utils._parse_field(BOXSCORE_SCHEME, boxscore, short_field, index)
+            index = BOXSCORE_ELEMENT_INDEX.get(short_field, 0)
+            value = utils.parse_field(BOXSCORE_SCHEME, boxscore, short_field, index)
             setattr(self, field, value)
 
         self._away_skaters = len(boxscore(BOXSCORE_SCHEME["away_skaters"]))
@@ -783,7 +785,7 @@ class Boxscore:
         part of, such as 'Western First Round', or None if the game was played
         during the regular season.
         """
-        return self._playoff_round
+        return self._playoff_round  # pylint: disable=no-member
 
     @property
     def winner(self):
@@ -812,8 +814,8 @@ class Boxscore:
         for the Vegas Golden Knights.
         """
         if self.winner == HOME:
-            return utils._parse_abbreviation(self._home_name)
-        return utils._parse_abbreviation(self._away_name)
+            return utils.parse_abbreviation(self._home_name)
+        return utils.parse_abbreviation(self._away_name)
 
     @property
     def losing_name(self):
@@ -832,8 +834,8 @@ class Boxscore:
         for the Washington Capitals.
         """
         if self.winner == HOME:
-            return utils._parse_abbreviation(self._away_name)
-        return utils._parse_abbreviation(self._home_name)
+            return utils.parse_abbreviation(self._away_name)
+        return utils.parse_abbreviation(self._home_name)
 
     @int_property_decorator
     def away_goals(self):
@@ -1208,7 +1210,7 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return pq(url=url)
+        return utils.rate_limit_pq(url=url)
 
     def _get_boxscore_uri(self, url):
         """
@@ -1316,7 +1318,7 @@ class Boxscores:
             teams in the following order: Away Name, Away Abbreviation, Away
             Score, Home Name, Home Abbreviation, Home Score.
         """
-        links = [i for i in game("td a").items()]
+        links = list(game("td a").items())
         # The away team is the first link in the boxscore
         away = links[0]
         # The home team is the last (3rd) link in the boxscore
@@ -1352,7 +1354,7 @@ class Boxscores:
         tuple
             Returns a tuple of the team's name followed by the abbreviation.
         """
-        link = [i for i in team_result_html("td a").items()]
+        link = list(team_result_html("td a").items())
         # If there are no links, the boxscore is likely misformed and can't be
         # parsed. In this case, the boxscore should be skipped.
         if len(link) < 1:
@@ -1387,7 +1389,7 @@ class Boxscores:
             away_name, away_abbr, away_score, home_name, home_abbr, home_score = details
             boxscore_url = game('td[class="right gamelink"] a')
             boxscore_uri = self._get_boxscore_uri(boxscore_url)
-            losers = [loser for loser in game('tr[class="loser"]').items()]
+            losers = list(game('tr[class="loser"]').items())
             winner = self._get_team_results(game('tr[class="winner"]'))
             loser = self._get_team_results(game('tr[class="loser"]'))
             # Occurs when the boxscore format is invalid and the game should be
@@ -1461,6 +1463,6 @@ class Boxscores:
             page = self._get_requested_page(url)
             games = page('table[class="teams"]').items()
             boxscores = self._extract_game_info(games)
-            timestamp = "%s-%s-%s" % (date_step.month, date_step.day, date_step.year)
+            timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"
             self._boxscores[timestamp] = boxscores
             date_step += timedelta(days=1)

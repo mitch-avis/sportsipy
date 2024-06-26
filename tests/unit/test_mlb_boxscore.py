@@ -1,5 +1,3 @@
-from urllib.error import HTTPError
-
 from flexmock import flexmock
 from mock import PropertyMock, patch
 from pyquery import PyQuery as pq
@@ -96,7 +94,7 @@ class TestMLBBoxscore:
     def test_winning_abbr_is_home(self):
         expected_name = "HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -108,7 +106,7 @@ class TestMLBBoxscore:
     def test_winning_abbr_is_away(self):
         expected_name = "AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -140,7 +138,7 @@ class TestMLBBoxscore:
     def test_losing_abbr_is_home(self):
         expected_name = "HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -152,7 +150,7 @@ class TestMLBBoxscore:
     def test_losing_abbr_is_away(self):
         expected_name = "AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
@@ -243,10 +241,9 @@ First game of doubleheader
         fields = {
             "attendance": 26340,
             "date": "Monday, July 9, 2018",
-            "attendance": 26340,
-            "venue": "Oriole Park at Camden Yards",
             "duration": "3:13",
             "time_of_day": "Night",
+            "venue": "Oriole Park at Camden Yards",
         }
 
         mock_field = """Monday, July 9, 2018
@@ -329,7 +326,7 @@ Day Game, on grass
 
         assert self.boxscore.time_of_day == NIGHT
 
-    def test_night_game_returns_night(self):
+    def test_day_game_returns_night(self):
         fake_time_of_day = PropertyMock(return_value="day game on grass")
         type(self.boxscore)._time_of_day = fake_time_of_day
 

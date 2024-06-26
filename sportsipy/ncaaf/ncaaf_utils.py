@@ -31,7 +31,7 @@ def _add_stats_data(teams_list, team_data_dict):
         # Skip the sub-header rows
         if 'class="over_header thead"' in str(team_data) or 'class="thead"' in str(team_data):
             continue
-        abbr = utils._parse_field(PARSING_SCHEME, team_data, "abbreviation")
+        abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
         try:
             team_data_dict[abbr]["data"] += team_data
         except KeyError:
@@ -73,22 +73,22 @@ def _retrieve_all_teams(year, season_page, offensive_stats, defensive_stats):
     team_data_dict = {}
 
     if not year:
-        year = utils._find_year_for_season("ncaaf")
+        year = utils.find_year_for_season("ncaaf")
         # If stats for the requested season do not exist yet (as is the case
         # right before a new season begins), attempt to pull the previous
         # year's stats. If it exists, use the previous year instead.
-        if not utils._url_exists(SEASON_PAGE_URL % year) and utils._url_exists(
+        if not utils.url_exists(SEASON_PAGE_URL % year) and utils.url_exists(
             SEASON_PAGE_URL % str(int(year) - 1)
         ):
             year = str(int(year) - 1)
-    doc = utils._pull_page(SEASON_PAGE_URL % year, season_page)
-    teams_list = utils._get_stats_table(doc, "div#div_standings")
-    offense_doc = utils._pull_page(OFFENSIVE_STATS_URL % year, offensive_stats)
-    offense_list = utils._get_stats_table(offense_doc, "table#offense")
-    defense_doc = utils._pull_page(DEFENSIVE_STATS_URL % year, defensive_stats)
-    defense_list = utils._get_stats_table(defense_doc, "table#defense")
+    doc = utils.pull_page(SEASON_PAGE_URL % year, season_page)
+    teams_list = utils.get_stats_table(doc, "div#div_standings")
+    offense_doc = utils.pull_page(OFFENSIVE_STATS_URL % year, offensive_stats)
+    offense_list = utils.get_stats_table(offense_doc, "table#offense")
+    defense_doc = utils.pull_page(DEFENSIVE_STATS_URL % year, defensive_stats)
+    defense_list = utils.get_stats_table(defense_doc, "table#defense")
     if not teams_list and not offense_list and not defense_list:
-        utils._no_data_found()
+        utils.no_data_found()
     for stats_list in [teams_list, offense_list, defense_list]:
         team_data_dict = _add_stats_data(stats_list, team_data_dict)
     return team_data_dict, year

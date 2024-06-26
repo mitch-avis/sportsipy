@@ -10,7 +10,7 @@ from sportsipy.ncaab.rankings import Rankings
 YEAR = 2018
 
 
-def read_file(filename):
+def read_file(filename=None):
     filepath = join(dirname(__file__), "ncaab", filename)
     return open(filepath, "r", encoding="utf8").read()
 
@@ -30,11 +30,11 @@ def mock_pyquery(url, timeout=None):
 
     if "BAD" in url:
         return MockPQ("", 404)
-    html_contents = read_file("%s-polls.html" % YEAR)
+    html_contents = read_file(f"{YEAR}-polls.html")
     return MockPQ(html_contents)
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -43,8 +43,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class TestNCAABRankings:
@@ -765,7 +764,7 @@ class TestNCAABRankings:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(YEAR)
+        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
         rankings = Rankings()
 
@@ -776,12 +775,12 @@ class TestNCAABRankings:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            rankings = Rankings("BAD")
+            Rankings("BAD")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2019)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         rankings = Rankings()
 
@@ -793,4 +792,4 @@ class TestNCAABRankings:
     def test_rankings_string_representation(self, *args, **kwargs):
         rankings = Rankings()
 
-        assert rankings.__repr__() == "NCAAB Rankings"
+        assert repr(rankings) == "NCAAB Rankings"

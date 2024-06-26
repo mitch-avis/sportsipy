@@ -239,9 +239,9 @@ class Team:
             multiple rows in a single string.
         """
         for field in self.__dict__:
-            if field == "_year" or field == "_team_conference":
+            if field in ("_year", "_team_conference"):
                 continue
-            value = utils._parse_field(
+            value = utils.parse_field(
                 PARSING_SCHEME,
                 team_data,
                 # Remove the '_' from the name
@@ -1132,7 +1132,7 @@ class Teams:
         for team in self._teams:
             if team.abbreviation.upper() == abbreviation.upper():
                 return team
-        raise ValueError("Team abbreviation %s not found" % abbreviation)
+        raise ValueError(f"Team abbreviation {abbreviation} not found")
 
     def __call__(self, abbreviation):
         """
@@ -1210,6 +1210,6 @@ class Teams:
         Team class. Rows are indexed by the team abbreviation.
         """
         frames = []
-        for team in self.__iter__():
+        for team in iter(self._teams):
             frames.append(team.dataframe)
         return pd.concat(frames)

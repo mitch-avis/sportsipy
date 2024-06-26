@@ -1,9 +1,12 @@
 import re
+import time
 from datetime import datetime
 
 import requests
 from lxml.etree import ParserError, XMLSyntaxError
 from pyquery import PyQuery as pq
+
+from sportsipy.constants import RATE_LIMIT_INTERVAL
 
 # {
 #   league name: {
@@ -24,7 +27,13 @@ SEASON_START_MONTH = {
 }
 
 
-def _todays_date():
+def rate_limit_pq(url, sleep=RATE_LIMIT_INTERVAL):
+    ret = pq(url=url)
+    time.sleep(sleep)
+    return ret
+
+
+def todays_date():
     """
     Get today's date.
 
@@ -39,7 +48,7 @@ def _todays_date():
     return datetime.now()
 
 
-def _url_exists(url):
+def url_exists(url):
     """
     Determine if a URL is valid and exists.
 
@@ -60,22 +69,17 @@ def _url_exists(url):
         False.
     """
     try:
-        response = requests.head(url)
+        response = requests.head(url, timeout=10)
         if response.status_code == 301:
-            response = requests.get(url)
-            if response.status_code < 400:
-                return True
-            else:
-                return False
-        elif response.status_code < 400:
-            return True
-        else:
-            return False
+            new_response = requests.get(url, timeout=10)
+            return bool(new_response.status_code < 400)
+        return bool(response.status_code < 400)
+    # pylint: disable=broad-exception-caught
     except Exception:
         return False
 
 
-def _find_year_for_season(league):
+def find_year_for_season(league):
     """
     Return the necessary seaons's year based on the current date.
 
@@ -112,22 +116,21 @@ def _find_year_for_season(league):
     ValueError
         If the passed 'league' is not a key in SEASON_START_MONTH.
     """
-    today = _todays_date()
+    today = todays_date()
     if league not in SEASON_START_MONTH:
         raise ValueError('"%s" league cannot be found!')
     start = SEASON_START_MONTH[league]["start"]
     wrap = SEASON_START_MONTH[league]["wrap"]
     if wrap and start - 1 <= today.month <= 12:
         return today.year + 1
-    elif not wrap and start == 1 and today.month == 12:
+    if not wrap and start == 1 and today.month == 12:
         return today.year + 1
-    elif not wrap and not start - 1 <= today.month <= 12:
+    if not wrap and not start - 1 <= today.month <= 12:
         return today.year - 1
-    else:
-        return today.year
+    return today.year
 
 
-def _parse_abbreviation(uri_link):
+def parse_abbreviation(uri_link):
     """
     Returns a team's abbreviation.
 
@@ -154,7 +157,7 @@ def _parse_abbreviation(uri_link):
     return abbr.upper()
 
 
-def _parse_field(parsing_scheme, html_data, field, index=0, strip=False, secondary_index=None):
+def parse_field(parsing_scheme, html_data, field, index=0, strip=False, secondary_index=None):
     """
     Parse an HTML table to find the requested field's value.
 
@@ -202,7 +205,7 @@ def _parse_field(parsing_scheme, html_data, field, index=0, strip=False, seconda
         could be found, returns None.
     """
     if field == "abbreviation":
-        return _parse_abbreviation(html_data)
+        return parse_abbreviation(html_data)
     scheme = parsing_scheme[field]
     if strip:
         items = [i.text() for i in html_data(scheme).items() if i.text()]
@@ -225,7 +228,7 @@ def _parse_field(parsing_scheme, html_data, field, index=0, strip=False, seconda
         return None
 
 
-def _remove_html_comment_tags(html):
+def remove_html_comment_tags(html):
     """
     Returns the passed HTML contents with all comment tags removed while
     keeping the contents within the tags.
@@ -247,7 +250,7 @@ def _remove_html_comment_tags(html):
     return str(html).replace("<!--", "").replace("-->", "")
 
 
-def _get_stats_table(html_page, div, footer=False):
+def get_stats_table(html_page, div, footer=False):
     """
     Returns a generator of all rows in a requested table.
 
@@ -274,7 +277,7 @@ def _get_stats_table(html_page, div, footer=False):
     """
     stats_html = html_page(div)
     try:
-        stats_table = pq(_remove_html_comment_tags(stats_html))
+        stats_table = pq(remove_html_comment_tags(stats_html))
     except (ParserError, XMLSyntaxError):
         return None
     if footer:
@@ -284,7 +287,7 @@ def _get_stats_table(html_page, div, footer=False):
     return teams_list
 
 
-def _pull_page(url=None, local_file=None):
+def pull_page(url=None, local_file=None):
     """
     Pull data from a local file if exists, or download data from the website.
 
@@ -316,11 +319,11 @@ def _pull_page(url=None, local_file=None):
         with open(local_file, "r", encoding="utf8") as filehandle:
             return pq(filehandle.read())
     if url:
-        return pq(url=url)
+        return rate_limit_pq(url=url)
     raise ValueError("Expected either a URL or a local data file!")
 
 
-def _no_data_found():
+def no_data_found():
     """
     Print a message that no data could be found on the page.
 
@@ -335,4 +338,3 @@ def _no_data_found():
         "found. Has the season begun, and is the data available on "
         "www.sports-reference.com?"
     )
-    return

@@ -26,21 +26,21 @@ def mock_pyquery(url, timeout=None):
             self.text = html_contents
 
         def __call__(self, div):
-            return read_file()
+            return read_file(None)
 
     if "BAD" in url:
         return MockPQ("", 404)
     if "big-12" in url:
-        html_contents = read_file("%s-big-12.html" % YEAR)
+        html_contents = read_file(f"{YEAR}-big-12.html")
         return MockPQ(html_contents)
     if "big-east" in url:
-        html_contents = read_file("%s-big-east.html" % YEAR)
+        html_contents = read_file(f"{YEAR}-big-east.html")
         return MockPQ(html_contents)
-    html_contents = read_file("%s.html" % YEAR)
+    html_contents = read_file(f"{YEAR}.html")
     return MockPQ(html_contents)
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -49,8 +49,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class TestNCAABConferences:
@@ -114,7 +113,7 @@ class TestNCAABConferences:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conferences_integration(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(YEAR)
+        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
         conferences = Conferences()
 
@@ -124,12 +123,12 @@ class TestNCAABConferences:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conferences_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            conferences = Conferences("BAD")
+            _ = Conferences("BAD")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conference_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            conference = Conference("BAD")
+            _ = Conference("BAD")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conference_with_no_names_is_empty(self, *args, **kwargs):
@@ -142,7 +141,7 @@ class TestNCAABConferences:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2019)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         conferences = Conferences()
 
@@ -152,7 +151,7 @@ class TestNCAABConferences:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_conference_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2019)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         conference = Conference("big-12")
 
@@ -162,10 +161,10 @@ class TestNCAABConferences:
     def test_conferences_string_representation(self, *args, **kwargs):
         conferences = Conferences()
 
-        assert conferences.__repr__() == "NCAAB Conferences"
+        assert repr(conferences) == "NCAAB Conferences"
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conference_string_representation(self, *args, **kwargs):
         conference = Conference("big-12")
 
-        assert conference.__repr__() == "big-12 - NCAAB"
+        assert repr(conference) == "big-12 - NCAAB"

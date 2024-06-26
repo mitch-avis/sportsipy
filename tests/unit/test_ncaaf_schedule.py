@@ -1,12 +1,11 @@
 from datetime import datetime
 
-import pytest
 from flexmock import flexmock
 from mock import PropertyMock
 from pyquery import PyQuery as pq
 
 from sportsipy import utils
-from sportsipy.constants import AWAY, HOME, LOSS, NEUTRAL, NON_DI, REGULAR_SEASON, WIN
+from sportsipy.constants import AWAY, HOME, LOSS, NEUTRAL, NON_DI, WIN
 from sportsipy.ncaaf.schedule import Game, Schedule
 
 
@@ -109,13 +108,13 @@ class TestNCAAFScheduleNames:
         text = '<td class="left " data-stat="opp_name">Citadel</td>'
         game_data = pq(text)
 
-        flexmock(utils).should_receive("_parse_field").and_return(None)
+        flexmock(utils).should_receive("parse_field").and_return(None)
 
         game = Game(game_data)
 
         assert game.opponent_abbr == "Citadel"
 
-    def test_non_major_school_returns_non_dI_for_conference(self):
+    def test_non_major_school_returns_non_d1_for_conference(self):
         text = '<td class="left " data-stat="conf_abbr">Non-Major</td>'
         game_data = pq(text)
 

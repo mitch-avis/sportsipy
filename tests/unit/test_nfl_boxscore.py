@@ -39,7 +39,7 @@ class MockBoxscoreData:
 
 def read_file(filename):
     filepath = join(dirname(__file__), "nfl", filename)
-    return open(filepath, "r").read()
+    return open(filepath, "r", encoding="utf-8").read()
 
 
 def mock_pyquery(url, timeout=None, status_code=404):
@@ -56,7 +56,7 @@ def mock_pyquery(url, timeout=None, status_code=404):
         return MockPQ("404 error", 200)
     if "bad" in url:
         return MockPQ(None)
-    return MockPQ(read_file("%s.htm" % url))
+    return MockPQ(read_file(f"{url}.htm"))
 
 
 class TestNFLBoxscore:
@@ -105,7 +105,7 @@ class TestNFLBoxscore:
     def test_winning_abbr_is_home(self):
         expected_name = "HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         type(self.boxscore).winner = fake_winner
@@ -115,7 +115,7 @@ class TestNFLBoxscore:
     def test_winning_abbr_is_away(self):
         expected_name = "AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         type(self.boxscore).winner = fake_winner
@@ -145,7 +145,7 @@ class TestNFLBoxscore:
     def test_losing_abbr_is_home(self):
         expected_name = "HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         type(self.boxscore).winner = fake_winner
@@ -155,7 +155,7 @@ class TestNFLBoxscore:
     def test_losing_abbr_is_away(self):
         expected_name = "AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         type(self.boxscore).winner = fake_winner

@@ -260,10 +260,10 @@ class Boxscore:
         """
         url = BOXSCORE_URL % uri
         try:
-            url_data = pq(url=url)
+            url_data = utils.rate_limit_pq(url=url)
         except (HTTPError, AttributeError):
             return None
-        return pq(utils._remove_html_comment_tags(url_data))
+        return pq(utils.remove_html_comment_tags(url_data))
 
     def _parse_game_date_and_location(self, field, boxscore):
         """
@@ -649,17 +649,17 @@ class Boxscore:
         for field in self.__dict__:
             # Remove the '_' from the name
             short_field = str(field)[1:]
-            if short_field == "winner" or short_field == "uri":
+            if short_field in ("winner", "uri"):
                 continue
-            if short_field == "location" or short_field == "date":
+            if short_field in ("location", "date"):
                 value = self._parse_game_date_and_location(short_field, boxscore)
                 setattr(self, field, value)
                 continue
-            if short_field == "away_name" or short_field == "home_name":
+            if short_field in ("away_name", "home_name"):
                 value = self._parse_name(short_field, boxscore)
                 setattr(self, field, value)
                 continue
-            if short_field == "away_ranking" or short_field == "home_ranking":
+            if short_field in ("away_ranking", "home_ranking"):
                 value = self._parse_ranking(short_field, boxscore)
                 setattr(self, field, value)
                 continue
@@ -667,14 +667,12 @@ class Boxscore:
                 value = self._parse_summary(boxscore)
                 setattr(self, field, value)
                 continue
-            index = 0
-            if short_field in BOXSCORE_ELEMENT_INDEX.keys():
-                index = BOXSCORE_ELEMENT_INDEX[short_field]
-            if short_field == "away_record" or short_field == "home_record":
+            index = BOXSCORE_ELEMENT_INDEX.get(short_field, 0)
+            if short_field in ("away_record", "home_record"):
                 value = self._parse_record(short_field, boxscore, index)
                 setattr(self, field, value)
                 continue
-            value = utils._parse_field(BOXSCORE_SCHEME, boxscore, short_field, index)
+            value = utils.parse_field(BOXSCORE_SCHEME, boxscore, short_field, index)
             setattr(self, field, value)
         self._away_players, self._home_players = self._find_players(boxscore)
 
@@ -856,10 +854,10 @@ class Boxscore:
         if self.winner == HOME:
             if "cbb/schools" not in str(self._home_name):
                 return str(self._home_name)
-            return utils._parse_abbreviation(self._home_name)
+            return utils.parse_abbreviation(self._home_name)
         if "cbb/schools" not in str(self._away_name):
             return str(self._away_name)
-        return utils._parse_abbreviation(self._away_name)
+        return utils.parse_abbreviation(self._away_name)
 
     @property
     def losing_name(self):
@@ -884,10 +882,10 @@ class Boxscore:
         if self.winner == HOME:
             if "cbb/schools" not in str(self._away_name):
                 return str(self._away_name)
-            return utils._parse_abbreviation(self._away_name)
+            return utils.parse_abbreviation(self._away_name)
         if "cbb/schools" not in str(self._home_name):
             return str(self._home_name)
-        return utils._parse_abbreviation(self._home_name)
+        return utils.parse_abbreviation(self._home_name)
 
     @float_property_decorator
     def pace(self):
@@ -924,7 +922,7 @@ class Boxscore:
         conclusion of the game.
         """
         try:
-            wins, losses = re.findall(r"\d+", self._away_record)
+            wins, _ = re.findall(r"\d+", self._away_record)
             return wins
         except (ValueError, TypeError):
             return 0
@@ -936,7 +934,7 @@ class Boxscore:
         conclusion of the game.
         """
         try:
-            wins, losses = re.findall(r"\d+", self._away_record)
+            _, losses = re.findall(r"\d+", self._away_record)
             return losses
         except (ValueError, TypeError):
             return 0
@@ -1246,7 +1244,7 @@ class Boxscore:
         conclusion of the game.
         """
         try:
-            wins, losses = re.findall(r"\d+", self._home_record)
+            wins, _ = re.findall(r"\d+", self._home_record)
             return wins
         except (ValueError, TypeError):
             return 0
@@ -1258,7 +1256,7 @@ class Boxscore:
         conclusion of the game.
         """
         try:
-            wins, losses = re.findall(r"\d+", self._home_record)
+            _, losses = re.findall(r"\d+", self._home_record)
             return losses
         except (ValueError, TypeError):
             return 0
@@ -1669,7 +1667,7 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return pq(url=url)
+        return utils.rate_limit_pq(url=url)
 
     def _get_boxscore_uri(self, url):
         """
@@ -1891,8 +1889,7 @@ class Boxscores:
             return None, None
         if away_score > home_score:
             return (away_name, away_abbr), (home_name, home_abbr)
-        else:
-            return (home_name, home_abbr), (away_name, away_abbr)
+        return (home_name, home_abbr), (away_name, away_abbr)
 
     def _extract_game_info(self, games):
         """
@@ -1996,6 +1993,6 @@ class Boxscores:
             page = self._get_requested_page(url)
             games = page('table[class="teams"]').items()
             boxscores = self._extract_game_info(games)
-            timestamp = "%s-%s-%s" % (date_step.month, date_step.day, date_step.year)
+            timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"
             self._boxscores[timestamp] = boxscores
             date_step += timedelta(days=1)

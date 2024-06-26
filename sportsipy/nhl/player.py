@@ -10,6 +10,7 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
+        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -25,6 +26,7 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
+        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -121,9 +123,9 @@ class AbstractPlayer:
         string
             Returns the desired value as a string.
         """
-        value = utils._parse_field(PLAYER_SCHEME, stats, field)
+        value = utils.parse_field(PLAYER_SCHEME, stats, field)
         if not value and field in BOXSCORE_RETRY:
-            value = utils._parse_field(BOXSCORE_RETRY, stats, field)
+            value = utils.parse_field(BOXSCORE_RETRY, stats, field)
         return value
 
     def _parse_player_data(self, player_data):
@@ -145,14 +147,14 @@ class AbstractPlayer:
         """
         for field in self.__dict__:
             short_field = str(field)[1:]
-            if (
-                short_field == "player_id"
-                or short_field == "index"
-                or short_field == "most_recent_season"
-                or short_field == "name"
-                or short_field == "weight"
-                or short_field == "height"
-                or short_field == "season"
+            if short_field in (
+                "player_id",
+                "index",
+                "most_recent_season",
+                "name",
+                "weight",
+                "height",
+                "season",
             ):
                 continue
             field_stats = []

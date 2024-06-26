@@ -1,7 +1,5 @@
 from urllib.error import HTTPError
 
-from pyquery import PyQuery as pq
-
 from sportsipy import utils
 
 from .constants import PARSING_SCHEME, SEASON_PAGE_URL
@@ -32,16 +30,17 @@ def _add_stats_data(teams_list, team_data_dict):
     """
     # Teams are listed in terms of rank with the first team being #1
     rank = 1
-    for team_data in teams_list:
-        # Only try to pull data from the row if there's a team link, otherwise it
-        # might be an embedded header row, like in the division standings
-        if team_data("a").attr("href") is not None:
-            abbr = utils._parse_field(PARSING_SCHEME, team_data, "abbreviation")
-            try:
-                team_data_dict[abbr]["data"] += team_data
-            except KeyError:
-                team_data_dict[abbr] = {"data": team_data, "rank": rank}
-            rank += 1
+    if teams_list is not None:
+        for team_data in teams_list:
+            # Only try to pull data from the row if there's a team link, otherwise it
+            # might be an embedded header row, like in the division standings
+            if team_data("a").attr("href") is not None:
+                abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
+                try:
+                    team_data_dict[abbr]["data"] += team_data
+                except KeyError:
+                    team_data_dict[abbr] = {"data": team_data, "rank": rank}
+                rank += 1
     return team_data_dict
 
 
@@ -71,34 +70,34 @@ def _retrieve_all_teams(year, season_file=None):
     team_data_dict = {}
 
     if not year:
-        year = utils._find_year_for_season("nba")
+        year = utils.find_year_for_season("nba")
         # Given the delays to the NBA season in 2020, the default season
         # selection logic is no longer valid after the original season should
         # have concluded. In this case, the previous season should be pulled
         # instead.
         if year == 2021:
             try:
-                doc = pq(url=SEASON_PAGE_URL % year)
+                doc = utils.rate_limit_pq(url=SEASON_PAGE_URL % year)
             except HTTPError:
                 year = str(int(year) - 1)
         # If stats for the requested season do not exist yet (as is the case
         # right before a new season begins), attempt to pull the previous
         # year's stats. If it exists, use the previous year instead.
-        if not utils._url_exists(SEASON_PAGE_URL % year) and utils._url_exists(
+        if not utils.url_exists(SEASON_PAGE_URL % year) and utils.url_exists(
             SEASON_PAGE_URL % str(int(year) - 1)
         ):
             year = str(int(year) - 1)
-    doc = utils._pull_page(SEASON_PAGE_URL % year, season_file)
-    teams_list = utils._get_stats_table(doc, "div#div_totals-team")
-    opp_teams_list = utils._get_stats_table(doc, "div#div_totals-opponent")
+    doc = utils.pull_page(SEASON_PAGE_URL % year, season_file)
+    teams_list = utils.get_stats_table(doc, "div#div_totals-team")
+    opp_teams_list = utils.get_stats_table(doc, "div#div_totals-opponent")
     # Team wins, losses, and win % are in separate tables, and older years
     # do not have a conference standings table
-    standings_list_E = utils._get_stats_table(doc, "div#div_divs_standings_E")
-    standings_list_W = utils._get_stats_table(doc, "div#div_divs_standings_W")
+    standings_list_e = utils.get_stats_table(doc, "div#div_divs_standings_E")
+    standings_list_w = utils.get_stats_table(doc, "div#div_divs_standings_W")
 
-    if not teams_list and not opp_teams_list and not standings_list_E and not standings_list_W:
-        utils._no_data_found()
+    if not teams_list and not opp_teams_list and not standings_list_e and not standings_list_w:
+        utils.no_data_found()
         return None, None
-    for stats_list in [teams_list, opp_teams_list, standings_list_E, standings_list_W]:
+    for stats_list in [teams_list, opp_teams_list, standings_list_e, standings_list_w]:
         team_data_dict = _add_stats_data(stats_list, team_data_dict)
     return team_data_dict, year

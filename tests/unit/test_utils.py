@@ -59,7 +59,7 @@ def mock_pyquery(url, timeout=None):
 
     if "404" in url:
         return MockPQ("This is bad", 404)
-    elif "exception" in url:
+    if "exception" in url:
         raise Exception
     return MockPQ("This is good", 200)
 
@@ -149,9 +149,9 @@ class TestUtils:
 
         for month in season_start_matrix:
             mock_datetime = MockDateTime(month.month, 2018)
-            flexmock(utils).should_receive("_todays_date").and_return(mock_datetime)
+            flexmock(utils).should_receive("todays_date").and_return(mock_datetime)
 
-            result = utils._find_year_for_season(month.league)
+            result = utils.find_year_for_season(month.league)
             assert result == month.expected_year
 
     def test_remove_html_comment_tags_removes_comments(self):
@@ -166,7 +166,7 @@ class TestUtils:
     </body>
 </html>"""
 
-        result = utils._remove_html_comment_tags(html_string)
+        result = utils.remove_html_comment_tags(html_string)
 
         assert result == expected_output
 
@@ -182,7 +182,7 @@ class TestUtils:
     </body>
 </html>"""
 
-        result = utils._remove_html_comment_tags(html_string)
+        result = utils.remove_html_comment_tags(html_string)
 
         assert result == expected_output
 
@@ -198,16 +198,16 @@ class TestUtils:
 
         for html, abbreviation in test_abbreviations.items():
             mock_html = MockHtml(html, None)
-            result = utils._parse_abbreviation(mock_html)
+            result = utils.parse_abbreviation(mock_html)
             assert result == abbreviation
 
     def test__parse_field_returns_abbreviation(self):
         parsing_scheme = {"abbreviation": "a"}
         input_abbreviation = "/teams/ARI/2018.shtml"
         expected = "ARI"
-        flexmock(utils).should_receive("_parse_abbreviation").and_return("ARI").once()
+        flexmock(utils).should_receive("parse_abbreviation").and_return("ARI").once()
 
-        result = utils._parse_field(
+        result = utils.parse_field(
             parsing_scheme, MockHtml(input_abbreviation, None), "abbreviation"
         )
         assert result == expected
@@ -219,7 +219,7 @@ class TestUtils:
 <td class="right " data-stat="runs_per_game">4.10</td>"""
         expected = None
 
-        result = utils._parse_field(
+        result = utils.parse_field(
             parsing_scheme, MockHtml(html_string, [expected]), "batters_used", index=3
         )
         assert result == expected
@@ -231,7 +231,7 @@ class TestUtils:
 <td class="right " data-stat="runs_per_game">4.10</td>"""
         expected = "32"
 
-        result = utils._parse_field(
+        result = utils.parse_field(
             parsing_scheme, MockHtml(html_string, [expected]), "batters_used"
         )
         assert result == expected
@@ -250,49 +250,43 @@ class TestUtils:
     </table>
 </div>"""
         expected = [
-            '<tr data-row="0">\n<td class="right " ' 'data-stat="column1">1</td>\n</tr>',
-            '<tr data-row="1">\n<td class="right " ' 'data-stat="column2">2</td>\n</tr>',
+            '<tr data-row="0">\n<td class="right " data-stat="column1">1</td>\n</tr>',
+            '<tr data-row="1">\n<td class="right " data-stat="column2">2</td>\n</tr>',
         ]
         div = "table#all_stats"
-        flexmock(utils).should_receive("_remove_html_comment_tags").and_return(html_string).once()
+        flexmock(utils).should_receive("remove_html_comment_tags").and_return(html_string).once()
 
-        result = utils._get_stats_table(MockHtml(html_string, expected), div)
+        result = utils.get_stats_table(MockHtml(html_string, expected), div)
 
         i = 0
-        for element in result:
+        for _ in result:
             i += 1
 
         assert i == 2
 
     @patch("requests.head", side_effect=mock_pyquery)
     def test_valid_url_returns_true(self, *args, **kwargs):
-        response = utils._url_exists("http://www.good_url.com/this/is/valid")
+        response = utils.url_exists("http://www.good_url.com/this/is/valid")
 
         assert response
 
     @patch("requests.head", side_effect=mock_pyquery)
     def test_404_url_returns_false(self, *args, **kwargs):
-        response = utils._url_exists("http://www.404.com/doesnt/exist")
-
-        assert not response
+        assert not utils.url_exists("http://www.404.com/doesnt/exist")
 
     @patch("requests.head", side_effect=mock_pyquery)
     def test_invalid_url_exception_returns_false(self, *args, **kwargs):
-        response = utils._url_exists("http://www.exception.com")
-
-        assert not response
+        assert not utils.url_exists("http://www.exception.com")
 
     def test_no_data_found_returns_safely(self, *args, **kwargs):
-        response = utils._no_data_found()
-
-        assert not response
+        assert not utils.no_data_found()
 
     def test_pulling_data_with_no_inputs(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            utils._pull_page()
+            utils.pull_page()
 
     def test_pulling_local_file(self, *args, **kwargs):
-        output = utils._pull_page(local_file="VERSION")
+        output = utils.pull_page(local_file="VERSION")
 
         assert output
 
@@ -306,7 +300,7 @@ class TestUtils:
         items = [32, 31, 34]
         expected = 31
 
-        result = utils._parse_field(
+        result = utils.parse_field(
             parsing_scheme, MockHtml(html_string, items), "batters_used", index=3, secondary_index=1
         )
         assert result == expected
@@ -320,7 +314,7 @@ class TestUtils:
 <td class="right " data-stat="batters_used">34</td>"""
         items = [32, 31, 34]
 
-        result = utils._parse_field(
+        result = utils.parse_field(
             parsing_scheme, MockHtml(html_string, items), "batters_used", index=3, secondary_index=4
         )
         assert not result

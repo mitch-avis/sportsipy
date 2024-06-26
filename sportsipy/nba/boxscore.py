@@ -109,10 +109,11 @@ class BoxscorePlayer(AbstractPlayer):
         Returns a ``float`` of the number of game minutes the player was on the
         court for.
         """
-        if self._minutes_played[self._index]:
-            minutes, seconds = self._minutes_played[self._index].split(":")
-            minutes = float(minutes) + float(seconds) / 60
-            return float(minutes)
+        if self._minutes_played is not None:
+            if self._minutes_played[self._index]:
+                minutes, seconds = self._minutes_played[self._index].split(":")
+                minutes = float(minutes) + float(seconds) / 60
+                return float(minutes)
         return None
 
     @property
@@ -121,16 +122,18 @@ class BoxscorePlayer(AbstractPlayer):
         Returns an ``int`` of the total number of two point field goals the
         player made.
         """
-        if self.field_goals and self.three_pointers:
-            return int(self.field_goals - self.three_pointers)
-        # Occurs when the player didn't make any three pointers, so the number
-        # of two pointers the player made is equal to the total number of field
-        # goals the player made.
-        if self.field_goals:
-            return int(self.field_goals)
-        # If the player didn't make any shots, they didn't make any two point
-        # field goals.
-        return None
+        two_pointers = None
+        if self.field_goals is not None:
+            if self.three_pointers is not None:
+                two_pointers = int(self.field_goals - self.three_pointers)
+            # Occurs when the player didn't make any three pointers, so the number
+            # of two pointers the player made is equal to the total number of field
+            # goals the player made.
+            else:
+                two_pointers = int(self.field_goals)
+            # If the player didn't make any shots, they didn't make any two point
+            # field goals.
+        return two_pointers
 
     @property
     def two_point_attempts(self):
@@ -138,16 +141,18 @@ class BoxscorePlayer(AbstractPlayer):
         Returns an ``int`` of the total number of two point field goals the
         player attempted during the season.
         """
-        if self.field_goal_attempts and self.three_point_attempts:
-            return int(self.field_goal_attempts - self.three_point_attempts)
-        # Occurs when the player didn't take any three pointers, so the number
-        # of two pointers the player took is equal to the total number of field
-        # goals the player took.
-        if self.field_goal_attempts:
-            return int(self.field_goal_attempts)
-        # If the player didn't take any shots, they didn't take any two point
-        # field goals.
-        return None
+        two_point_attempts = None
+        if self.field_goal_attempts is not None:
+            if self.three_point_attempts is not None:
+                two_point_attempts = int(self.field_goal_attempts - self.three_point_attempts)
+            # Occurs when the player didn't take any three pointers, so the number
+            # of two pointers the player took is equal to the total number of field
+            # goals the player took.
+            else:
+                two_point_attempts = int(self.field_goal_attempts)
+            # If the player didn't take any shots, they didn't take any two point
+            # field goals.
+        return two_point_attempts
 
     @property
     def two_point_percentage(self):
@@ -155,13 +160,15 @@ class BoxscorePlayer(AbstractPlayer):
         Returns a ``float`` of the player's two point field goal percentage
         during the season. Percentage ranges from 0-1.
         """
-        if self.two_pointers and self.two_point_attempts:
-            perc = float(self.two_pointers) / float(self.two_point_attempts)
-            return round(perc, 3)
-        # Occurs when the player didn't make and two pointers.
-        if self.two_point_attempts:
-            return 0.0
-        return None
+        two_pointers = None
+        if self.two_pointers is not None:
+            if self.two_point_attempts is not None and float(self.two_point_attempts) != 0.0:
+                perc = float(self.two_pointers) / float(self.two_point_attempts)
+                two_pointers = round(perc, 3)
+            # Occurs when the player didn't make any two pointers.
+            else:
+                two_pointers = 0.0
+        return two_pointers
 
     @_int_property_decorator
     def offensive_rating(self):
@@ -313,10 +320,10 @@ class Boxscore:
         """
         url = BOXSCORE_URL % uri
         try:
-            url_data = pq(url=url)
+            url_data = utils.rate_limit_pq(url=url)
         except (HTTPError, AttributeError):
             return None
-        return pq(utils._remove_html_comment_tags(url_data))
+        return pq(utils.remove_html_comment_tags(url_data))
 
     def _parse_game_date_and_location(self, field, boxscore):
         """
@@ -372,7 +379,7 @@ class Boxscore:
             The complete text for the requested tag.
         """
         scheme = BOXSCORE_SCHEME[field]
-        items = [i for i in boxscore(scheme).items()]
+        items = list(boxscore(scheme).items())
         return items[BOXSCORE_ELEMENT_INDEX[field]]
 
     def _parse_summary(self, boxscore):
@@ -637,13 +644,13 @@ class Boxscore:
         for field in self.__dict__:
             # Remove the '_' from the name
             short_field = str(field)[1:]
-            if short_field == "winner" or short_field == "uri":
+            if short_field in ("winner", "uri"):
                 continue
-            if short_field == "location" or short_field == "date":
+            if short_field in ("location", "date"):
                 value = self._parse_game_date_and_location(short_field, boxscore)
                 setattr(self, field, value)
                 continue
-            if short_field == "away_name" or short_field == "home_name":
+            if short_field in ("away_name", "home_name"):
                 value = self._parse_name(short_field, boxscore)
                 setattr(self, field, value)
                 continue
@@ -654,12 +661,12 @@ class Boxscore:
             index = 0
             strip = False
             secondary_index = None
-            if short_field in BOXSCORE_ELEMENT_INDEX.keys():
+            if short_field in BOXSCORE_ELEMENT_INDEX:
                 index = BOXSCORE_ELEMENT_INDEX[short_field]
                 secondary_index = 1
             if short_field == "home_record":
                 strip = True
-            value = utils._parse_field(
+            value = utils.parse_field(
                 BOXSCORE_SCHEME, boxscore, short_field, index, strip, secondary_index
             )
             setattr(self, field, value)
@@ -833,8 +840,8 @@ class Boxscore:
         for the Detroit Pistons.
         """
         if self.winner == HOME:
-            return utils._parse_abbreviation(self._home_name)
-        return utils._parse_abbreviation(self._away_name)
+            return utils.parse_abbreviation(self._home_name)
+        return utils.parse_abbreviation(self._away_name)
 
     @property
     def losing_name(self):
@@ -852,8 +859,8 @@ class Boxscore:
         for the Phoenix Suns.
         """
         if self.winner == HOME:
-            return utils._parse_abbreviation(self._away_name)
-        return utils._parse_abbreviation(self._home_name)
+            return utils.parse_abbreviation(self._away_name)
+        return utils.parse_abbreviation(self._home_name)
 
     @float_property_decorator
     def pace(self):
@@ -870,7 +877,7 @@ class Boxscore:
         conclusion of the game.
         """
         try:
-            wins, losses = re.findall(r"\d+", self._away_record)
+            wins, _ = re.findall(r"\d+", self._away_record)
             return wins
         except ValueError:
             return 0
@@ -882,7 +889,7 @@ class Boxscore:
         conclusion of the game.
         """
         try:
-            wins, losses = re.findall(r"\d+", self._away_record)
+            _, losses = re.findall(r"\d+", self._away_record)
             return losses
         except ValueError:
             return 0
@@ -1188,7 +1195,7 @@ class Boxscore:
         conclusion of the game.
         """
         try:
-            wins, losses = re.findall(r"\d+", self._home_record)
+            wins, _ = re.findall(r"\d+", self._home_record)
             return wins
         except ValueError:
             return 0
@@ -1200,7 +1207,7 @@ class Boxscore:
         conclusion of the game.
         """
         try:
-            wins, losses = re.findall(r"\d+", self._home_record)
+            _, losses = re.findall(r"\d+", self._home_record)
             return losses
         except ValueError:
             return 0
@@ -1616,7 +1623,7 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return pq(url=url)
+        return utils.rate_limit_pq(url=url)
 
     def _get_boxscore_uri(self, url):
         """
@@ -1724,7 +1731,7 @@ class Boxscores:
             teams in the following order: Away Name, Away Abbreviation, Away
             Score, Home Name, Home Abbreviation, Home Score.
         """
-        links = [i for i in game("td a").items()]
+        links = list(game("td a").items())
         # The away team is the first link in the boxscore
         away = links[0]
         # The home team is the last (3rd) link in the boxscore
@@ -1760,7 +1767,7 @@ class Boxscores:
         tuple
             Returns a tuple of the team's name followed by the abbreviation.
         """
-        link = [i for i in team_result_html("td a").items()]
+        link = list(team_result_html("td a").items())
         # If there are no links, the boxscore is likely misformed and can't be
         # parsed. In this case, the boxscore should be skipped.
         if len(link) < 1:
@@ -1795,7 +1802,7 @@ class Boxscores:
             away_name, away_abbr, away_score, home_name, home_abbr, home_score = details
             boxscore_url = game('td[class="right gamelink"] a')
             boxscore_uri = self._get_boxscore_uri(boxscore_url)
-            losers = [loser for loser in game('tr[class="loser"]').items()]
+            losers = list(game('tr[class="loser"]').items())
             winner = self._get_team_results(game('tr[class="winner"]'))
             loser = self._get_team_results(game('tr[class="loser"]'))
             # Occurs when the boxscore format is invalid and the game should be
@@ -1869,6 +1876,6 @@ class Boxscores:
             page = self._get_requested_page(url)
             games = page('table[class="teams"]').items()
             boxscores = self._extract_game_info(games)
-            timestamp = "%s-%s-%s" % (date_step.month, date_step.day, date_step.year)
+            timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"
             self._boxscores[timestamp] = boxscores
             date_step += timedelta(days=1)

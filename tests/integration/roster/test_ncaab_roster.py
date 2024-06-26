@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 
 import mock
 import pandas as pd
@@ -15,7 +14,7 @@ YEAR = 2018
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "ncaab", filename)
-    return open("%s.html" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}.html", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -29,17 +28,19 @@ def mock_pyquery(url, timeout=None):
             self.text = html_contents
 
     if "purdue" in url:
-        return MockPQ(read_file("2018"))
-    if "isaac-haas-1" in url:
-        return MockPQ(read_file("isaac-haas-1"))
-    if "vince-edwards-2" in url:
-        return MockPQ(read_file("vince-edwards-2"))
-    if "bad" in url:
-        return MockPQ(None, 404)
-    return MockPQ(read_file("carsen-edwards-1"))
+        mock_pq = MockPQ(read_file("2018"))
+    elif "isaac-haas-1" in url:
+        mock_pq = MockPQ(read_file("isaac-haas-1"))
+    elif "vince-edwards-2" in url:
+        mock_pq = MockPQ(read_file("vince-edwards-2"))
+    elif "bad" in url:
+        mock_pq = MockPQ(None, 404)
+    else:
+        mock_pq = MockPQ(read_file("carsen-edwards-1"))
+    return mock_pq
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -48,8 +49,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class TestNCAABPlayer:
@@ -186,7 +186,7 @@ class TestNCAABPlayer:
         mock_season = mock.PropertyMock(return_value=seasons)
         type(self.player)._season = mock_season
 
-        result = self.player._find_initial_index()
+        self.player.find_initial_index()
 
         assert self.player._index == 1
 
@@ -364,19 +364,19 @@ class TestNCAABPlayer:
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
         frames = [df, player.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        pd.concat(frames).drop_duplicates(keep=False)
 
     def test_ncaab_player_string_representation(self):
         # Request the career stats
         player = self.player("")
 
-        assert player.__repr__() == "Carsen Edwards (carsen-edwards-1)"
+        assert repr(player) == "Carsen Edwards (carsen-edwards-1)"
 
 
 class TestNCAABRoster:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("PURDUE")
 
         assert len(roster.players) == 3
@@ -387,7 +387,7 @@ class TestNCAABRoster:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_bad_url_raises_value_error(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            roster = Roster("BAD")
+            Roster("BAD")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_from_team_class(self, *args, **kwargs):
@@ -404,7 +404,7 @@ class TestNCAABRoster:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("PURDUE", slim=True)
 
         assert len(roster.players) == 3
@@ -417,7 +417,7 @@ class TestNCAABRoster:
     @mock.patch("requests.head", side_effect=mock_request)
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2019)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         roster = Roster("PURDUE")
 
@@ -432,10 +432,10 @@ class TestNCAABRoster:
 Isaac Haas (isaac-haas-1)
 Vince Edwards (vince-edwards-2)"""
 
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("PURDUE")
 
-        assert roster.__repr__() == expected
+        assert repr(roster) == expected
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_coach(self, *args, **kwargs):

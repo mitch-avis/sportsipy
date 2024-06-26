@@ -8,7 +8,7 @@ from flexmock import flexmock
 from sportsipy import utils
 from sportsipy.constants import AWAY
 from sportsipy.ncaaf.boxscore import Boxscore, Boxscores
-from sportsipy.ncaaf.constants import BOXSCORE_URL, BOXSCORES_URL
+from sportsipy.ncaaf.constants import BOXSCORES_URL
 
 MONTH = 10
 YEAR = 2020
@@ -18,7 +18,7 @@ BOXSCORE = "2020-09-12-wake-forest"
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "ncaaf", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -32,7 +32,7 @@ def mock_pyquery(url, timeout=None):
         return MockPQ(read_file("boxscores-9-12-2020.html"))
     if url == BOXSCORES_URL % (9, 13, 2020):
         return MockPQ(read_file("boxscores-9-13-2020.html"))
-    boxscore = read_file("%s.html" % BOXSCORE)
+    boxscore = read_file(f"{BOXSCORE}.html")
     return MockPQ(boxscore)
 
 
@@ -87,7 +87,7 @@ class TestNCAAFBoxscore:
             "home_penalties": 1,
             "home_yards_from_penalties": 6,
         }
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.boxscore = Boxscore(BOXSCORE)
 
@@ -130,9 +130,9 @@ class TestNCAAFBoxscore:
             assert not player.dataframe.empty
 
     def test_ncaaf_boxscore_string_representation(self):
-        expected = "Boxscore for Clemson at Wake Forest " "(Saturday Sep 12, 2020)"
+        expected = "Boxscore for Clemson at Wake Forest (Saturday Sep 12, 2020)"
 
-        assert self.boxscore.__repr__() == expected
+        assert repr(self.boxscore) == expected
 
 
 class TestNCAAFBoxscores:
@@ -1190,4 +1190,4 @@ class TestNCAAFBoxscores:
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 9, 12))
 
-        assert result.__repr__() == "NCAAF games for 9-12-2020"
+        assert repr(result) == "NCAAF games for 9-12-2020"

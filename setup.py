@@ -1,9 +1,9 @@
 from setuptools import find_packages, setup
 
-with open("README.rst", "r") as f:
+with open("README.rst", "r", encoding="utf-8") as f:
     long_description = f.read()
 
-with open("VERSION", "r") as f:
+with open("VERSION", "r", encoding="utf-8") as f:
     version = f.read()
 
 setup(
@@ -19,14 +19,13 @@ setup(
     python_requires=">=3.7",
     keywords="stats sports api sportsipy machine learning",
     install_requires=[
-        "numpy >= 1.19.5",
-        "pandas >= 0.24.1",
-        "pyquery >= 1.4.0",
-        "requests >= 2.18.4",
+        "numpy >= 2.0.0",
+        "pandas >= 2.2.2",
+        "pyquery >= 2.0.0",
+        "requests >= 2.32.3",
     ],
     classifiers=(
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX :: Linux",
     ),

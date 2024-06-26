@@ -56,7 +56,7 @@ class TestFBRoster:
     def test_no_player_id_skips_player(self):
         result = self.roster._add_stats_data([MockSquadPlayer()], {})
 
-        assert result == {}
+        assert not result
 
     @mock.patch("requests.get", side_effect=mock_httperror)
     def test_invalid_http_page_error(self, *args, **kwargs):

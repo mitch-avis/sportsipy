@@ -15,7 +15,7 @@ YEAR = 2017
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "mlb", filename)
-    return open("%s.shtml" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}.shtml", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -37,7 +37,7 @@ def mock_pyquery(url, timeout=None):
     return MockPQ(read_file("altuvjo01"))
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -46,8 +46,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class TestMLBPlayer:
@@ -507,7 +506,7 @@ class TestMLBPlayer:
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
         frames = [df, player.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        pd.concat(frames).drop_duplicates(keep=False)
 
     def test_player_contract_returns_contract(self):
         contract = self.player.contract
@@ -534,7 +533,7 @@ class TestMLBPlayer:
         # Request the career stats
         player = self.player("")
 
-        assert player.__repr__() == "José Altuve (altuvjo01)"
+        assert repr(player) == "José Altuve (altuvjo01)"
 
 
 class TestMLBPitcher:
@@ -1043,7 +1042,7 @@ class TestMLBPitcher:
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
         frames = [df, player.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        pd.concat(frames).drop_duplicates(keep=False)
 
     def test_player_contract_returns_contract(self):
         contract = self.player.contract
@@ -1072,7 +1071,7 @@ class TestMLBPitcher:
         mock_season = mock.PropertyMock(return_value=seasons)
         type(self.player)._season = mock_season
 
-        result = self.player._find_initial_index()
+        self.player.find_initial_index()
 
         assert self.player._index == 1
 
@@ -1080,7 +1079,7 @@ class TestMLBPitcher:
 class TestMLBRoster:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2017")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2017")
         roster = Roster("HOU")
 
         assert len(roster.players) == 3
@@ -1091,7 +1090,7 @@ class TestMLBRoster:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_bad_url_raises_value_error(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            roster = Roster("bad")
+            Roster("bad")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_from_team_class(self, *args, **kwargs):
@@ -1108,7 +1107,7 @@ class TestMLBRoster:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU", slim=True)
 
         assert len(roster.players) == 3
@@ -1121,7 +1120,7 @@ class TestMLBRoster:
     @mock.patch("requests.head", side_effect=mock_request)
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2018)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         roster = Roster("HOU")
 
@@ -1136,10 +1135,10 @@ class TestMLBRoster:
 Justin Verlander (verlaju01)
 José Altuve (mortoch02)"""
 
-        flexmock(utils).should_receive("_find_year_for_season").and_return("2018")
+        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
 
-        assert roster.__repr__() == expected
+        assert repr(roster) == expected
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_coach(self, *args, **kwargs):

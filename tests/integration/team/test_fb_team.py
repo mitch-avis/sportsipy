@@ -7,7 +7,7 @@ from sportsipy.fb.team import Team
 
 def read_file(filename):
     filepath = path.join(path.dirname(__file__), "fb_stats", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -65,4 +65,4 @@ class TestFBTeam:
     def test_team_name(self, *args, **kwargs):
         team = Team("Tottenham Hotspur")
 
-        assert team.__repr__() == "Tottenham Hotspur (361ca564) - 2019-2020"
+        assert repr(team) == "Tottenham Hotspur (361ca564) - 2019-2020"

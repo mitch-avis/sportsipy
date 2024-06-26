@@ -20,14 +20,13 @@ def mock_pyquery(url, timeout=None):
 
     if "2021" in url:
         return MockPQ("<div/>", status_code=404)
-    else:
-        return MockPQ('<div id="div_totals-team"/>' '<div id="div_totals-opponent"/>')
+    return MockPQ('<div id="div_totals-team"/><div id="div_totals-opponent"/>')
 
 
 class TestNBAUtils:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nba_2020_season_default_to_previous(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2021)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2021)
 
         _, year = _retrieve_all_teams(None)
 

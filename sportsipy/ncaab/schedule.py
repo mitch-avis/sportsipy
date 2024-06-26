@@ -2,7 +2,6 @@ import re
 from datetime import datetime
 
 import pandas as pd
-from pyquery import PyQuery as pq
 
 from sportsipy import utils
 from sportsipy.constants import (
@@ -141,15 +140,15 @@ class Game:
         for field in self.__dict__:
             # Remove the leading '_' from the name
             short_name = str(field)[1:]
-            if short_name == "datetime" or short_name == "opponent_rank":
+            if short_name in ("datetime", "opponent_rank"):
                 continue
-            elif short_name == "opponent_abbr":
+            if short_name == "opponent_abbr":
                 self._parse_abbreviation(game_data)
                 continue
-            elif short_name == "boxscore":
+            if short_name == "boxscore":
                 self._parse_boxscore(game_data)
                 continue
-            value = utils._parse_field(SCHEDULE_SCHEME, game_data, short_name)
+            value = utils.parse_field(SCHEDULE_SCHEME, game_data, short_name)
             setattr(self, field, value)
 
     @property
@@ -226,7 +225,7 @@ class Game:
             time = "12:00A"
         else:
             time = self._time.upper()
-        date_string = "%s %s" % (self._date, time)
+        date_string = f"{self._date} {time}"
         date_string = re.sub(r"/.*", "", date_string)
         date_string = re.sub(r" ET", "", date_string)
         date_string += "M"
@@ -266,18 +265,24 @@ class Game:
         Returns a ``string`` constant to indicate whether the game was played
         during the regular season or in the post season.
         """
-        if self._type.lower() == "reg":
-            return REGULAR_SEASON
-        if self._type.lower() == "ctourn":
-            return CONFERENCE_TOURNAMENT
-        if self._type.lower() == "ncaa":
-            return NCAA_TOURNAMENT
-        if self._type.lower() == "nit":
-            return NIT_TOURNAMENT
-        if self._type.lower() == "cbi":
-            return CBI_TOURNAMENT
-        if self._type.lower() == "cit":
-            return CIT_TOURNAMENT
+        if not self._type:
+            return None
+        match self._type.upper():
+            case "REG":
+                type_string = REGULAR_SEASON
+            case "CTOURN":
+                type_string = CONFERENCE_TOURNAMENT
+            case "NCAA":
+                type_string = NCAA_TOURNAMENT
+            case "NIT":
+                type_string = NIT_TOURNAMENT
+            case "CBI":
+                type_string = CBI_TOURNAMENT
+            case "CIT":
+                type_string = CIT_TOURNAMENT
+            case _:
+                type_string = None
+        return type_string
 
     @property
     def location(self):
@@ -285,12 +290,16 @@ class Game:
         Returns a ``string`` constant to indicate whether the game was played
         at the team's home venue, the opponent's venue, or at a neutral site.
         """
-        if self._location == "":
-            return HOME
-        if self._location == "N":
-            return NEUTRAL
-        if self._location == "@":
-            return AWAY
+        match self._location.upper():
+            case "":
+                location_string = HOME
+            case "@":
+                location_string = AWAY
+            case "N":
+                location_string = NEUTRAL
+            case _:
+                location_string = None
+        return location_string
 
     @property
     def opponent_abbr(self):
@@ -520,19 +529,19 @@ class Schedule:
             The requested year to pull stats from.
         """
         if not year:
-            year = utils._find_year_for_season("ncaab")
+            year = utils.find_year_for_season("ncaab")
             # If stats for the requested season do not exist yet (as is the
             # case right before a new season begins), attempt to pull the
             # previous year's stats. If it exists, use the previous year
             # instead.
-            if not utils._url_exists(
+            if not utils.url_exists(
                 SCHEDULE_URL % (abbreviation.lower(), year)
-            ) and utils._url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
+            ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
                 year = str(int(year) - 1)
-        doc = pq(url=SCHEDULE_URL % (abbreviation.lower(), year))
-        schedule = utils._get_stats_table(doc, "table#schedule")
+        doc = utils.rate_limit_pq(url=SCHEDULE_URL % (abbreviation.lower(), year))
+        schedule = utils.get_stats_table(doc, "table#schedule")
         if not schedule:
-            utils._no_data_found()
+            utils.no_data_found()
             return
 
         for item in schedule:
@@ -548,11 +557,11 @@ class Schedule:
         Game class. Rows are indexed by the boxscore string.
         """
         frames = []
-        for game in self.__iter__():
+        for game in iter(self._games):
             df = game.dataframe
             if df is not None:
                 frames.append(df)
-        if frames == []:
+        if not frames:
             return None
         return pd.concat(frames)
 
@@ -566,10 +575,10 @@ class Schedule:
         'dataframe' property.
         """
         frames = []
-        for game in self.__iter__():
+        for game in iter(self._games):
             df = game.dataframe_extended
             if df is not None:
                 frames.append(df)
-        if frames == []:
+        if not frames:
             return None
         return pd.concat(frames)

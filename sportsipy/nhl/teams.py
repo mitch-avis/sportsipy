@@ -113,11 +113,12 @@ class Team:
         # Teams are listed in terms of rank with the first team being #1
         rank = 1
         for team_data in teams_list:
-            name = utils._parse_field(PARSING_SCHEME, team_data, "abbreviation")
+            name = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
             if name == team_name:
                 self._rank = rank
                 return team_data
             rank += 1
+        return None
 
     def _parse_team_data(self, team_data):
         """
@@ -141,9 +142,9 @@ class Team:
         for field in self.__dict__:
             # The rank attribute is passed directly to the class during
             # instantiation.
-            if field == "_rank" or field == "_year":
+            if field in ("_rank", "_year"):
                 continue
-            value = utils._parse_field(PARSING_SCHEME, team_data, str(field)[1:])
+            value = utils.parse_field(PARSING_SCHEME, team_data, str(field)[1:])
             setattr(self, field, value)
 
     @property
@@ -479,7 +480,7 @@ class Teams:
         for team in self._teams:
             if team.abbreviation.upper() == abbreviation.upper():
                 return team
-        raise ValueError("Team abbreviation %s not found" % abbreviation)
+        raise ValueError(f"Team abbreviation {abbreviation} not found")
 
     def __call__(self, abbreviation):
         """
@@ -552,6 +553,6 @@ class Teams:
         Team class. Rows are indexed by the team abbreviation.
         """
         frames = []
-        for team in self.__iter__():
+        for team in iter(self._teams):
             frames.append(team.dataframe)
         return pd.concat(frames)

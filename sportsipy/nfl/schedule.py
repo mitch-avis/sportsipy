@@ -2,7 +2,6 @@ import re
 from datetime import datetime
 
 import pandas as pd
-from pyquery import PyQuery as pq
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME, LOSS, NEUTRAL, POST_SEASON, REGULAR_SEASON, TIE, WIN
@@ -144,15 +143,15 @@ class Game:
         for field in self.__dict__:
             # Remove the leading '_' from the name
             short_name = str(field)[1:]
-            if short_name == "datetime" or short_name == "type" or short_name == "year":
+            if short_name in ("datetime", "type", "year"):
                 continue
             if short_name == "opponent_abbr":
                 self._parse_abbreviation(game_data)
                 continue
-            elif short_name == "boxscore":
+            if short_name == "boxscore":
                 self._parse_boxscore(game_data)
                 continue
-            value = utils._parse_field(SCHEDULE_SCHEME, game_data, short_name)
+            value = utils.parse_field(SCHEDULE_SCHEME, game_data, short_name)
             setattr(self, field, value)
 
     @property
@@ -221,15 +220,18 @@ class Game:
         Returns an ``int`` of the week number in the season, such as 1 for the
         first week of the regular season.
         """
-        if self._week.lower() == "wild card":
-            return WILD_CARD
-        if self._week.lower() == "division":
-            return DIVISION
-        if self._week.lower() == "conf. champ.":
-            return CONF_CHAMPIONSHIP
-        if self._week.lower() == "superbowl":
-            return SUPER_BOWL
-        return self._week
+        match self._week.upper():
+            case "WILD CARD":
+                week_int = WILD_CARD
+            case "DIVISION":
+                week_int = DIVISION
+            case "CONF. CHAMP.":
+                week_int = CONF_CHAMPIONSHIP
+            case "SUPERBOWL":
+                week_int = SUPER_BOWL
+            case _:
+                week_int = self._week
+        return week_int
 
     @property
     def day(self):
@@ -281,7 +283,7 @@ class Game:
         # february, and increase the year by 1.
         if self._date.split(" ")[0].lower() in ["january", "february"]:
             year = int(year) + 1
-        date_string = "%s %s %s" % (self._day, self._date, year)
+        date_string = f"{self._day} {self._date} {year}"
         return datetime.strptime(date_string, "%a %B %d %Y")
 
     @property
@@ -292,14 +294,17 @@ class Game:
         OT. If a game has no result (canceled, yet to be played, etc.) return
         ``None``.
         """
-        if self._result.lower() == "l":
-            return LOSS
-        elif self._result.lower() == "w":
-            return WIN
-        elif self._result.lower() == "t":
-            return TIE
-        else:
+        if not self._result:
             return None
+        match self._result.upper():
+            case "W":
+                return WIN
+            case "L":
+                return LOSS
+            case "T":
+                return TIE
+            case _:
+                return None
 
     @property
     def overtime(self):
@@ -683,23 +688,23 @@ class Schedule:
             The requested year to pull stats from.
         """
         if not year:
-            year = utils._find_year_for_season("nfl")
+            year = utils.find_year_for_season("nfl")
             # If stats for the requested season do not exist yet (as is the
             # case right before a new season begins), attempt to pull the
             # previous year's stats. If it exists, use the previous year
             # instead.
-            if not utils._url_exists(
+            if not utils.url_exists(
                 SCHEDULE_URL % (abbreviation.lower(), year)
-            ) and utils._url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
+            ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
                 year = str(int(year) - 1)
-        doc = pq(url=SCHEDULE_URL % (abbreviation.lower(), year))
-        schedule = utils._get_stats_table(doc, "table#gamelog%s" % year)
+        doc = utils.rate_limit_pq(url=SCHEDULE_URL % (abbreviation.lower(), year))
+        schedule = utils.get_stats_table(doc, f"table#gamelog{year}")
         if not schedule:
-            utils._no_data_found()
+            utils.no_data_found()
             return
         self._add_games_to_schedule(schedule, REGULAR_SEASON, year)
-        if "playoff_gamelog%s" % year in str(doc):
-            playoffs = utils._get_stats_table(doc, "table#playoff_gamelog%s" % year)
+        if f"playoff_gamelog{year}" in str(doc):
+            playoffs = utils.get_stats_table(doc, f"table#playoff_gamelog{year}")
             self._add_games_to_schedule(playoffs, POST_SEASON, year)
 
     @property
@@ -709,11 +714,11 @@ class Schedule:
         Game class. Rows are indexed by the boxscore string.
         """
         frames = []
-        for game in self.__iter__():
+        for game in iter(self._games):
             df = game.dataframe
             if df is not None:
                 frames.append(df)
-        if frames == []:
+        if not frames:
             return None
         return pd.concat(frames)
 
@@ -727,10 +732,10 @@ class Schedule:
         'dataframe' property.
         """
         frames = []
-        for game in self.__iter__():
+        for game in iter(self._games):
             df = game.dataframe_extended
             if df is not None:
                 frames.append(df)
-        if frames == []:
+        if not frames:
             return None
         return pd.concat(frames)

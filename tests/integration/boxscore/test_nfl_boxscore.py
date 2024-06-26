@@ -8,7 +8,7 @@ from flexmock import flexmock
 from sportsipy import utils
 from sportsipy.constants import HOME
 from sportsipy.nfl.boxscore import Boxscore, Boxscores
-from sportsipy.nfl.constants import BOXSCORE_URL, BOXSCORES_URL
+from sportsipy.nfl.constants import BOXSCORES_URL
 
 MONTH = 10
 YEAR = 2020
@@ -18,7 +18,7 @@ BOXSCORE = "202009100kan"
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "nfl", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -32,7 +32,7 @@ def mock_pyquery(url, timeout=None):
         return MockPQ(read_file("boxscores-1-2020.html"))
     if url == BOXSCORES_URL % (YEAR, 2):
         return MockPQ(read_file("boxscores-2-2020.html"))
-    boxscore = read_file("%s.html" % BOXSCORE)
+    boxscore = read_file(f"{BOXSCORE}.html")
     return MockPQ(boxscore)
 
 
@@ -112,7 +112,7 @@ class TestNFLBoxscore:
             "home_fourth_down_attempts": 1,
             "home_time_of_possession": "34:47",
         }
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.boxscore = Boxscore(BOXSCORE)
 
@@ -155,9 +155,9 @@ class TestNFLBoxscore:
             assert not player.dataframe.empty
 
     def test_nfl_boxscore_string_representation(self):
-        expected = "Boxscore for Houston Texans at Kansas City Chiefs " "(Thursday Sep 10, 2020)"
+        expected = "Boxscore for Houston Texans at Kansas City Chiefs (Thursday Sep 10, 2020)"
 
-        assert self.boxscore.__repr__() == expected
+        assert repr(self.boxscore) == expected
 
 
 class TestNFLBoxscores:
@@ -819,10 +819,10 @@ class TestNFLBoxscores:
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(1, 2020)
 
-        assert result.__repr__() == "NFL games for week 1"
+        assert repr(result) == "NFL games for week 1"
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_string_representation_multi_week(self, *args, **kwargs):
         result = Boxscores(1, 2020, 2)
 
-        assert result.__repr__() == "NFL games for weeks 1, 2"
+        assert repr(result) == "NFL games for weeks 1, 2"

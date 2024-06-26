@@ -8,7 +8,7 @@ from flexmock import flexmock
 from sportsipy import utils
 from sportsipy.constants import AWAY
 from sportsipy.nhl.boxscore import Boxscore, Boxscores
-from sportsipy.nhl.constants import BOXSCORE_URL, BOXSCORES_URL
+from sportsipy.nhl.constants import BOXSCORES_URL
 
 MONTH = 10
 YEAR = 2020
@@ -18,7 +18,7 @@ BOXSCORE = "202003040VAN"
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "nhl", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -32,7 +32,7 @@ def mock_pyquery(url, timeout=None):
         return MockPQ(read_file("boxscores-3-4-2020.html"))
     if url == BOXSCORES_URL % (3, 5, YEAR):
         return MockPQ(read_file("boxscores-3-5-2020.html"))
-    boxscore = read_file("%s.html" % BOXSCORE)
+    boxscore = read_file(f"{BOXSCORE}.html")
     return MockPQ(boxscore)
 
 
@@ -90,7 +90,7 @@ class TestNHLBoxscore:
             "home_shutout": 0,
         }
 
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.boxscore = Boxscore(BOXSCORE)
 
@@ -132,9 +132,9 @@ class TestNHLBoxscore:
             assert not player.dataframe.empty
 
     def test_nhl_boxscore_string_representation(self):
-        expected = "Boxscore for Arizona Coyotes at Vancouver Canucks " "(March 4, 2020)"
+        expected = "Boxscore for Arizona Coyotes at Vancouver Canucks (March 4, 2020)"
 
-        assert self.boxscore.__repr__() == expected
+        assert repr(self.boxscore) == expected
 
 
 class TestNHLBoxscores:
@@ -406,4 +406,4 @@ class TestNHLBoxscores:
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 3, 4))
 
-        assert result.__repr__() == "NHL games for 3-4-2020"
+        assert repr(result) == "NHL games for 3-4-2020"

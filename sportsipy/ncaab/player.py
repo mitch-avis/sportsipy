@@ -1,3 +1,4 @@
+import re
 from functools import wraps
 
 from pyquery import PyQuery as pq
@@ -21,6 +22,7 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
+        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         value = _cleanup(prop[index])
@@ -37,6 +39,7 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
+        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         value = _cleanup(prop[index])
@@ -146,7 +149,7 @@ class AbstractPlayer:
         elif field == "team_abbreviation":
             value = self._parse_team_abbreviation(stats)
         else:
-            value = utils._parse_field(PLAYER_SCHEME, stats, field)
+            value = utils.parse_field(PLAYER_SCHEME, stats, field)
         return value
 
     def _parse_player_data(self, player_data):
@@ -168,15 +171,15 @@ class AbstractPlayer:
         """
         for field in self.__dict__:
             short_field = str(field)[1:]
-            if (
-                short_field == "player_id"
-                or short_field == "index"
-                or short_field == "most_recent_season"
-                or short_field == "player_data"
-                or short_field == "name"
-                or short_field == "height"
-                or short_field == "weight"
-                or short_field == "position"
+            if short_field in (
+                "player_id",
+                "index",
+                "most_recent_season",
+                "player_data",
+                "name",
+                "height",
+                "weight",
+                "position",
             ):
                 continue
             field_stats = []
@@ -190,6 +193,51 @@ class AbstractPlayer:
                 value = self._parse_value(stats, short_field)
                 field_stats.append(value)
             setattr(self, field, field_stats)
+
+    def _parse_conference(self, stats):
+        """
+        Parse the conference abbreviation for the player's team.
+
+        The conference abbreviation is embedded within the conference name tag
+        and should be special-parsed to extract it.
+
+        Parameters
+        ----------
+        stats : PyQuery object
+            A PyQuery object containing the HTML from the player's stats page.
+
+        Returns
+        -------
+        string
+            Returns a string of the conference abbreviation, such as 'big-12'.
+        """
+        conference_tag = stats(PLAYER_SCHEME["conference"])
+        conference = re.sub(r".*/cbb/conferences/", "", str(conference_tag("a")))
+        conference = re.sub(r"/.*", "", conference)
+        return conference
+
+    def _parse_team_abbreviation(self, stats):
+        """
+        Parse the team abbreviation.
+
+        The team abbreviation is embedded within the team name tag and should
+        be special-parsed to extract it.
+
+        Parameters
+        ----------
+        stats : PyQuery object
+            A PyQuery object containing the HTML from the player's stats page.
+
+        Returns
+        -------
+        string
+            Returns a string of the team's abbreviation, such as 'PURDUE' for
+            the Purdue Boilermakers.
+        """
+        team_tag = stats(PLAYER_SCHEME["team_abbreviation"])
+        team = re.sub(r".*/cbb/schools/", "", str(team_tag("a")))
+        team = re.sub(r"/.*", "", team)
+        return team
 
     @property
     def player_id(self):

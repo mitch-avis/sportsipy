@@ -7,7 +7,7 @@ from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.constants import LOSS
-from sportsipy.nfl.constants import LOST_WILD_CARD, SEASON_PAGE_URL
+from sportsipy.nfl.constants import LOST_WILD_CARD
 from sportsipy.nfl.teams import Team, Teams
 
 MONTH = 9
@@ -16,7 +16,7 @@ YEAR = 2017
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "nfl_stats", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -28,16 +28,15 @@ def mock_pyquery(url, timeout=None):
 
         def __call__(self, div):
             if div == "div#all_team_stats":
-                return read_file("%s_all_team_stats.html" % YEAR)
-            elif div == "table#AFC":
-                return read_file("%s_afc.html" % YEAR)
-            else:
-                return read_file("%s_nfc.html" % YEAR)
+                return read_file(f"{YEAR}_all_team_stats.html")
+            if div == "table#AFC":
+                return read_file(f"{YEAR}_afc.html")
+            return read_file(f"{YEAR}_nfc.html")
 
     if "gamelog" in url:
-        html_contents = read_file("%s_gamelog.html" % YEAR)
+        html_contents = read_file(f"{YEAR}_gamelog.html")
     else:
-        html_contents = read_file("%s.html" % YEAR)
+        html_contents = read_file(f"{YEAR}.html")
     return MockPQ(html_contents)
 
 
@@ -50,8 +49,7 @@ def mock_request(url, timeout=None):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class MockDateTime:
@@ -149,7 +147,7 @@ class TestNFLIntegration:
             "NYG",
             "CLE",
         ]
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.teams = Teams()
 
@@ -198,8 +196,8 @@ class TestNFLIntegration:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nfl_empty_page_returns_no_teams(self, *args, **kwargs):
-        flexmock(utils).should_receive("_no_data_found").once()
-        flexmock(utils).should_receive("_get_stats_table").and_return(None)
+        flexmock(utils).should_receive("no_data_found").once()
+        flexmock(utils).should_receive("get_stats_table").and_return(None)
 
         teams = Teams()
 
@@ -220,7 +218,7 @@ class TestNFLIntegration:
     def test_team_string_representation(self, *args, **kwargs):
         kansas = Team("KAN")
 
-        assert kansas.__repr__() == "Kansas City Chiefs (KAN) - 2017"
+        assert repr(kansas) == "Kansas City Chiefs (KAN) - 2017"
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_teams_string_representation(self, *args, **kwargs):
@@ -259,14 +257,14 @@ Cleveland Browns (CLE)"""
 
         teams = Teams()
 
-        assert teams.__repr__() == expected
+        assert repr(teams) == expected
 
 
 class TestNFLIntegrationInvalidYear:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2018)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         teams = Teams()
 

@@ -2,7 +2,6 @@ import re
 from datetime import datetime
 
 import pandas as pd
-from pyquery import PyQuery as pq
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME, LOSS, NEUTRAL, NON_DI, WIN
@@ -122,10 +121,10 @@ class Game:
             if short_name == "opponent_abbr":
                 self._parse_abbreviation(game_data)
                 continue
-            elif short_name == "boxscore":
+            if short_name == "boxscore":
                 self._parse_boxscore(game_data)
                 continue
-            value = utils._parse_field(SCHEDULE_SCHEME, game_data, short_name)
+            value = utils.parse_field(SCHEDULE_SCHEME, game_data, short_name)
             setattr(self, field, value)
 
     @property
@@ -200,7 +199,7 @@ class Game:
         """
         if self._time == "" or not self._time:
             return datetime.strptime(self._date, "%b %d, %Y")
-        date_string = "%s %s" % (self._date, self._time)
+        date_string = f"{self._date} {self._time}"
         return datetime.strptime(date_string, "%b %d, %Y %I:%M %p")
 
     @property
@@ -233,11 +232,16 @@ class Game:
         Returns a ``string`` constant to indicate whether the game was played
         at home, away, or in a neutral location.
         """
-        if self._location.lower() == "n":
-            return NEUTRAL
-        if self._location.lower() == "@":
-            return AWAY
-        return HOME
+        match self._location.upper():
+            case "":
+                location_string = HOME
+            case "@":
+                location_string = AWAY
+            case "N":
+                location_string = NEUTRAL
+            case _:
+                location_string = None
+        return location_string
 
     @int_property_decorator
     def rank(self):
@@ -456,19 +460,19 @@ class Schedule:
             The requested year to pull stats from.
         """
         if not year:
-            year = utils._find_year_for_season("ncaaf")
+            year = utils.find_year_for_season("ncaaf")
             # If stats for the requested season do not exist yet (as is the
             # case right before a new season begins), attempt to pull the
             # previous year's stats. If it exists, use the previous year
             # instead.
-            if not utils._url_exists(
+            if not utils.url_exists(
                 SCHEDULE_URL % (abbreviation.lower(), year)
-            ) and utils._url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
+            ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
                 year = str(int(year) - 1)
-        doc = pq(url=SCHEDULE_URL % (abbreviation.lower(), year))
-        schedule = utils._get_stats_table(doc, "table#schedule")
+        doc = utils.rate_limit_pq(url=SCHEDULE_URL % (abbreviation.lower(), year))
+        schedule = utils.get_stats_table(doc, "table#schedule")
         if not schedule:
-            utils._no_data_found()
+            utils.no_data_found()
             return
 
         for item in schedule:
@@ -482,11 +486,11 @@ class Schedule:
         Game class. Rows are indexed by the boxscore string.
         """
         frames = []
-        for game in self.__iter__():
+        for game in iter(self._games):
             df = game.dataframe
             if df is not None:
                 frames.append(df)
-        if frames == []:
+        if not frames:
             return None
         return pd.concat(frames)
 
@@ -500,10 +504,10 @@ class Schedule:
         'dataframe' property.
         """
         frames = []
-        for game in self.__iter__():
+        for game in iter(self._games):
             df = game.dataframe_extended
             if df is not None:
                 frames.append(df)
-        if frames == []:
+        if not frames:
             return None
         return pd.concat(frames)

@@ -3,7 +3,6 @@ import warnings
 from urllib.error import HTTPError
 
 from lxml.etree import ParserError
-from pyquery import PyQuery as pq
 
 from .. import utils
 from .constants import CONFERENCE_URL, CONFERENCES_URL
@@ -65,7 +64,7 @@ class Conference:
             A string of the requested year to pull conference information from.
         """
         try:
-            return pq(url=CONFERENCE_URL % (conference_abbreviation, year))
+            return utils.rate_limit_pq(url=CONFERENCE_URL % (conference_abbreviation, year))
         except (HTTPError, ParserError):
             return None
 
@@ -110,26 +109,23 @@ class Conference:
             A string of the requested year to pull conference information from.
         """
         if not year:
-            year = utils._find_year_for_season("ncaaf")
+            year = utils.find_year_for_season("ncaaf")
             # If stats for the requested season do not exist yet (as is the
             # case right before a new season begins), attempt to pull the
             # previous year's stats. If it exists, use the previous year
             # instead.
-            if not utils._url_exists(CONFERENCES_URL % year) and utils._url_exists(
+            if not utils.url_exists(CONFERENCES_URL % year) and utils.url_exists(
                 CONFERENCES_URL % str(int(year) - 1)
             ):
                 year = str(int(year) - 1)
         page = self._pull_conference_page(conference_abbreviation, year)
         if not page:
             url = CONFERENCE_URL % (conference_abbreviation, year)
-            output = (
-                "Can't pull requested conference page. Ensure the " "following URL exists: %s" % url
-            )
+            output = f"Can't pull requested conference page. Ensure the following URL exists: {url}"
             if self._ignore_missing:
                 warnings.warn(output)
                 return
-            else:
-                raise ValueError(output)
+            raise ValueError(output)
         conference = page("table#standings tbody tr").items()
         for team in conference:
             team_abbreviation = self._get_team_abbreviation(team)
@@ -206,7 +202,7 @@ class Conferences:
             Returns a PyQuery object of the conference HTML page.
         """
         try:
-            return pq(url=CONFERENCES_URL % year)
+            return utils.rate_limit_pq(url=CONFERENCES_URL % year)
         except HTTPError:
             return None
 
@@ -250,20 +246,20 @@ class Conferences:
             A string of the requested year to pull conferences from.
         """
         if not year:
-            year = utils._find_year_for_season("ncaaf")
+            year = utils.find_year_for_season("ncaaf")
             # If stats for the requested season do not exist yet (as is the
             # case right before a new season begins), attempt to pull the
             # previous year's stats. If it exists, use the previous year
             # instead.
-            if not utils._url_exists(CONFERENCES_URL % year) and utils._url_exists(
+            if not utils.url_exists(CONFERENCES_URL % year) and utils.url_exists(
                 CONFERENCES_URL % str(int(year) - 1)
             ):
                 year = str(int(year) - 1)
         page = self._pull_conference_page(year)
         if not page:
             output = (
-                "Can't pull requested conference page. Ensure the "
-                "following URL exists: %s" % (CONFERENCES_URL % year)
+                "Can't pull requested conference page. Ensure the following URL exists: "
+                f"{CONFERENCES_URL % year}"
             )
             raise ValueError(output)
         conferences = page("table#conferences tbody tr").items()
@@ -272,7 +268,7 @@ class Conferences:
             conference_name = conference('td[data-stat="conf_name"]').text()
             teams_dict = Conference(conference_abbreviation, year, self._ignore_missing).teams
             conference_dict = {"name": conference_name, "teams": teams_dict}
-            for team in teams_dict.keys():
+            for team in teams_dict:
                 self._team_conference[team] = conference_abbreviation
             self._conferences[conference_abbreviation] = conference_dict
 

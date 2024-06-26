@@ -1,4 +1,3 @@
-import pytest
 from flexmock import flexmock
 from mock import PropertyMock, patch
 from pyquery import PyQuery as pq
@@ -6,7 +5,6 @@ from pyquery import PyQuery as pq
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME
 from sportsipy.ncaaf.boxscore import Boxscore, Boxscores
-from sportsipy.ncaaf.player import AbstractPlayer
 
 
 class MockField:
@@ -120,7 +118,7 @@ class TestNCAAFBoxscore:
         expected_name = "HOME"
         test_name = "<a>cfb/schools</a>HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_home_name = PropertyMock(return_value=MockName(test_name))
@@ -133,7 +131,7 @@ class TestNCAAFBoxscore:
         expected_name = "HOME"
         test_name = "HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_home_name = PropertyMock(return_value=MockName(test_name))
@@ -146,7 +144,7 @@ class TestNCAAFBoxscore:
         expected_name = "AWAY"
         test_name = "<a>cfb/schools</a>AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_away_name = PropertyMock(return_value=MockName(test_name))
@@ -159,7 +157,7 @@ class TestNCAAFBoxscore:
         expected_name = "AWAY"
         test_name = "AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_away_name = PropertyMock(return_value=MockName(test_name))
@@ -216,7 +214,7 @@ class TestNCAAFBoxscore:
         expected_name = "HOME"
         test_name = "<a>cfb/schools</a>HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_home_name = PropertyMock(return_value=MockName(test_name))
@@ -229,7 +227,7 @@ class TestNCAAFBoxscore:
         expected_name = "HOME"
         test_name = "HOME"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=AWAY)
         fake_home_name = PropertyMock(return_value=MockName(test_name))
@@ -242,7 +240,7 @@ class TestNCAAFBoxscore:
         expected_name = "AWAY"
         test_name = "<a>cfb/schools</a>AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_away_name = PropertyMock(return_value=MockName(test_name))
@@ -255,7 +253,7 @@ class TestNCAAFBoxscore:
         expected_name = "AWAY"
         test_name = "AWAY"
 
-        flexmock(utils).should_receive("_parse_abbreviation").and_return(expected_name)
+        flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
         fake_winner = PropertyMock(return_value=HOME)
         fake_away_name = PropertyMock(return_value=MockName(test_name))

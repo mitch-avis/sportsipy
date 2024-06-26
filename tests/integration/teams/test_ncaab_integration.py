@@ -21,7 +21,7 @@ YEAR = 2018
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "ncaab_stats", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -33,29 +33,28 @@ def mock_pyquery(url, timeout=None):
 
         def __call__(self, div):
             if div == "table#basic_school_stats":
-                return read_file("%s-school-stats-table.html" % YEAR)
-            elif div == "table#basic_opp_stats":
-                return read_file("%s-opponent-stats-table.html" % YEAR)
-            elif div == "table#adv_school_stats":
-                return read_file("%s-advanced-school-stats-table.html" % YEAR)
-            else:
-                return read_file("%s-advanced-opponent-stats-table.html" % YEAR)
+                return read_file(f"{YEAR}-school-stats-table.html")
+            if div == "table#basic_opp_stats":
+                return read_file(f"{YEAR}-opponent-stats-table.html")
+            if div == "table#adv_school_stats":
+                return read_file(f"{YEAR}-advanced-school-stats-table.html")
+            return read_file(f"{YEAR}-advanced-opponent-stats-table.html")
 
-    basic_contents = read_file("%s-school-stats.html" % YEAR)
-    opp_contents = read_file("%s-opponent-stats.html" % YEAR)
-    adv_contents = read_file("%s-advanced-school-stats.html" % YEAR)
-    adv_opp_contents = read_file("%s-advanced-opponent-stats.html" % YEAR)
+    basic_contents = read_file(f"{YEAR}-school-stats.html")
+    opp_contents = read_file(f"{YEAR}-opponent-stats.html")
+    adv_contents = read_file(f"{YEAR}-advanced-school-stats.html")
+    adv_opp_contents = read_file(f"{YEAR}-advanced-opponent-stats.html")
     if url == BASIC_STATS_URL % YEAR:
         return MockPQ(basic_contents)
-    elif url == BASIC_OPPONENT_STATS_URL % YEAR:
+    if url == BASIC_OPPONENT_STATS_URL % YEAR:
         return MockPQ(opp_contents)
-    elif url == ADVANCED_STATS_URL % YEAR:
+    if url == ADVANCED_STATS_URL % YEAR:
         return MockPQ(adv_contents)
-    elif url == ADVANCED_OPPONENT_STATS_URL % YEAR:
+    if url == ADVANCED_OPPONENT_STATS_URL % YEAR:
         return MockPQ(adv_opp_contents)
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -64,8 +63,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class MockDateTime:
@@ -870,7 +868,7 @@ class TestNCAABIntegration:
             "maryland-eastern-shore": "meac",
             "delaware-state": "meac",
         }
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         flexmock(Conferences).should_receive("_find_conferences").and_return(None)
         flexmock(Conferences).should_receive("team_conference").and_return(team_conference)
@@ -917,8 +915,8 @@ class TestNCAABIntegration:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaab_empty_page_returns_no_teams(self, *args, **kwargs):
-        flexmock(utils).should_receive("_no_data_found").once()
-        flexmock(utils).should_receive("_get_stats_table").and_return(None)
+        flexmock(utils).should_receive("no_data_found").once()
+        flexmock(utils).should_receive("get_stats_table").and_return(None)
 
         teams = Teams()
 
@@ -926,7 +924,7 @@ class TestNCAABIntegration:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaab_no_conference_info_skips_team(self, *args, **kwargs):
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
         flexmock(Conferences).should_receive("team_conference").and_return({})
         flexmock(Conferences).should_receive("_find_conferences").and_return(None)
 
@@ -945,7 +943,7 @@ class TestNCAABIntegration:
     def test_team_string_representation(self, *args, **kwargs):
         purdue = Team("PURDUE")
 
-        assert purdue.__repr__() == "Purdue (PURDUE) - 2018"
+        assert repr(purdue) == "Purdue (PURDUE) - 2018"
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_teams_string_representation(self, *args, **kwargs):
@@ -1303,7 +1301,7 @@ Youngstown State (YOUNGSTOWN-STATE)"""
 
         teams = Teams()
 
-        assert teams.__repr__() == expected
+        assert repr(teams) == expected
 
 
 class TestNCAABIntegrationInvalidYear:
@@ -1663,7 +1661,7 @@ class TestNCAABIntegrationInvalidYear:
             "maryland-eastern-shore": "meac",
             "delaware-state": "meac",
         }
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2019)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
         flexmock(Conferences).should_receive("_find_conferences").and_return(None)
         flexmock(Conferences).should_receive("team_conference").and_return(team_conference)
 

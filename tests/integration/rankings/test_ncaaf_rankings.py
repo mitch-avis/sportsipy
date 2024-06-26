@@ -5,12 +5,12 @@ import pytest
 from flexmock import flexmock
 
 from sportsipy import utils
-from sportsipy.ncaaf.rankings import CFPRankings, Rankings
+from sportsipy.ncaaf.rankings import CFPRankings, CoachesRankings, Rankings
 
 YEAR = 2017
 
 
-def read_file(filename):
+def read_file(filename=None):
     filepath = join(dirname(__file__), "ncaaf", filename)
     return open(filepath, "r", encoding="utf8").read()
 
@@ -30,11 +30,11 @@ def mock_pyquery(url, timeout=None):
 
     if "BAD" in url:
         return MockPQ("", 404)
-    html_contents = read_file("%s-polls.html" % YEAR)
+    html_contents = read_file(f"{YEAR}-polls.html")
     return MockPQ(html_contents)
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -43,8 +43,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class TestNCAAFRankings:
@@ -765,7 +764,7 @@ class TestNCAAFRankings:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(YEAR)
+        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
         rankings = Rankings()
 
@@ -778,12 +777,12 @@ class TestNCAAFRankings:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            rankings = Rankings("BAD")
+            Rankings("BAD")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2018)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         rankings = Rankings()
 
@@ -791,6 +790,12 @@ class TestNCAAFRankings:
         assert rankings.current == self.results
         for week, data in self.results_complete.items():
             assert rankings.complete[week] == data
+
+    @mock.patch("requests.get", side_effect=mock_pyquery)
+    def test_rankings_string_representation(self, *args, **kwargs):
+        rankings = Rankings()
+
+        assert repr(rankings) == "NCAAF Rankings"
 
 
 class TestCFPNCAAFRankings:
@@ -2419,7 +2424,7 @@ class TestCFPNCAAFRankings:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(YEAR)
+        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
         rankings = CFPRankings()
 
@@ -2430,12 +2435,12 @@ class TestCFPNCAAFRankings:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
-            rankings = CFPRankings("BAD")
+            CFPRankings("BAD")
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2018)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         rankings = CFPRankings()
 
@@ -2443,8 +2448,748 @@ class TestCFPNCAAFRankings:
         assert rankings.current == self.results
         assert rankings.complete == self.results_complete
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    def test_rankings_string_representation(self, *args, **kwargs):
-        rankings = Rankings()
 
-        assert rankings.__repr__() == "NCAAF Rankings"
+class TestCoachesNCAAFRankings:
+    def setup_method(self):
+        results_extended = [
+            {
+                "abbreviation": "clemson",
+                "name": "Clemson",
+                "rank": 1,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "3",
+                "change": 2,
+            },
+            {
+                "abbreviation": "oklahoma",
+                "name": "Oklahoma",
+                "rank": 2,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "5",
+                "change": 3,
+            },
+            {
+                "abbreviation": "georgia",
+                "name": "Georgia",
+                "rank": 3,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "7",
+                "change": 4,
+            },
+            {
+                "abbreviation": "alabama",
+                "name": "Alabama",
+                "rank": 4,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "1",
+                "change": -3,
+            },
+            {
+                "abbreviation": "ohio-state",
+                "name": "Ohio State",
+                "rank": 5,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "8",
+                "change": 3,
+            },
+            {
+                "abbreviation": "wisconsin",
+                "name": "Wisconsin",
+                "rank": 6,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "4",
+                "change": -2,
+            },
+            {
+                "abbreviation": "southern-california",
+                "name": "USC",
+                "rank": 7,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "10",
+                "change": 3,
+            },
+            {
+                "abbreviation": "auburn",
+                "name": "Auburn",
+                "rank": 8,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "6",
+                "change": -2,
+            },
+            {
+                "abbreviation": "penn-state",
+                "name": "Penn State",
+                "rank": 9,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "11",
+                "change": 2,
+            },
+            {
+                "abbreviation": "central-florida",
+                "name": "UCF",
+                "rank": 10,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "12",
+                "change": 2,
+            },
+            {
+                "abbreviation": "miami-fl",
+                "name": "Miami (FL)",
+                "rank": 11,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "2",
+                "change": -9,
+            },
+            {
+                "abbreviation": "washington",
+                "name": "Washington",
+                "rank": 12,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "14",
+                "change": 2,
+            },
+            {
+                "abbreviation": "texas-christian",
+                "name": "Texas Christian",
+                "rank": 13,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "13",
+                "change": 0,
+            },
+            {
+                "abbreviation": "louisiana-state",
+                "name": "LSU",
+                "rank": 14,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "18",
+                "change": 4,
+            },
+            {
+                "abbreviation": "notre-dame",
+                "name": "Notre Dame",
+                "rank": 15,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "9",
+                "change": -6,
+            },
+            {
+                "abbreviation": "stanford",
+                "name": "Stanford",
+                "rank": 16,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "20",
+                "change": 4,
+            },
+            {
+                "abbreviation": "oklahoma-state",
+                "name": "Oklahoma State",
+                "rank": 17,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "21",
+                "change": 4,
+            },
+            {
+                "abbreviation": "memphis",
+                "name": "Memphis",
+                "rank": 18,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "16",
+                "change": -2,
+            },
+            {
+                "abbreviation": "michigan-state",
+                "name": "Michigan State",
+                "rank": 19,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "22",
+                "change": 3,
+            },
+            {
+                "abbreviation": "northwestern",
+                "name": "Northwestern",
+                "rank": 20,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "23",
+                "change": 3,
+            },
+            {
+                "abbreviation": "washington-state",
+                "name": "Washington State",
+                "rank": 21,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "15",
+                "change": -6,
+            },
+            {
+                "abbreviation": "virginia-tech",
+                "name": "Virginia Tech",
+                "rank": 22,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "25",
+                "change": 3,
+            },
+            {
+                "abbreviation": "mississippi-state",
+                "name": "Mississippi State",
+                "rank": 23,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "17",
+                "change": -6,
+            },
+            {
+                "abbreviation": "south-florida",
+                "name": "South Florida",
+                "rank": 24,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "19",
+                "change": -5,
+            },
+            {
+                "abbreviation": "boise-state",
+                "name": "Boise State",
+                "rank": 25,
+                "week": 14,
+                "date": "2017-12-03",
+                "previous": "24",
+                "change": -1,
+            },
+        ]
+        results = {
+            "clemson": 1,
+            "oklahoma": 2,
+            "georgia": 3,
+            "alabama": 4,
+            "ohio-state": 5,
+            "wisconsin": 6,
+            "southern-california": 7,
+            "auburn": 8,
+            "penn-state": 9,
+            "central-florida": 10,
+            "miami-fl": 11,
+            "washington": 12,
+            "texas-christian": 13,
+            "louisiana-state": 14,
+            "notre-dame": 15,
+            "stanford": 16,
+            "oklahoma-state": 17,
+            "memphis": 18,
+            "michigan-state": 19,
+            "northwestern": 20,
+            "washington-state": 21,
+            "virginia-tech": 22,
+            "mississippi-state": 23,
+            "south-florida": 24,
+            "boise-state": 25,
+        }
+        results_complete = {
+            14: [
+                {
+                    "abbreviation": "clemson",
+                    "name": "Clemson",
+                    "rank": 1,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "3",
+                    "change": 2,
+                },
+                {
+                    "abbreviation": "oklahoma",
+                    "name": "Oklahoma",
+                    "rank": 2,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "5",
+                    "change": 3,
+                },
+                {
+                    "abbreviation": "georgia",
+                    "name": "Georgia",
+                    "rank": 3,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "7",
+                    "change": 4,
+                },
+                {
+                    "abbreviation": "alabama",
+                    "name": "Alabama",
+                    "rank": 4,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "1",
+                    "change": -3,
+                },
+                {
+                    "abbreviation": "ohio-state",
+                    "name": "Ohio State",
+                    "rank": 5,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "8",
+                    "change": 3,
+                },
+                {
+                    "abbreviation": "wisconsin",
+                    "name": "Wisconsin",
+                    "rank": 6,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "4",
+                    "change": -2,
+                },
+                {
+                    "abbreviation": "southern-california",
+                    "name": "USC",
+                    "rank": 7,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "10",
+                    "change": 3,
+                },
+                {
+                    "abbreviation": "auburn",
+                    "name": "Auburn",
+                    "rank": 8,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "6",
+                    "change": -2,
+                },
+                {
+                    "abbreviation": "penn-state",
+                    "name": "Penn State",
+                    "rank": 9,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "11",
+                    "change": 2,
+                },
+                {
+                    "abbreviation": "central-florida",
+                    "name": "UCF",
+                    "rank": 10,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "12",
+                    "change": 2,
+                },
+                {
+                    "abbreviation": "miami-fl",
+                    "name": "Miami (FL)",
+                    "rank": 11,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "2",
+                    "change": -9,
+                },
+                {
+                    "abbreviation": "washington",
+                    "name": "Washington",
+                    "rank": 12,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "14",
+                    "change": 2,
+                },
+                {
+                    "abbreviation": "texas-christian",
+                    "name": "Texas Christian",
+                    "rank": 13,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "13",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "louisiana-state",
+                    "name": "LSU",
+                    "rank": 14,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "18",
+                    "change": 4,
+                },
+                {
+                    "abbreviation": "notre-dame",
+                    "name": "Notre Dame",
+                    "rank": 15,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "9",
+                    "change": -6,
+                },
+                {
+                    "abbreviation": "stanford",
+                    "name": "Stanford",
+                    "rank": 16,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "20",
+                    "change": 4,
+                },
+                {
+                    "abbreviation": "oklahoma-state",
+                    "name": "Oklahoma State",
+                    "rank": 17,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "21",
+                    "change": 4,
+                },
+                {
+                    "abbreviation": "memphis",
+                    "name": "Memphis",
+                    "rank": 18,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "16",
+                    "change": -2,
+                },
+                {
+                    "abbreviation": "michigan-state",
+                    "name": "Michigan State",
+                    "rank": 19,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "22",
+                    "change": 3,
+                },
+                {
+                    "abbreviation": "northwestern",
+                    "name": "Northwestern",
+                    "rank": 20,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "23",
+                    "change": 3,
+                },
+                {
+                    "abbreviation": "washington-state",
+                    "name": "Washington State",
+                    "rank": 21,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "15",
+                    "change": -6,
+                },
+                {
+                    "abbreviation": "virginia-tech",
+                    "name": "Virginia Tech",
+                    "rank": 22,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "25",
+                    "change": 3,
+                },
+                {
+                    "abbreviation": "mississippi-state",
+                    "name": "Mississippi State",
+                    "rank": 23,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "17",
+                    "change": -6,
+                },
+                {
+                    "abbreviation": "south-florida",
+                    "name": "South Florida",
+                    "rank": 24,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "19",
+                    "change": -5,
+                },
+                {
+                    "abbreviation": "boise-state",
+                    "name": "Boise State",
+                    "rank": 25,
+                    "week": 14,
+                    "date": "2017-12-03",
+                    "previous": "24",
+                    "change": -1,
+                },
+            ],
+            13: [
+                {
+                    "abbreviation": "alabama",
+                    "name": "Alabama",
+                    "rank": 1,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "1",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "miami-fl",
+                    "name": "Miami (FL)",
+                    "rank": 2,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "2",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "clemson",
+                    "name": "Clemson",
+                    "rank": 3,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "3",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "wisconsin",
+                    "name": "Wisconsin",
+                    "rank": 4,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "4",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "oklahoma",
+                    "name": "Oklahoma",
+                    "rank": 5,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "5",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "auburn",
+                    "name": "Auburn",
+                    "rank": 6,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "6",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "georgia",
+                    "name": "Georgia",
+                    "rank": 7,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "7",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "ohio-state",
+                    "name": "Ohio State",
+                    "rank": 8,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "8",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "notre-dame",
+                    "name": "Notre Dame",
+                    "rank": 9,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "9",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "southern-california",
+                    "name": "USC",
+                    "rank": 10,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "10",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "penn-state",
+                    "name": "Penn State",
+                    "rank": 11,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "11",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "central-florida",
+                    "name": "UCF",
+                    "rank": 12,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "12",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "texas-christian",
+                    "name": "Texas Christian",
+                    "rank": 13,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "14",
+                    "change": 1,
+                },
+                {
+                    "abbreviation": "washington",
+                    "name": "Washington",
+                    "rank": 14,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "15",
+                    "change": 1,
+                },
+                {
+                    "abbreviation": "washington-state",
+                    "name": "Washington State",
+                    "rank": 15,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "16",
+                    "change": 1,
+                },
+                {
+                    "abbreviation": "memphis",
+                    "name": "Memphis",
+                    "rank": 16,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "17",
+                    "change": 1,
+                },
+                {
+                    "abbreviation": "mississippi-state",
+                    "name": "Mississippi State",
+                    "rank": 17,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "19",
+                    "change": 2,
+                },
+                {
+                    "abbreviation": "louisiana-state",
+                    "name": "LSU",
+                    "rank": 18,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "21",
+                    "change": 3,
+                },
+                {
+                    "abbreviation": "south-florida",
+                    "name": "South Florida",
+                    "rank": 19,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "20",
+                    "change": 1,
+                },
+                {
+                    "abbreviation": "stanford",
+                    "name": "Stanford",
+                    "rank": 20,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "23",
+                    "change": 3,
+                },
+                {
+                    "abbreviation": "oklahoma-state",
+                    "name": "Oklahoma State",
+                    "rank": 21,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "13",
+                    "change": -8,
+                },
+                {
+                    "abbreviation": "michigan-state",
+                    "name": "Michigan State",
+                    "rank": 22,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "24",
+                    "change": 2,
+                },
+                {
+                    "abbreviation": "northwestern",
+                    "name": "Northwestern",
+                    "rank": 23,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "boise-state",
+                    "name": "Boise State",
+                    "rank": 24,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "",
+                    "change": 0,
+                },
+                {
+                    "abbreviation": "virginia-tech",
+                    "name": "Virginia Tech",
+                    "rank": 25,
+                    "week": 13,
+                    "date": "2017-11-19",
+                    "previous": "",
+                    "change": 0,
+                },
+            ],
+        }
+        self.results_extended = results_extended
+        self.results = results
+        self.results_complete = results_complete
+
+    @mock.patch("requests.get", side_effect=mock_pyquery)
+    def test_rankings_integration(self, *args, **kwargs):
+        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
+
+        rankings = CoachesRankings()
+
+        assert rankings.current_extended == self.results_extended
+        assert rankings.current == self.results
+        # The test case only keeps the last two weeks, where the API returns all the weeks
+        for week, data in self.results_complete.items():
+            assert rankings.complete[week] == data
+
+    @mock.patch("requests.get", side_effect=mock_pyquery)
+    def test_rankings_integration_bad_url(self, *args, **kwargs):
+        with pytest.raises(ValueError):
+            CoachesRankings("BAD")
+
+    @mock.patch("requests.get", side_effect=mock_pyquery)
+    @mock.patch("requests.head", side_effect=mock_request)
+    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
+
+        rankings = CoachesRankings()
+
+        assert rankings.current_extended == self.results_extended
+        assert rankings.current == self.results
+        for week, data in self.results_complete.items():
+            assert rankings.complete[week] == data

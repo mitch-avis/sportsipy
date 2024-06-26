@@ -258,19 +258,17 @@ class Team:
             short_field = str(field)[1:]
             # The rank attribute is passed directly to the class during
             # instantiation.
-            if field == "_rank" or field == "_year":
+            if field in ("_rank", "_year"):
                 continue
-            elif field == "_name":
+            if field == "_name":
                 self._parse_name(team_data)
                 continue
             # Default to returning the first element returned unless a
             # subsequent element is desired. For example, total runs and
             # runs per game are two different fields, but they both share
             # the same attribute of 'R' in the HTML tables.
-            index = 0
-            if short_field in ELEMENT_INDEX.keys():
-                index = ELEMENT_INDEX[short_field]
-            value = utils._parse_field(PARSING_SCHEME, team_data, short_field, index)
+            index = ELEMENT_INDEX.get(short_field, 0)
+            value = utils.parse_field(PARSING_SCHEME, team_data, short_field, index)
             setattr(self, field, value)
 
     @property
@@ -1269,7 +1267,7 @@ class Teams:
         for team in self._teams:
             if team.abbreviation.upper() == abbreviation.upper():
                 return team
-        raise ValueError("Team abbreviation %s not found" % abbreviation)
+        raise ValueError(f"Team abbreviation {abbreviation} not found")
 
     def __call__(self, abbreviation):
         """
@@ -1328,6 +1326,6 @@ class Teams:
         Team class. Rows are indexed by the team abbreviation.
         """
         frames = []
-        for team in self.__iter__():
+        for team in iter(self._teams):
             frames.append(team.dataframe)
         return pd.concat(frames)

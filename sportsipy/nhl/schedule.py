@@ -2,7 +2,6 @@ import re
 from datetime import datetime
 
 import pandas as pd
-from pyquery import PyQuery as pq
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME, LOSS, WIN
@@ -28,7 +27,7 @@ class Game:
         The year of the current season.
     """
 
-    def __init__(self, game_data, year):
+    def __init__(self, game_data):
         self._game = None
         self._date = None
         self._boxscore = None
@@ -133,10 +132,10 @@ class Game:
             if short_name == "opponent_abbr":
                 self._parse_abbreviation(game_data)
                 continue
-            elif short_name == "boxscore":
+            if short_name == "boxscore":
                 self._parse_boxscore(game_data)
                 continue
-            value = utils._parse_field(SCHEDULE_SCHEME, game_data, short_name)
+            value = utils.parse_field(SCHEDULE_SCHEME, game_data, short_name)
             setattr(self, field, value)
 
     @property
@@ -283,7 +282,7 @@ class Game:
         """
         if self._result.lower() == "w":
             return WIN
-        if self._result.lower() == "l" and self.overtime != 0:
+        if self._result.lower() == "l" and self.overtime != 0:  # pylint: disable=W0143
             return OVERTIME_LOSS
         return LOSS
 
@@ -593,25 +592,25 @@ class Schedule:
             The requested year to pull stats from.
         """
         if not year:
-            year = utils._find_year_for_season("nhl")
+            year = utils.find_year_for_season("nhl")
             # If stats for the requested season do not exist yet (as is the
             # case right before a new season begins), attempt to pull the
             # previous year's stats. If it exists, use the previous year
             # instead.
-            if not utils._url_exists(SCHEDULE_URL % (abbreviation, year)) and utils._url_exists(
+            if not utils.url_exists(SCHEDULE_URL % (abbreviation, year)) and utils.url_exists(
                 SCHEDULE_URL % (abbreviation, str(int(year) - 1))
             ):
                 year = str(int(year) - 1)
-        doc = pq(url=SCHEDULE_URL % (abbreviation, year))
-        schedule = utils._get_stats_table(doc, "table#tm_gamelog_rs")
+        doc = utils.rate_limit_pq(url=SCHEDULE_URL % (abbreviation, year))
+        schedule = utils.get_stats_table(doc, "table#tm_gamelog_rs")
         if not schedule:
-            utils._no_data_found()
+            utils.no_data_found()
             return
 
         for item in schedule:
             if 'class="thead"' in str(item):
                 continue
-            game = Game(item, year)
+            game = Game(item)
             self._games.append(game)
 
     @property
@@ -621,11 +620,11 @@ class Schedule:
         Game class. Rows are indexed by the boxscore string.
         """
         frames = []
-        for game in self.__iter__():
+        for game in iter(self._games):
             df = game.dataframe
             if df is not None:
                 frames.append(df)
-        if frames == []:
+        if not frames:
             return None
         return pd.concat(frames)
 
@@ -639,10 +638,10 @@ class Schedule:
         'dataframe' property.
         """
         frames = []
-        for game in self.__iter__():
+        for game in iter(self._games):
             df = game.dataframe_extended
             if df is not None:
                 frames.append(df)
-        if frames == []:
+        if not frames:
             return None
         return pd.concat(frames)

@@ -15,7 +15,7 @@ YEAR = 2021
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "mlb_stats", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -27,22 +27,21 @@ def mock_pyquery(url, timeout=None):
 
         def __call__(self, div):
             if div == "div#all_teams_standard_batting":
-                return read_file("%s_batting.html" % YEAR)
-            elif div == "div#all_teams_standard_pitching":
-                return read_file("%s_pitching.html" % YEAR)
-            else:
-                return read_file("%s_overall.html" % YEAR)
+                return read_file(f"{YEAR}_batting.html")
+            if div == "div#all_teams_standard_pitching":
+                return read_file(f"{YEAR}_pitching.html")
+            return read_file(f"{YEAR}_overall.html")
 
-    html_contents = read_file("%s-standings.html" % YEAR)
-    team_stats = read_file("%s.html" % YEAR)
+    html_contents = read_file(f"{YEAR}-standings.html")
+    team_stats = read_file(f"{YEAR}.html")
 
     if url == STANDINGS_URL % YEAR:
         return MockPQ(html_contents)
-    elif url == TEAM_STATS_URL % YEAR:
+    if url == TEAM_STATS_URL % YEAR:
         return MockPQ(team_stats)
 
 
-def mock_request(url):
+def mock_request(url, timeout=None):
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -51,8 +50,7 @@ def mock_request(url):
 
     if str(YEAR) in url:
         return MockRequest("good")
-    else:
-        return MockRequest("bad", status_code=404)
+    return MockRequest("bad", status_code=404)
 
 
 class MockDateTime:
@@ -202,7 +200,7 @@ class TestMLBIntegration:
             "CHW",
         ]
 
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_returns_correct_number_of_teams(self, *args, **kwargs):
@@ -268,7 +266,7 @@ class TestMLBIntegration:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
     def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("_find_year_for_season").and_return(2022)
+        flexmock(utils).should_receive("find_year_for_season").and_return(2022)
 
         teams = Teams()
 
@@ -277,8 +275,8 @@ class TestMLBIntegration:
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_empty_page_returns_no_teams(self, *args, **kwargs):
-        flexmock(utils).should_receive("_no_data_found").once()
-        flexmock(utils).should_receive("_get_stats_table").and_return(None)
+        flexmock(utils).should_receive("no_data_found").once()
+        flexmock(utils).should_receive("get_stats_table").and_return(None)
 
         teams = Teams()
 
@@ -288,7 +286,7 @@ class TestMLBIntegration:
     def test_mlb_team_string_representation(self, *args, **kwargs):
         hou = Team("HOU")
 
-        assert hou.__repr__() == "Houston Astros (HOU) - 2021"
+        assert repr(hou) == "Houston Astros (HOU) - 2021"
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_teams_string_representation(self, *args, **kwargs):
@@ -325,4 +323,4 @@ Baltimore Orioles (BAL)"""
 
         teams = Teams()
 
-        assert teams.__repr__() == expected
+        assert repr(teams) == expected

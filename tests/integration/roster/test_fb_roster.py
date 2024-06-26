@@ -2,7 +2,6 @@ from os import path
 
 import mock
 import pandas as pd
-from flexmock import flexmock
 from pyquery import PyQuery as pq
 
 from sportsipy.fb.roster import Roster
@@ -12,7 +11,7 @@ EXPECTED_NUM_PLAYERS = 34
 
 def read_file(filename):
     filepath = path.join(path.dirname(__file__), "fb", filename)
-    return open("%s.html" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}.html", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -321,10 +320,11 @@ class TestFBRoster:
             assert getattr(harry_kane, attribute) == value
 
     def test_number_of_players_returns_expected(self):
-        for count, player in enumerate(self.roster):
-            pass
+        count = 0
+        for _, _ in enumerate(self.roster):
+            count += 1
 
-        assert count + 1 == EXPECTED_NUM_PLAYERS
+        assert count == EXPECTED_NUM_PLAYERS
 
     def test_roster_len_returns_expected_roster_size(self):
         assert len(self.roster) == EXPECTED_NUM_PLAYERS
@@ -387,9 +387,9 @@ Michel Vorm (1bebde9d)
 Harvey White (4d90ce8c)
 Alfie Whiteman (3f2587ee)"""
 
-        assert self.roster.__repr__() == expected
+        assert repr(self.roster) == expected
 
     def test_fb_player_string_representation(self):
         player = self.roster("Harry Kane")
 
-        assert player.__repr__() == "Harry Kane (21a66f6a)"
+        assert repr(player) == "Harry Kane (21a66f6a)"

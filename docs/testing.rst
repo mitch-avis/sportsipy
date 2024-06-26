@@ -11,7 +11,7 @@ Next, start the tests by running py.test while optionally including coverage
 flags which identify the amount of production code covered by the testing
 framework::
 
-    py.test --cov=sportsipy --cov-report term-missing tests/
+    pytest --cov --cov-report=html:htmlcov tests/
 
 If the tests were successful, it will return a green line will show a message at
 the end of the output similar to the following::

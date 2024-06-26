@@ -1,7 +1,6 @@
 from urllib.error import HTTPError
 
 import mock
-import pytest
 from flexmock import flexmock
 
 from sportsipy.fb.roster import Roster
@@ -199,6 +198,4 @@ class TestFBTeamInvalidPage:
         team = Team(None)
         team._squad_id = ""
 
-        output = team._pull_team_page()
-
-        assert not output
+        assert not team._pull_team_page()

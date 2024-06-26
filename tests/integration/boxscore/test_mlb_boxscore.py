@@ -8,7 +8,7 @@ from flexmock import flexmock
 from sportsipy import utils
 from sportsipy.constants import HOME
 from sportsipy.mlb.boxscore import Boxscore, Boxscores
-from sportsipy.mlb.constants import BOXSCORE_URL, BOXSCORES_URL, NIGHT
+from sportsipy.mlb.constants import BOXSCORES_URL, NIGHT
 
 MONTH = 10
 YEAR = 2020
@@ -18,7 +18,7 @@ BOXSCORE = "ANA/ANA202008170"
 
 def read_file(filename):
     filepath = os.path.join(os.path.dirname(__file__), "mlb", filename)
-    return open("%s" % filepath, "r", encoding="utf8").read()
+    return open(f"{filepath}", "r", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
@@ -32,7 +32,7 @@ def mock_pyquery(url, timeout=None):
         return MockPQ(read_file("boxscore-8-17-2020.html"))
     if url == BOXSCORES_URL % (YEAR, 8, 18):
         return MockPQ(read_file("boxscore-8-18-2020.html"))
-    path = "%s.shtml" % BOXSCORE
+    path = f"{BOXSCORE}.shtml"
     boxscore = read_file(path.replace("ANA/", ""))
     return MockPQ(boxscore)
 
@@ -47,90 +47,88 @@ class TestMLBBoxscore:
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
-            "date": "Monday, August 17, 2020",
-            "time": "6:40 p.m. Local",
-            "venue": "Angel Stadium of Anaheim",
-            "time_of_day": NIGHT,
-            "duration": "3:12",
-            "winner": HOME,
-            "winning_name": "Los Angeles Angels",
-            "winning_abbr": "LAA",
-            "losing_name": "San Francisco Giants",
-            "losing_abbr": "SFG",
-            "away_at_bats": 35,
-            "away_runs": 6,
-            "away_hits": 10,
-            "away_rbi": 6,
-            "away_earned_runs": 6.0,
-            "away_bases_on_balls": 1,
-            "away_strikeouts": 5,
-            "away_plate_appearances": 38,
-            "away_batting_average": 0.286,
-            "away_on_base_percentage": 0.316,
-            "away_slugging_percentage": 0.457,
-            "away_on_base_plus": 0.773,
-            "away_pitches": 140,
-            "away_strikes": 100,
-            "away_win_probability_for_offensive_player": 0.283,
-            "away_average_leverage_index": 1.15,
-            "away_win_probability_added": 0.893,
-            "away_win_probability_subtracted": -0.608,
-            "away_base_out_runs_added": 1.1,
-            "away_putouts": 25,
             "away_assists": 5,
-            "away_innings_pitched": 8.1,
-            "away_home_runs": 2,
-            "away_strikes_by_contact": 63,
-            "away_strikes_swinging": 14,
-            "away_strikes_looking": 23,
-            "away_grounded_balls": 10,
+            "away_at_bats": 35,
+            "away_average_leverage_index": 1.75,
+            "away_base_out_runs_added": 1.1,
+            "away_base_out_runs_saved": -2.4,
+            "away_bases_on_balls": 1,
+            "away_batting_average": 0.286,
+            "away_earned_runs": 6.0,
             "away_fly_balls": 21,
-            "away_line_drives": 10,
-            "away_unknown_bat_type": 0,
             "away_game_score": 38,
+            "away_grounded_balls": 10,
+            "away_hits": 10,
+            "away_home_runs": 2,
             "away_inherited_runners": 0,
             "away_inherited_score": 0,
+            "away_innings_pitched": 8.1,
+            "away_line_drives": 10,
+            "away_on_base_percentage": 0.316,
+            "away_on_base_plus": 0.773,
+            "away_pitches": 140,
+            "away_plate_appearances": 38,
+            "away_putouts": 25,
+            "away_rbi": 6,
+            "away_runs": 6,
+            "away_slugging_percentage": 0.457,
+            "away_strikeouts": 5,
+            "away_strikes_by_contact": 63,
+            "away_strikes_looking": 23,
+            "away_strikes_swinging": 14,
+            "away_strikes": 100,
+            "away_unknown_bat_type": 0,
+            "away_win_probability_added": 0.893,
             "away_win_probability_by_pitcher": -0.783,
-            "away_average_leverage_index": 1.75,
-            "away_base_out_runs_saved": -2.4,
-            "home_at_bats": 35,
-            "home_runs": 7,
-            "home_hits": 12,
-            "home_rbi": 7,
-            "home_earned_runs": 7.56,
-            "home_bases_on_balls": 2,
-            "home_strikeouts": 10,
-            "home_plate_appearances": 38,
-            "home_batting_average": 0.343,
-            "home_on_base_percentage": 0.368,
-            "home_slugging_percentage": 0.600,
-            "home_on_base_plus": 0.968,
-            "home_pitches": 159,
-            "home_strikes": 99,
-            "home_win_probability_for_offensive_player": 0.784,
-            "home_average_leverage_index": 1.75,
-            "home_win_probability_added": 1.842,
-            "home_win_probability_subtracted": -1.060,
-            "home_base_out_runs_added": 2.4,
-            "home_putouts": 27,
+            "away_win_probability_for_offensive_player": 0.283,
+            "away_win_probability_subtracted": -0.608,
+            "date": "Monday, August 17, 2020",
+            "duration": "3:12",
             "home_assists": 8,
-            "home_innings_pitched": 9,
-            "home_home_runs": 1,
-            "home_strikes_by_contact": 50,
-            "home_strikes_swinging": 14,
-            "home_strikes_looking": 35,
-            "home_grounded_balls": 7,
+            "home_at_bats": 35,
+            "home_average_leverage_index": 1.15,
+            "home_base_out_runs_added": 2.4,
+            "home_base_out_runs_saved": -1.1,
+            "home_bases_on_balls": 2,
+            "home_batting_average": 0.343,
+            "home_earned_runs": 7.56,
             "home_fly_balls": 19,
-            "home_line_drives": 9,
-            "home_unknown_bat_type": 0,
             "home_game_score": 42,
+            "home_grounded_balls": 7,
+            "home_hits": 12,
+            "home_home_runs": 1,
             "home_inherited_runners": 5,
             "home_inherited_score": 2,
+            "home_innings_pitched": 9,
+            "home_line_drives": 9,
+            "home_on_base_percentage": 0.368,
+            "home_on_base_plus": 0.968,
+            "home_pitches": 159,
+            "home_plate_appearances": 38,
+            "home_putouts": 27,
+            "home_rbi": 7,
+            "home_runs": 7,
+            "home_slugging_percentage": 0.600,
+            "home_strikeouts": 10,
+            "home_strikes_by_contact": 50,
+            "home_strikes_looking": 35,
+            "home_strikes_swinging": 14,
+            "home_strikes": 99,
+            "home_unknown_bat_type": 0,
+            "home_win_probability_added": 1.842,
             "home_win_probability_by_pitcher": -0.283,
-            "home_average_leverage_index": 1.15,
-            "home_base_out_runs_saved": -1.1,
+            "home_win_probability_for_offensive_player": 0.784,
+            "home_win_probability_subtracted": -1.060,
+            "losing_abbr": "SFG",
+            "losing_name": "San Francisco Giants",
+            "time_of_day": NIGHT,
+            "time": "6:40 p.m. Local",
+            "venue": "Angel Stadium of Anaheim",
+            "winner": HOME,
+            "winning_abbr": "LAA",
+            "winning_name": "Los Angeles Angels",
         }
-        flexmock(utils).should_receive("_todays_date").and_return(MockDateTime(YEAR, MONTH))
+        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.boxscore = Boxscore(BOXSCORE)
 
@@ -177,10 +175,10 @@ class TestMLBBoxscore:
 
     def test_mlb_boxscore_string_representation(self):
         expected = (
-            "Boxscore for San Francisco Giants at " "Los Angeles Angels (Monday, August 17, 2020)"
+            "Boxscore for San Francisco Giants at Los Angeles Angels (Monday, August 17, 2020)"
         )
 
-        assert self.boxscore.__repr__() == expected
+        assert repr(self.boxscore) == expected
 
 
 class TestMLBBoxscores:
@@ -738,4 +736,4 @@ class TestMLBBoxscores:
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 8, 17))
 
-        assert result.__repr__() == "MLB games for 8-17-2020"
+        assert repr(result) == "MLB games for 8-17-2020"
