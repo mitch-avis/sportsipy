@@ -1,17 +1,13 @@
 #!/bin/bash
 
 echo "Sorting imports with isort..."
-isort .
-isort tests/*.py
+isort . --skip venv
 
 echo "Reformatting with black..."
-black .
-black tests/*.py
+black . --exclude 'venv/'
 
 echo "Linting with flake8..."
-flake8 .
-flake8 tests/*.py
+flake8 . --exclude=venv
 
 echo "Linting with pylint..."
-pylint sportsipy/
-pylint tests/*.py
+pylint . --ignore=venv
