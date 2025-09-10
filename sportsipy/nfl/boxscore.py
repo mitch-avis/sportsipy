@@ -732,11 +732,21 @@ class Boxscore:
         game_info = boxscore(BOXSCORE_SCHEME["team_stats"])
 
         for column in game_info("th").items():
-            if column.text():
-                abbreviations.append(column.text())
-        if not abbreviations:
+            text = column.text()
+            if not text:
+                continue
+            # Basic heuristic: team abbreviations are 2-4 uppercase letters
+            if not re.fullmatch(r"[A-Z]{2,4}", text):
+                continue
+            if text not in abbreviations:
+                abbreviations.append(text)
+            if len(abbreviations) == 2:
+                break
+
+        logging.debug("Found alt abbreviations (deduped): %s", abbreviations)
+        if len(abbreviations) < 2:
             return None, None
-        return abbreviations
+        return abbreviations[0], abbreviations[1]
 
     def _parse_game_data(self, _uri):
         """
