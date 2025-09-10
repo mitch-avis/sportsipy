@@ -1764,7 +1764,11 @@ class Roster:
         page_source = utils.get_page_source(url=url)
         if not page_source:
             raise ValueError("Invalid team or season.")
-        return pq(utils.remove_html_comment_tags(page_source))
+        page = pq(utils.remove_html_comment_tags(page_source))
+        # If the page is empty, treat as invalid
+        if not page or not page.html() or "Page Not Found (404 error)" in str(page):
+            raise ValueError("Invalid team or season.")
+        return page
 
     def _create_url(self, year):
         """
