@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements-dev.txt --strip-extras requirements-dev.in
 #
-astroid==3.3.9
+astroid==3.3.11
     # via
     #   -r requirements-dev.in
     #   pylint
 black==25.1.0
     # via -r requirements-dev.in
-click==8.1.8
+click==8.2.1
     # via
     #   -r requirements-dev.in
     #   black
@@ -20,7 +20,7 @@ colorama==0.4.6
     #   click
     #   pylint
     #   pytest
-coverage==7.8.0
+coverage==7.10.2
     # via
     #   -r requirements-dev.in
     #   pytest-cov
@@ -28,7 +28,7 @@ dill==0.4.0
     # via
     #   -r requirements-dev.in
     #   pylint
-flake8==7.2.0
+flake8==7.3.0
     # via -r requirements-dev.in
 flexmock==0.12.2
     # via -r requirements-dev.in
@@ -60,32 +60,37 @@ pathspec==0.12.1
     # via
     #   -r requirements-dev.in
     #   black
-platformdirs==4.3.7
+platformdirs==4.3.8
     # via
     #   -r requirements-dev.in
     #   black
     #   pylint
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   -r requirements-dev.in
     #   pytest
-pycodestyle==2.13.0
+    #   pytest-cov
+pycodestyle==2.14.0
     # via
     #   -r requirements-dev.in
     #   flake8
-pyflakes==3.3.2
+pyflakes==3.4.0
     # via
     #   -r requirements-dev.in
     #   flake8
-pylint==3.3.6
+pygments==2.19.2
+    # via pytest
+pylint==3.3.7
     # via -r requirements-dev.in
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements-dev.in
     #   pytest-cov
-pytest-cov==6.1.1
+pytest-cov==6.2.1
     # via -r requirements-dev.in
-tomlkit==0.13.2
+regex==2025.7.34
+    # via -r requirements-dev.in
+tomlkit==0.13.3
     # via
     #   -r requirements-dev.in
     #   pylint
