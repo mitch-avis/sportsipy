@@ -297,8 +297,9 @@ class Boxscore:
         self._home_time_of_possession = None
 
         self._page_source = page_source
+        if self._page_source is None:
+            self._page_source = self._retrieve_html_page(uri)
 
-        self._set_page_source(uri)
         self._parse_game_data()
 
     def __str__(self):
@@ -765,6 +766,10 @@ class Boxscore:
         # no information can be gathered. As there is nothing to grab, the
         # class instance should just be empty.
         if not boxscore:
+            # Set all attributes except _uri and _page_source to None
+            for field in self.__dict__:
+                if field not in ("_uri", "_page_source"):
+                    setattr(self, field, None)
             return
 
         for field in self.__dict__:
@@ -805,22 +810,6 @@ class Boxscore:
         self._parse_game_details(boxscore)
         self._away_abbr, self._home_abbr = self._alt_abbreviations(boxscore)
         self._away_players, self._home_players = self._find_players(boxscore)
-
-    def _set_page_source(self, uri):
-        """
-        Set page source from utils Playwright method if None
-        """
-        if self._page_source is None:
-            url = BOXSCORE_URL % uri
-            try:
-                html_content = utils.get_page_source(url)
-                if html_content:
-                    # Convert the HTML string to a PyQuery object
-                    self._page_source = pq(utils.remove_html_comment_tags(pq(html_content)))
-                else:
-                    self._page_source = None
-            except Exception:  # pylint: disable=broad-exception-caught
-                self._page_source = None
 
     @property
     def dataframe(self):
@@ -1734,18 +1723,21 @@ class Boxscores:
 
     def _is_main_schedule_table(self, table):
         """
-        Returns True if the table is not inside a dropdown or menu.
+        Return True if the table is not inside a known dropdown/menu container.
+
+        Checks parent elements for known dropdown/menu IDs.
         """
-        # Check if any parent has a class or id indicating a dropdown/menu
-        for parent in table.parents():
-            parent_class = parent.attr.get("class", "") if hasattr(parent, "attr") else ""
-            parent_id = parent.attr.get("id", "") if hasattr(parent, "attr") else ""
-            if (
-                "dropdown" in parent_class
-                or "scores-menu" in parent_class
-                or "dropdown" in parent_id
-            ):
-                return False
+        try:
+            current = table
+            while True:
+                parent = current.parent()
+                if not parent:
+                    break
+                if parent.attr("id") == "header_scores":
+                    return False
+                current = parent
+        except Exception:  # pylint: disable=broad-exception-caught
+            return False
         return True
 
     def _extract_game_info(self, games):
