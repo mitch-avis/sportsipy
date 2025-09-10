@@ -4,6 +4,7 @@ from functools import wraps
 from urllib.error import HTTPError
 
 import pandas as pd
+from lxml.etree import ParserError, XMLSyntaxError
 from pyquery import PyQuery as pq
 
 from .. import utils
@@ -225,7 +226,7 @@ class Boxscore:
         '201802040nwe'.
     """
 
-    def __init__(self, uri):
+    def __init__(self, uri, page_source=None):
         self._uri = uri
         self._date = None
         self._time = None
@@ -295,7 +296,10 @@ class Boxscore:
         self._home_fourth_down_attempts = None
         self._home_time_of_possession = None
 
-        self._parse_game_data(uri)
+        self._page_source = page_source
+
+        self._set_page_source(uri)
+        self._parse_game_data()
 
     def __str__(self):
         """
@@ -311,7 +315,7 @@ class Boxscore:
         """
         return self.__str__()
 
-    def _retrieve_html_page(self, uri):
+    def _retrieve_html_page(self, uri: str | None):
         """
         Download the requested HTML page.
 
@@ -321,20 +325,24 @@ class Boxscore:
 
         Parameters
         ----------
-        uri : string
+        uri : string or None
             The relative link to the boxscore HTML page, such as
             '201802040nwe'.
 
         Returns
         -------
         PyQuery object
-            The requested page is returned as a queriable PyQuery object with
+            The requested page is returned as a queryable PyQuery object with
             the comment tags removed.
         """
-        url = BOXSCORE_URL % uri
+        if not uri:
+            return None
         try:
-            url_data = pq(url=url)
-        except (HTTPError, AttributeError):
+            url = BOXSCORE_URL % uri
+            url_data = pq(utils.get_page_source(url))
+            if not url_data:
+                return None
+        except (HTTPError, ParserError, XMLSyntaxError, AttributeError, TypeError, ValueError):
             return None
         # For NFL, a 404 page doesn't actually raise a 404 error, so it needs
         # to be manually checked.
@@ -414,11 +422,11 @@ class Boxscore:
         for line in game_info:
             if "Attendance" in line:
                 attendance = line.replace("Attendance: ", "").replace(",", "")
-            if "Time of Game" in line:
+            elif "Time of Game" in line:
                 duration = line.replace("Time of Game: ", "")
-            if "Stadium" in line:
+            elif "Stadium" in line:
                 stadium = line.replace("Stadium: ", "")
-            if "Start Time" in line:
+            elif "Start Time" in line:
                 time = line.replace("Start Time: ", "")
         setattr(self, "_attendance", attendance)
         setattr(self, "_date", date)
@@ -733,11 +741,14 @@ class Boxscore:
                 continue
             if text not in abbreviations:
                 abbreviations.append(text)
+            # if len(abbreviations) == 2:
+            #     break
+
         if len(abbreviations) < 2:
             return None, None
         return abbreviations[0], abbreviations[1]
 
-    def _parse_game_data(self, uri):
+    def _parse_game_data(self):
         """
         Parses a value for every attribute.
 
@@ -748,14 +759,8 @@ class Boxscore:
 
         Note that this method is called directly once Boxscore is invoked and
         does not need to be called manually.
-
-        Parameters
-        ----------
-        uri : string
-            The relative link to the boxscore HTML page, such as
-            '201802040nwe'.
         """
-        boxscore = self._retrieve_html_page(uri)
+        boxscore = self._page_source
         # If the boxscore is None, the game likely hasn't been played yet and
         # no information can be gathered. As there is nothing to grab, the
         # class instance should just be empty.
@@ -785,7 +790,7 @@ class Boxscore:
                 "over_under",
             ):
                 continue
-            if short_field in {"away_name", "home_name"}:
+            if short_field in ("away_name", "home_name"):
                 value = self._parse_name(short_field, boxscore)
                 setattr(self, field, value)
                 continue
@@ -800,6 +805,22 @@ class Boxscore:
         self._parse_game_details(boxscore)
         self._away_abbr, self._home_abbr = self._alt_abbreviations(boxscore)
         self._away_players, self._home_players = self._find_players(boxscore)
+
+    def _set_page_source(self, uri):
+        """
+        Set page source from utils Playwright method if None
+        """
+        if self._page_source is None:
+            url = BOXSCORE_URL % uri
+            try:
+                html_content = utils.get_page_source(url)
+                if html_content:
+                    # Convert the HTML string to a PyQuery object
+                    self._page_source = pq(utils.remove_html_comment_tags(pq(html_content)))
+                else:
+                    self._page_source = None
+            except Exception:  # pylint: disable=broad-exception-caught
+                self._page_source = None
 
     @property
     def dataframe(self):
@@ -1559,7 +1580,7 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return pq(url=url)
+        return pq(utils.get_page_source(url))
 
     def _get_boxscore_uri(self, url):
         """
@@ -1584,7 +1605,7 @@ class Boxscores:
         uri = re.sub(r"\.htm.*", "", uri).strip()
         return uri
 
-    def parse_abbreviation(self, abbr):
+    def _parse_abbreviation(self, abbr):
         """
         Parse a team's abbreviation.
 
@@ -1622,7 +1643,7 @@ class Boxscores:
             Tuple is in the following order: Team Name, Team Abbreviation.
         """
         team_name = name.text()
-        abbr = self.parse_abbreviation(name)
+        abbr = self._parse_abbreviation(name)
         return team_name, abbr
 
     def _get_score(self, score_link):
@@ -1711,6 +1732,22 @@ class Boxscores:
         name, abbreviation = self._get_name(link[0])
         return name, abbreviation
 
+    def _is_main_schedule_table(self, table):
+        """
+        Returns True if the table is not inside a dropdown or menu.
+        """
+        # Check if any parent has a class or id indicating a dropdown/menu
+        for parent in table.parents():
+            parent_class = parent.attr.get("class", "") if hasattr(parent, "attr") else ""
+            parent_id = parent.attr.get("id", "") if hasattr(parent, "attr") else ""
+            if (
+                "dropdown" in parent_class
+                or "scores-menu" in parent_class
+                or "dropdown" in parent_id
+            ):
+                return False
+        return True
+
     def _extract_game_info(self, games):
         """
         Parse game information from all boxscores.
@@ -1734,6 +1771,9 @@ class Boxscores:
         all_boxscores = []
 
         for game in games:
+            # Only process tables that are not inside a dropdown/menu
+            if not self._is_main_schedule_table(game):
+                continue
             details = self._get_team_details(game)
             away_name, away_abbr, away_score, home_name, home_abbr, home_score = details
             boxscore_url = game('td[class="right gamelink"] a')
