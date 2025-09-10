@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Generator, Optional
 
 import requests
-from lxml.etree import ParserError, XMLSyntaxError  # noqa: E401
+from lxml.etree import ParserError, XMLSyntaxError
 from pyquery import PyQuery
 
 
@@ -59,11 +59,30 @@ def todays_date() -> datetime:
 
 def url_exists(url: str) -> bool:
     """
-    Perform a lightweight HEAD to check if a URL returns 200.
+    Determine if a URL is valid and exists.
+
+    Not every URL that is provided is valid and exists, such as requesting
+    stats for a season that hasn't yet begun. In this case, the URL needs to be
+    validated prior to continuing any code to ensure no unhandled exceptions
+    occur.
+
+    Parameters
+    ----------
+    url : string
+        A string representation of the url to check.
+
+    Returns
+    -------
+    bool
+        Evaluates to True when the URL exists and is valid, otherwise returns
+        False.
     """
     try:
-        resp = requests.head(url, timeout=10)
-        return resp.status_code == 200
+        response = requests.head(url, timeout=10)
+        if response.status_code == 301:
+            new_response = requests.get(url, timeout=10)
+            return bool(new_response.status_code < 400)
+        return bool(response.status_code < 400)
     except requests.RequestException:
         return False
 
@@ -107,25 +126,30 @@ def find_year_for_season(league: str) -> int:
     """
     if league not in SEASON_START_MONTH:
         raise ValueError(f"Unsupported league '{league}'")
+
     today = todays_date()
     start = SEASON_START_MONTH[league]["start"]
     wrap = SEASON_START_MONTH[league]["wrap"]
 
-    # Wrapped seasons: if month >= start-1 we are in the season that ends next calendar year
+    # Wrapped seasons (NBA, NHL, NCAAB): if current month >= start-1 treat as next year season
     if wrap and (start - 1) <= today.month <= 12:
         return today.year + 1
-    # Non-wrapping season that starts in January: December belongs to next season
+
+    # Non-wrapping seasons starting January need December -> previous year logic
     if not wrap and start == 1 and today.month == 12:
         return today.year + 1
-    # Non-wrapping: before start month -> prior year season
+
+    # Non-wrapping (MLB, NFL, NCAAF): before start month -> prior year season
     if not wrap and today.month < start:
         return today.year - 1
+
     return today.year
 
 
 def parse_abbreviation(uri_link) -> str:
     """
-    Returns a team's abbreviation.
+    Returns a team's abbreviation. Accepts either a PyQuery object or raw HTML
+    string for a single <tr> row.
 
     A school or team's abbreviation is generally embedded in a URI link which
     contains other relative link information. For example, the URI for the
@@ -144,10 +168,20 @@ def parse_abbreviation(uri_link) -> str:
     string
         The shortened uppercase abbreviation for a given team.
     """
-    abbr = re.sub(r"/[0-9]+\..*htm.*", "", uri_link("a").attr("href"))
-    abbr = re.sub(r"/.*/schools/", "", abbr)
-    abbr = re.sub(r"/teams/", "", abbr)
-    return abbr.upper()
+    # Make sure we have a callable PyQuery selection object
+    if isinstance(uri_link, str):
+        uri_link = pq(uri_link)
+    try:
+        anchor = uri_link("a")
+        href = anchor.attr("href") if anchor else None
+        if not href:
+            return ""
+        abbr = re.sub(r"/[0-9]+\..*htm.*", "", href)
+        abbr = re.sub(r"/.*/schools/", "", abbr)
+        abbr = re.sub(r"/teams/", "", abbr)
+        return abbr.upper()
+    except (ParserError, XMLSyntaxError):
+        return ""
 
 
 def parse_field(
@@ -206,26 +240,34 @@ def parse_field(
     """
     if field == "abbreviation":
         return parse_abbreviation(html_data)
-    scheme = parsing_scheme[field]
-    if strip:
-        items = [i.text() for i in html_data(scheme).items() if i.text()]
-    else:
-        items = [i.text() for i in html_data(scheme).items()]
-    # Stats can be added and removed on a yearly basis. If not stats are found,
-    # return None and have the be the value.
-    if len(items) == 0:
-        return None
-    # Default to returning the first element. Optionally return another element
-    # if multiple fields have the same tag attribute.
+
     try:
-        return items[index]
-    except IndexError:
-        if secondary_index:
-            try:
-                return items[secondary_index]
-            except IndexError:
-                return None
+        scheme = parsing_scheme[field]
+    except KeyError:
         return None
+
+    try:
+        selection = html_data(scheme) if callable(html_data) else pq(html_data)(scheme)
+        items: list[str] = []
+        for item in selection.items():
+            txt = item.text()
+            if strip and not txt:
+                continue
+            items.append(txt)
+    except (ParserError, XMLSyntaxError, TypeError, AttributeError):
+        items = []
+
+    result = None
+    if items:
+        try:
+            result = items[index]
+        except IndexError:
+            if secondary_index is not None:
+                try:
+                    result = items[secondary_index]
+                except IndexError:
+                    result = None
+    return result
 
 
 def remove_html_comment_tags(html: str) -> str:
@@ -306,7 +348,7 @@ def get_stats_table(
 
 def pull_page(url: str | None = None, local_file: str | None = None):
     """
-    Return a PyQuery document for either a local file or a remote URL.
+    Pull data from a local file if exists, or download data from the website.
 
     If local_file is passed, users can pull data directly from a local file
     which has already been downloaded instead of downloading from
@@ -388,6 +430,7 @@ def get_page_source(url: str) -> Optional[str]:
                 html = page.content()
                 browser.close()
                 return html
-        except Exception:  # pylint: disable=broad-except
+        except Exception as exc:  # pylint: disable=broad-except
+            print(f"Playwright fetch failed: {exc}")
             return None
     return None
