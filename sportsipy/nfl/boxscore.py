@@ -1,6 +1,4 @@
-import logging
 import re
-import traceback
 from datetime import datetime
 from functools import wraps
 from urllib.error import HTTPError
@@ -227,7 +225,7 @@ class Boxscore:
         '201802040nwe'.
     """
 
-    def __init__(self, uri, page_source=None):
+    def __init__(self, uri):
         self._uri = uri
         self._date = None
         self._time = None
@@ -297,9 +295,6 @@ class Boxscore:
         self._home_fourth_down_attempts = None
         self._home_time_of_possession = None
 
-        self._page_source = page_source
-
-        self._set_page_source(uri)
         self._parse_game_data(uri)
 
     def __str__(self):
@@ -333,12 +328,12 @@ class Boxscore:
         Returns
         -------
         PyQuery object
-            The requested page is returned as a queryable PyQuery object with
+            The requested page is returned as a queriable PyQuery object with
             the comment tags removed.
         """
         url = BOXSCORE_URL % uri
         try:
-            url_data = pq(utils.get_page_source(url))
+            url_data = pq(url=url)
         except (HTTPError, AttributeError):
             return None
         # For NFL, a 404 page doesn't actually raise a 404 error, so it needs
@@ -419,11 +414,11 @@ class Boxscore:
         for line in game_info:
             if "Attendance" in line:
                 attendance = line.replace("Attendance: ", "").replace(",", "")
-            elif "Time of Game" in line:
+            if "Time of Game" in line:
                 duration = line.replace("Time of Game: ", "")
-            elif "Stadium" in line:
+            if "Stadium" in line:
                 stadium = line.replace("Stadium: ", "")
-            elif "Start Time" in line:
+            if "Start Time" in line:
                 time = line.replace("Start Time: ", "")
         setattr(self, "_attendance", attendance)
         setattr(self, "_date", date)
@@ -452,8 +447,7 @@ class Boxscore:
             The complete text for the requested tag.
         """
         scheme = BOXSCORE_SCHEME[field]
-        element = boxscore(scheme)
-        return element
+        return pq(str(boxscore(scheme)).strip())
 
     def _parse_summary(self, boxscore):
         """
@@ -730,8 +724,7 @@ class Boxscore:
         """
         abbreviations = []
         game_info = boxscore(BOXSCORE_SCHEME["team_stats"])
-
-        for column in game_info("th").items():
+        for column in game_info("thead th").items():
             text = column.text()
             if not text:
                 continue
@@ -740,15 +733,11 @@ class Boxscore:
                 continue
             if text not in abbreviations:
                 abbreviations.append(text)
-            if len(abbreviations) == 2:
-                break
-
-        logging.debug("Found alt abbreviations (deduped): %s", abbreviations)
         if len(abbreviations) < 2:
             return None, None
         return abbreviations[0], abbreviations[1]
 
-    def _parse_game_data(self, _uri):
+    def _parse_game_data(self, uri):
         """
         Parses a value for every attribute.
 
@@ -766,8 +755,7 @@ class Boxscore:
             The relative link to the boxscore HTML page, such as
             '201802040nwe'.
         """
-        boxscore = self._page_source
-
+        boxscore = self._retrieve_html_page(uri)
         # If the boxscore is None, the game likely hasn't been played yet and
         # no information can be gathered. As there is nothing to grab, the
         # class instance should just be empty.
@@ -797,7 +785,7 @@ class Boxscore:
                 "over_under",
             ):
                 continue
-            if short_field in ("away_name", "home_name"):
+            if short_field in {"away_name", "home_name"}:
                 value = self._parse_name(short_field, boxscore)
                 setattr(self, field, value)
                 continue
@@ -812,23 +800,6 @@ class Boxscore:
         self._parse_game_details(boxscore)
         self._away_abbr, self._home_abbr = self._alt_abbreviations(boxscore)
         self._away_players, self._home_players = self._find_players(boxscore)
-
-    def _set_page_source(self, uri):
-        """
-        Set page source from utils Playwright method if None
-        """
-        if self._page_source is None:
-            url = BOXSCORE_URL % uri
-            try:
-                html_content = utils.get_page_source(url)
-                if html_content:
-                    # Convert the HTML string to a PyQuery object
-                    self._page_source = pq(utils.remove_html_comment_tags(pq(html_content)))
-                else:
-                    self._page_source = None
-            except Exception:  # pylint: disable=broad-exception-caught
-                logging.error("Error getting page source: %s, %s", url, traceback.format_exc())
-                self._page_source = None
 
     @property
     def dataframe(self):
@@ -1588,7 +1559,7 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return pq(utils.get_page_source(url))
+        return pq(url=url)
 
     def _get_boxscore_uri(self, url):
         """
@@ -1613,7 +1584,7 @@ class Boxscores:
         uri = re.sub(r"\.htm.*", "", uri).strip()
         return uri
 
-    def _parse_abbreviation(self, abbr):
+    def parse_abbreviation(self, abbr):
         """
         Parse a team's abbreviation.
 
@@ -1631,7 +1602,7 @@ class Boxscores:
         """
         abbr = re.sub(r".*/teams/", "", str(abbr))
         abbr = re.sub(r"/.*", "", abbr)
-        return abbr
+        return abbr.strip()
 
     def _get_name(self, name):
         """
@@ -1651,7 +1622,7 @@ class Boxscores:
             Tuple is in the following order: Team Name, Team Abbreviation.
         """
         team_name = name.text()
-        abbr = self._parse_abbreviation(name)
+        abbr = self.parse_abbreviation(name)
         return team_name, abbr
 
     def _get_score(self, score_link):
