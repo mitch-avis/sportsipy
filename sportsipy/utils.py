@@ -1,6 +1,5 @@
 import logging
 import re
-import time
 from datetime import datetime
 
 import requests
@@ -198,33 +197,37 @@ def parse_field(parsing_scheme, html_data, field, index=0, strip=False, secondar
         The value at the specified index for the requested field. If no value
         could be found, returns None.
     """
+    result = None
+
     if field == "abbreviation":
         return parse_abbreviation(html_data)
+
     try:
         scheme = parsing_scheme[field]
     except KeyError:
         if field != "page_source":
             logging.error("Key not found in parsing scheme, in utils._parse_field: %s", field)
-        return None
-    if strip:
-        items = [i.text() for i in html_data(scheme).items() if i.text()]
-    else:
-        items = [i.text() for i in html_data(scheme).items()]
-    # Stats can be added and removed on a yearly basis. If not stats are found,
-    # return None and have the be the value.
-    if len(items) == 0:
-        return None
-    # Default to returning the first element. Optionally return another element
-    # if multiple fields have the same tag attribute.
-    try:
-        return items[index]
-    except IndexError:
-        if secondary_index:
+        scheme = None
+
+    if scheme:
+        items = (
+            [i.text() for i in html_data(scheme).items() if (i.text() or not strip)]
+            if strip
+            else [i.text() for i in html_data(scheme).items()]
+        )
+        if items:
             try:
-                return items[secondary_index]
+                result = items[index]
             except IndexError:
-                return None
-        return None
+                if secondary_index is not None:
+                    try:
+                        result = items[secondary_index]
+                    except IndexError:
+                        result = None
+                else:
+                    result = None
+
+    return result
 
 
 def remove_html_comment_tags(html):
