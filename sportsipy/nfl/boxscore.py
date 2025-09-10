@@ -829,7 +829,6 @@ class Boxscore:
             except Exception:  # pylint: disable=broad-exception-caught
                 logging.error("Error getting page source: %s, %s", url, traceback.format_exc())
                 self._page_source = None
-        return
 
     @property
     def dataframe(self):
