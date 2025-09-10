@@ -77,7 +77,7 @@ def _retrieve_all_teams(year, season_file=None):
         # instead.
         if year == 2021:
             try:
-                doc = utils.rate_limit_pq(url=SEASON_PAGE_URL % year)
+                doc = utils.pq(utils.get_page_source(url=SEASON_PAGE_URL % year))
             except HTTPError:
                 year = str(int(year) - 1)
         # If stats for the requested season do not exist yet (as is the case

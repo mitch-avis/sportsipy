@@ -4,7 +4,12 @@ from urllib.error import HTTPError
 from pyquery import PyQuery as pq
 
 from .. import utils
-from .constants import CFP_RANKINGS_URL, COACHES_RANKINGS_URL, RANKINGS_SCHEME, RANKINGS_URL
+from .constants import (
+    CFP_RANKINGS_URL,
+    COACHES_RANKINGS_URL,
+    RANKINGS_SCHEME,
+    RANKINGS_URL,
+)
 
 
 class Rankings:
@@ -57,7 +62,7 @@ class Rankings:
             Returns a PyQuery object of the rankings HTML page.
         """
         try:
-            url_data = utils.rate_limit_pq(url=RANKINGS_URL % year)
+            url_data = utils.pq(utils.get_page_source(url=RANKINGS_URL % year))
             return pq(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None
@@ -273,7 +278,7 @@ class CFPRankings:
             Returns a PyQuery object of the rankings HTML page.
         """
         try:
-            url_data = utils.rate_limit_pq(url=CFP_RANKINGS_URL % year)
+            url_data = utils.pq(utils.get_page_source(url=CFP_RANKINGS_URL % year))
             return pq(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None
@@ -489,7 +494,7 @@ class CoachesRankings:
             Returns a PyQuery object of the rankings HTML page.
         """
         try:
-            url_data = utils.rate_limit_pq(url=COACHES_RANKINGS_URL % year)
+            url_data = utils.pq(utils.get_page_source(url=COACHES_RANKINGS_URL % year))
             return pq(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None

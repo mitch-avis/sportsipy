@@ -56,7 +56,9 @@ class Conference:
             A string of the requested year to pull conference information from.
         """
         try:
-            return utils.rate_limit_pq(url=CONFERENCE_URL % (conference_abbreviation, year))
+            return utils.pq(
+                utils.get_page_source(url=CONFERENCE_URL % (conference_abbreviation, year))
+            )
         except HTTPError:
             return None
 
@@ -186,7 +188,7 @@ class Conferences:
             Returns a PyQuery object of the conference HTML page.
         """
         try:
-            return utils.rate_limit_pq(url=CONFERENCES_URL % year)
+            return utils.pq(utils.get_page_source(url=CONFERENCES_URL % year))
         except HTTPError:
             return None
 

@@ -1,24 +1,73 @@
 import logging
-import re
-import traceback
+import time
 from datetime import datetime
 from functools import wraps
-from urllib.error import HTTPError
 
 import pandas as pd
+import regex as re
+from playwright.sync_api import sync_playwright
 from pyquery import PyQuery as pq
 
-from .. import utils
-from ..constants import AWAY, HOME
-from ..decorators import int_property_decorator
-from .constants import (
+from tests.exhaustive.nfl_constants_tests import (
     BOXSCORE_ELEMENT_INDEX,
     BOXSCORE_ELEMENT_SUB_INDEX,
     BOXSCORE_SCHEME,
     BOXSCORE_URL,
-    BOXSCORES_URL,
 )
-from .player import AbstractPlayer, _float_property_decorator, _int_property_decorator
+
+logging.basicConfig(level=logging.DEBUG)
+
+WIN = "Win"
+LOSS = "Loss"
+DRAW = "Draw"
+TIE = "Tie"
+HOME = "Home"
+AWAY = "Away"
+NEUTRAL = "Neutral"
+REGULAR_SEASON = "Reg"
+POST_SEASON = "Post"
+CONFERENCE_TOURNAMENT = "Conf-Tourney"
+NON_DI = "Non-DI School"
+
+
+def int_property_decorator(func):
+    @property
+    @wraps(func)
+    def wrapper(*args):
+        value = func(*args)
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            # If there is no value, default to None. None is statistically
+            # different from 0 as a player/team who played an entire game and
+            # contributed nothing is different from one who didn't play at all.
+            # This enables flexibility for end-users to decide whether they
+            # want to fill the empty value with any specific number (such as 0
+            # or an average/median for the category) or keep it empty depending
+            # on their use-case.
+            return None
+
+    return wrapper
+
+
+def float_property_decorator(func):
+    @property
+    @wraps(func)
+    def wrapper(*args):
+        value = func(*args)
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            # If there is no value, default to None. None is statistically
+            # different from 0 as a player/team who played an entire game and
+            # contributed nothing is different from one who didn't play at all.
+            # This enables flexibility for end-users to decide whether they
+            # want to fill the empty value with any specific number (such as 0
+            # or an average/median for the category) or keep it empty depending
+            # on their use-case.
+            return None
+
+    return wrapper
 
 
 def nfl_int_property_sub_index(func):
@@ -43,173 +92,128 @@ def nfl_int_property_sub_index(func):
     return wrapper
 
 
-class BoxscorePlayer(AbstractPlayer):
+def get_page_source(url: str):
+    with sync_playwright() as p:
+        # Launch browser in headfull mode for debugging (can switch to headless later)
+        browser = p.chromium.launch(
+            headless=True, args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"]
+        )
+        page = browser.new_page()
+        try:
+            # Set longer default timeout and navigate to URL
+            page.set_default_timeout(60000)
+            page.goto(url)
+            # Wait for main content to load - adjust selector as needed
+            page.wait_for_selector(".box", state="attached", timeout=45000)
+            # Optional: Wait for additional time if needed
+            time.sleep(2)
+            # Get page content and parse with BeautifulSoup
+            html = page.content()
+            logging.info(f"Page content successfully retrieved! URL: {url}")
+            return html
+        except Exception as e:
+            logging.error(f"Error occurred: {str(e)}")
+            return None
+        finally:
+            browser.close()
+
+
+def _parse_abbreviation(uri_link):
     """
-    Get player stats for an individual game.
+    Returns a team's abbreviation.
 
-    Given a player ID, such as 'BreeDr01' for Drew Brees, their full name, and
-    all associated stats from the Boxscore page in HTML format, parse the HTML
-    and extract only the relevant stats for the specified player and assign
-    them to readable properties.
-
-    This class inherits the ``AbstractPlayer`` class. As a result, all
-    properties associated with ``AbstractPlayer`` can also be read directly
-    from this class.
-
-    As this class is instantiated from within the Boxscore class, it should not
-    be called directly and should instead be queried using the appropriate
-    players properties from the Boxscore class.
+    A school or team's abbreviation is generally embedded in a URI link which
+    contains other relative link information. For example, the URI for the
+    New England Patriots for the 2017 season is "/teams/nwe/2017.htm". This
+    function strips all of the contents before and after "nwe" and converts it
+    to uppercase and returns "NWE".
 
     Parameters
     ----------
-    player_id : string
-        A player's ID according to pro-football-reference.com, such as
-        'BreeDr00' for Drew Brees. The player ID can be found by navigating to
-        the player's stats page and getting the string between the final slash
-        and the '.htm' in the URL. In general, the ID is in the format
-        'LlllFfNN' where 'Llll' are the first 4 letters in the player's last
-        name with the first letter capitalized, 'Ff' are the first 2 letters in
-        the player's first name where the first letter is capitalized, and 'NN'
-        is a number starting at '00' for the first time that player ID has been
-        used and increments by 1 for every successive player.
-    player_name : string
-        A string representing the player's first and last name, such as 'David
-        Blough'.
-    player_data : string
-        A string representation of the player's HTML data from the Boxscore
-        page. If the player appears in multiple tables, all of their
-        information will appear in one single string concatenated together.
+    uri_link : string
+        A URI link which contains a team's abbreviation within other link
+        contents.
+
+    Returns
+    -------
+    string
+        The shortened uppercase abbreviation for a given team.
     """
+    abbr = re.sub(r"/[0-9]+\..*htm.*", "", uri_link("a").attr("href"))
+    abbr = re.sub(r"/.*/schools/", "", abbr)
+    abbr = re.sub(r"/teams/", "", abbr)
+    return abbr.upper()
 
-    def __init__(self, player_id, player_name, player_data):
-        self._index = 0
-        self._yards_lost_from_sacks = None
-        self._fumbles_lost = None
-        self._combined_tackles = None
-        self._solo_tackles = None
-        self._tackles_for_loss = None
-        self._quarterback_hits = None
-        self._average_kickoff_return_yards = None
-        AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
-    @property
-    def dataframe(self):
-        """
-        Returns a ``pandas DataFrame`` containing all other relevant class
-        properties and values for the specified game.
-        """
-        fields_to_include = {
-            "completed_passes": self.completed_passes,
-            "attempted_passes": self.attempted_passes,
-            "passing_yards": self.passing_yards,
-            "passing_touchdowns": self.passing_touchdowns,
-            "interceptions_thrown": self.interceptions_thrown,
-            "times_sacked": self.times_sacked,
-            "yards_lost_from_sacks": self.yards_lost_from_sacks,
-            "longest_pass": self.longest_pass,
-            "quarterback_rating": self.quarterback_rating,
-            "rush_attempts": self.rush_attempts,
-            "rush_yards": self.rush_yards,
-            "rush_touchdowns": self.rush_touchdowns,
-            "longest_rush": self.longest_rush,
-            "times_pass_target": self.times_pass_target,
-            "receptions": self.receptions,
-            "receiving_yards": self.receiving_yards,
-            "receiving_touchdowns": self.receiving_touchdowns,
-            "longest_reception": self.longest_reception,
-            "fumbles": self.fumbles,
-            "fumbles_lost": self.fumbles_lost,
-            "interceptions": self.interceptions,
-            "yards_returned_from_interception": self.yards_returned_from_interception,
-            "interceptions_returned_for_touchdown": self.interceptions_returned_for_touchdown,
-            "longest_interception_return": self.longest_interception_return,
-            "passes_defended": self.passes_defended,
-            "sacks": self.sacks,
-            "combined_tackles": self.combined_tackles,
-            "solo_tackles": self.solo_tackles,
-            "assists_on_tackles": self.assists_on_tackles,
-            "tackles_for_loss": self.tackles_for_loss,
-            "quarterback_hits": self.quarterback_hits,
-            "fumbles_recovered": self.fumbles_recovered,
-            "yards_recovered_from_fumble": self.yards_recovered_from_fumble,
-            "fumbles_recovered_for_touchdown": self.fumbles_recovered_for_touchdown,
-            "fumbles_forced": self.fumbles_forced,
-            "kickoff_returns": self.kickoff_returns,
-            "kickoff_return_yards": self.kickoff_return_yards,
-            "average_kickoff_return_yards": self.average_kickoff_return_yards,
-            "kickoff_return_touchdown": self.kickoff_return_touchdown,
-            "longest_kickoff_return": self.longest_kickoff_return,
-            "punt_returns": self.punt_returns,
-            "punt_return_yards": self.punt_return_yards,
-            "yards_per_punt_return": self.yards_per_punt_return,
-            "punt_return_touchdown": self.punt_return_touchdown,
-            "longest_punt_return": self.longest_punt_return,
-            "extra_points_made": self.extra_points_made,
-            "extra_points_attempted": self.extra_points_attempted,
-            "field_goals_made": self.field_goals_made,
-            "field_goals_attempted": self.field_goals_attempted,
-            "punts": self.punts,
-            "total_punt_yards": self.total_punt_yards,
-            "yards_per_punt": self.yards_per_punt,
-            "longest_punt": self.longest_punt,
-        }
-        return pd.DataFrame([fields_to_include], index=[self._player_id])
+def _parse_field(parsing_scheme, html_data, field, index=0, strip=False, secondary_index=None):
+    """
+    Parse an HTML table to find the requested field's value.
 
-    @_int_property_decorator
-    def yards_lost_from_sacks(self):
-        """
-        Returns an ``int`` of the total number of yards the player lost after
-        being sacked by the opponent.
-        """
-        return self._yards_lost_from_sacks
+    All of the values are passed in an HTML table row instead of as individual
+    items. The values need to be parsed by matching the requested attribute
+    with a parsing scheme that sports-reference uses to differentiate stats.
+    This function returns a single value for the given attribute.
 
-    @_int_property_decorator
-    def fumbles_lost(self):
-        """
-        Returns an ``int`` of the number of times the player fumbled the ball
-        and the opponent recovered the ball.
-        """
-        return self._fumbles_lost
+    Parameters
+    ----------
+    parsing_scheme : dict
+        A dictionary of the parsing scheme to be used to find the desired
+        field. The key corresponds to the attribute name to parse, and the
+        value is a PyQuery-readable parsing scheme as a string (such as
+        'td[data-stat="wins"]').
+    html_data : string
+        A string containing all of the rows of stats for a given team. If
+        multiple tables are being referenced, this will be comprised of
+        multiple rows in a single string.
+    field : string
+        The name of the attribute to match. Field must be a key in
+        parsing_scheme.
+    index : int (optional)
+        An optional index if multiple fields have the same attribute name. For
+        example, 'HR' may stand for the number of home runs a baseball team has
+        hit, or the number of home runs a pitcher has given up. The index
+        aligns with the order in which the attributes are recevied in the
+        html_data parameter.
+    strip : boolean (optional)
+        An optional boolean value which will remove any empty or invalid
+        elements which might show up during list comprehensions. Specify True
+        if the invalid elements should be removed from lists, which can help
+        with reverse indexing.
+    secondary_index : int (optional)
+        An optional index if multiple fields have the same attribute, but the
+        original index specified above doesn't work. This happens if a page
+        doesn't have all of the intended information, and the requested index
+        isn't valid, causing the value to be None. Instead, a secondary index
+        could be checked prior to returning None.
 
-    @_int_property_decorator
-    def combined_tackles(self):
-        """
-        Returns an ``int`` of the number of solo and assisted tackles the
-        player made.
-        """
-        return self._combined_tackles
-
-    @_int_property_decorator
-    def solo_tackles(self):
-        """
-        Returns an ``int`` of the number of solo tackles the player made during
-        the game.
-        """
-        return self._solo_tackles
-
-    @_int_property_decorator
-    def tackles_for_loss(self):
-        """
-        Returns an ``int`` of the number of times the player tackles an
-        opponent for a loss on the play.
-        """
-        return self._tackles_for_loss
-
-    @_int_property_decorator
-    def quarterback_hits(self):
-        """
-        Returns an ``int`` of the number of times the player hit the
-        quarterback.
-        """
-        return self._quarterback_hits
-
-    @_float_property_decorator
-    def average_kickoff_return_yards(self):
-        """
-        Returns a ``float`` of the average number of yards the player returned
-        a kickoff for.
-        """
-        return self._average_kickoff_return_yards
+    Returns
+    -------
+    string
+        The value at the specified index for the requested field. If no value
+        could be found, returns None.
+    """
+    if field == "abbreviation":
+        return _parse_abbreviation(html_data)
+    scheme = parsing_scheme[field]
+    if strip:
+        items = [i.text() for i in html_data(scheme).items() if i.text()]
+    else:
+        items = [i.text() for i in html_data(scheme).items()]
+    # Stats can be added and removed on a yearly basis. If not stats are found,
+    # return None and have the be the value.
+    if len(items) == 0:
+        return None
+    # Default to returning the first element. Optionally return another element
+    # if multiple fields have the same tag attribute.
+    try:
+        return items[index]
+    except IndexError:
+        if secondary_index:
+            try:
+                return items[secondary_index]
+            except IndexError:
+                return None
+        return None
 
 
 class Boxscore:
@@ -227,7 +231,7 @@ class Boxscore:
         '201802040nwe'.
     """
 
-    def __init__(self, uri, page_source=None):
+    def __init__(self, uri):
         self._uri = uri
         self._date = None
         self._time = None
@@ -297,9 +301,6 @@ class Boxscore:
         self._home_fourth_down_attempts = None
         self._home_time_of_possession = None
 
-        self._page_source = page_source
-
-        self._set_page_source(uri)
         self._parse_game_data(uri)
 
     def __str__(self):
@@ -307,7 +308,7 @@ class Boxscore:
         Return the string representation of the class.
         """
         return (
-            f"Boxscore for {self._away_name.text()} at " f"{self._home_name.text()} ({self.date})"
+            f"Boxscore for {self._away_name.text()} at " f"{self._home_name.text()} ({self._date})"
         )
 
     def __repr__(self):
@@ -315,37 +316,6 @@ class Boxscore:
         Return the string representation of the class.
         """
         return self.__str__()
-
-    def _retrieve_html_page(self, uri):
-        """
-        Download the requested HTML page.
-
-        Given a relative link, download the requested page and strip it of all
-        comment tags before returning a pyquery object which will be used to
-        parse the data.
-
-        Parameters
-        ----------
-        uri : string
-            The relative link to the boxscore HTML page, such as
-            '201802040nwe'.
-
-        Returns
-        -------
-        PyQuery object
-            The requested page is returned as a queryable PyQuery object with
-            the comment tags removed.
-        """
-        url = BOXSCORE_URL % uri
-        try:
-            url_data = pq(utils.get_page_source(url))
-        except (HTTPError, AttributeError):
-            return None
-        # For NFL, a 404 page doesn't actually raise a 404 error, so it needs
-        # to be manually checked.
-        if "404 error" in str(url_data):
-            return None
-        return pq(utils.remove_html_comment_tags(url_data))
 
     def _parse_game_details(self, boxscore):
         """
@@ -419,11 +389,11 @@ class Boxscore:
         for line in game_info:
             if "Attendance" in line:
                 attendance = line.replace("Attendance: ", "").replace(",", "")
-            elif "Time of Game" in line:
+            if "Time of Game" in line:
                 duration = line.replace("Time of Game: ", "")
-            elif "Stadium" in line:
+            if "Stadium" in line:
                 stadium = line.replace("Stadium: ", "")
-            elif "Start Time" in line:
+            if "Start Time" in line:
                 time = line.replace("Start Time: ", "")
         setattr(self, "_attendance", attendance)
         setattr(self, "_date", date)
@@ -452,8 +422,7 @@ class Boxscore:
             The complete text for the requested tag.
         """
         scheme = BOXSCORE_SCHEME[field]
-        element = boxscore(scheme)
-        return element
+        return pq(str(boxscore(scheme)).strip())
 
     def _parse_summary(self, boxscore):
         """
@@ -596,7 +565,8 @@ class Boxscore:
             return AWAY
         if name == self.home_abbreviation.upper():
             return HOME
-        return AWAY
+        else:
+            return AWAY
 
     def _extract_player_stats(self, table, player_dict):
         """
@@ -670,12 +640,14 @@ class Boxscore:
         """
         home_players = []
         away_players = []
-        for player_id, details in player_dict.items():
-            player = BoxscorePlayer(player_id, details["name"], details["data"])
-            if details["team"] == HOME:
-                home_players.append(player)
-            else:
-                away_players.append(player)
+        # for player_id, details in player_dict.items():
+        #     player = BoxscorePlayer(player_id,
+        #                             details['name'],
+        #                             details['data'])
+        #     if details['team'] == HOME:
+        #         home_players.append(player)
+        #     else:
+        #         away_players.append(player)
         return away_players, home_players
 
     def _find_players(self, boxscore):
@@ -734,92 +706,10 @@ class Boxscore:
         for column in game_info("th").items():
             if column.text():
                 abbreviations.append(column.text())
+        print(abbreviations)
         if not abbreviations:
             return None, None
         return abbreviations
-
-    def _parse_game_data(self, _uri):
-        """
-        Parses a value for every attribute.
-
-        This function looks through every attribute and retrieves the value
-        according to the parsing scheme and index of the attribute from the
-        passed HTML data. Once the value is retrieved, the attribute's value is
-        updated with the returned result.
-
-        Note that this method is called directly once Boxscore is invoked and
-        does not need to be called manually.
-
-        Parameters
-        ----------
-        uri : string
-            The relative link to the boxscore HTML page, such as
-            '201802040nwe'.
-        """
-        boxscore = self._page_source
-
-        # If the boxscore is None, the game likely hasn't been played yet and
-        # no information can be gathered. As there is nothing to grab, the
-        # class instance should just be empty.
-        if not boxscore:
-            return
-
-        for field in self.__dict__:
-            # Remove the '_' from the name
-            short_field = str(field)[1:]
-            if short_field in (
-                "winner",
-                "winning_name",
-                "winning_abbr",
-                "losing_name",
-                "losing_abbr",
-                "uri",
-                "date",
-                "time",
-                "stadium",
-                "attendance",
-                "duration",
-                "won_toss",
-                "roof",
-                "surface",
-                "weather",
-                "vegas_line",
-                "over_under",
-            ):
-                continue
-            if short_field in ("away_name", "home_name"):
-                value = self._parse_name(short_field, boxscore)
-                setattr(self, field, value)
-                continue
-            if short_field == "summary":
-                value = self._parse_summary(boxscore)
-                setattr(self, field, value)
-                continue
-            index = BOXSCORE_ELEMENT_INDEX.get(short_field, 0)
-            value = utils.parse_field(BOXSCORE_SCHEME, boxscore, short_field, index)
-            setattr(self, field, value)
-        self._parse_game_date_and_location(boxscore)
-        self._parse_game_details(boxscore)
-        self._away_abbr, self._home_abbr = self._alt_abbreviations(boxscore)
-        self._away_players, self._home_players = self._find_players(boxscore)
-
-    def _set_page_source(self, uri):
-        """
-        Set page source from utils Playwright method if None
-        """
-        if self._page_source is None:
-            url = BOXSCORE_URL % uri
-            try:
-                html_content = utils.get_page_source(url)
-                if html_content:
-                    # Convert the HTML string to a PyQuery object
-                    self._page_source = pq(utils.remove_html_comment_tags(pq(html_content)))
-                else:
-                    self._page_source = None
-            except Exception:  # pylint: disable=broad-exception-caught
-                logging.error("Error getting page source: %s, %s", url, traceback.format_exc())
-                self._page_source = None
-        return
 
     @property
     def dataframe(self):
@@ -955,7 +845,7 @@ class Boxscore:
         """
         dt = None
         if self._date and self._time:
-            date = f"{self._date} {self._time}"
+            date = "%s %s" % (self._date, self._time)
             dt = datetime.strptime(date, "%A %b %d, %Y %I:%M%p")
         elif self._date:
             dt = datetime.strptime(self._date, "%A %b %d, %Y")
@@ -1070,8 +960,8 @@ class Boxscore:
         for the New England Patriots.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._home_name)
-        return utils.parse_abbreviation(self._away_name)
+            return _parse_abbreviation(self._home_name)
+        return _parse_abbreviation(self._away_name)
 
     @property
     def losing_name(self):
@@ -1090,8 +980,8 @@ class Boxscore:
         for the Kansas City Chiefs.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._away_name)
-        return utils.parse_abbreviation(self._home_name)
+            return _parse_abbreviation(self._away_name)
+        return _parse_abbreviation(self._home_name)
 
     @int_property_decorator
     def away_points(self):
@@ -1457,379 +1347,75 @@ class Boxscore:
         """
         return self._home_time_of_possession
 
-
-class Boxscores:
-    """
-    Search for NFL games taking place on a particular day.
-
-    Retrieve a dictionary which contains a list of all games being played on a
-    particular day. Output includes a link to the boxscore, and the names and
-    abbreviations for both the home teams. If no games are played on a
-    particular day, the list will be empty.
-
-    Parameters
-    ----------
-    week : int
-        The week number to pull games from.
-    year : int
-        The 4-digit year to pull games from.
-    end_week : int (optional)
-        Optionally specify an end week to iterate until. All boxscores starting
-        from the week specified in the 'week' parameter up to and including the
-        boxscores specified in the 'end_week' parameter will be pulled. If left
-        empty, or if 'end_week' is prior to 'week', only the games from the day
-        specified in the 'date' parameter will be saved.
-    """
-
-    def __init__(self, week, year, end_week=None):
-        self._boxscores = {}
-
-        self._find_games(week, year, end_week)
-
-    def __str__(self):
+    def _parse_game_data(self, uri):
         """
-        Return the string representation of the class.
-        """
-        weeks = [week.split("-")[0] for week in sorted(self._boxscores.keys())]
-        if len(weeks) > 1:
-            return f"NFL games for weeks {', '.join(weeks)}"
-        return f"NFL games for week {weeks[0]}"
+        Parses a value for every attribute.
 
-    def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
-        return self.__str__()
+        This function looks through every attribute and retrieves the value
+        according to the parsing scheme and index of the attribute from the
+        passed HTML data. Once the value is retrieved, the attribute's value is
+        updated with the returned result.
 
-    @property
-    def games(self):
-        """
-        Returns a ``dictionary`` object representing all of the games played on
-        the requested day. Dictionary is in the following format::
-
-            {'week' : [  # 'week' is the string week in format 'W-YYYY'
-                {
-                    'home_name': Name of the home team, such as 'Kansas City
-                                 Chiefs' (`str`),
-                    'home_abbr': Abbreviation for the home team, such as 'KAN'
-                                 (`str`),
-                    'away_name': Name of the away team, such as 'Houston
-                                 Texans' (`str`),
-                    'away_abbr': Abbreviation for the away team, such as 'HTX'
-                                 (`str`),
-                    'boxscore': String representing the boxscore URI, such as
-                                'SLN/SLN201807280' (`str`),
-                    'winning_name': Full name of the winning team, such as
-                                    'Kansas City Chiefs' (`str`),
-                    'winning_abbr': Abbreviation for the winning team, such as
-                                    'KAN' (`str`),
-                    'losing_name': Full name of the losing team, such as
-                                   'Houston Texans' (`str`),
-                    'losing_abbr': Abbreviation for the losing team, such as
-                                   'HTX' (`str`),
-                    'home_score': Integer score for the home team (`int`),
-                    'away_score': Integer score for the away team (`int`)
-                },
-                { ... },
-                ...
-                ]
-            }
-
-        If no games were played on 'week', the list for ['week'] will be empty.
-        """
-        return self._boxscores
-
-    def _create_url(self, week, year):
-        """
-        Build the URL based on the passed week number.
-
-        In order to get the proper boxscore page, the URL needs to include the
-        requested week number.
+        Note that this method is called directly once Boxscore is invoked and
+        does not need to be called manually.
 
         Parameters
         ----------
-        week : int
-            The week number to pull games from.
-        year : int
-            The 4-digit year to pull games from.
-
-        Returns
-        -------
-        string
-            Returns a ``string`` of the boxscore URL including the requested
-            date.
+        uri : string
+            The relative link to the boxscore HTML page, such as
+            '201802040nwe'.
         """
-        return BOXSCORES_URL % (year, week)
+        url = BOXSCORE_URL % uri
+        boxscore = pq(open("nfl_boxscore_template.html", "r", encoding="utf-8").read())
+        # boxscore = pq(get_page_source(url))
+        # If the boxscore is None, the game likely hasn't been played yet and
+        # no information can be gathered. As there is nothing to grab, the
+        # class instance should just be empty.
+        if not boxscore:
+            return
 
-    def _get_requested_page(self, url):
-        """
-        Get the requested page.
-
-        Download the requested page given the created URL and return a PyQuery
-        object.
-
-        Parameters
-        ----------
-        url : string
-            The URL containing the boxscores to find.
-
-        Returns
-        -------
-        PyQuery object
-            A PyQuery object containing the HTML contents of the requested
-            page.
-        """
-        return pq(utils.get_page_source(url))
-
-    def _get_boxscore_uri(self, url):
-        """
-        Find the boxscore URI.
-
-        Given the boxscore tag for a game, parse the embedded URI for the
-        boxscore.
-
-        Parameters
-        ----------
-        url : PyQuery object
-            A PyQuery object containing the game's boxscore tag which has the
-            boxscore URI embedded within it.
-
-        Returns
-        -------
-        string
-            Returns a ``string`` containing the link to the game's boxscore
-            page.
-        """
-        uri = re.sub(r".*/boxscores/", "", str(url))
-        uri = re.sub(r"\.htm.*", "", uri).strip()
-        return uri
-
-    def _parse_abbreviation(self, abbr):
-        """
-        Parse a team's abbreviation.
-
-        Given the team's HTML name tag, parse their abbreviation.
-
-        Parameters
-        ----------
-        abbr : string
-            A string of a team's HTML name tag.
-
-        Returns
-        -------
-        string
-            Returns a ``string`` of the team's abbreviation.
-        """
-        abbr = re.sub(r".*/teams/", "", str(abbr))
-        abbr = re.sub(r"/.*", "", abbr)
-        return abbr
-
-    def _get_name(self, name):
-        """
-        Find a team's name and abbreviation.
-
-        Given the team's HTML name tag, determine their name, and abbreviation.
-
-        Parameters
-        ----------
-        name : PyQuery object
-            A PyQuery object of a team's HTML name tag in the boxscore.
-
-        Returns
-        -------
-        tuple
-            Returns a tuple containing the name and abbreviation for a team.
-            Tuple is in the following order: Team Name, Team Abbreviation.
-        """
-        team_name = name.text()
-        abbr = self._parse_abbreviation(name)
-        return team_name, abbr
-
-    def _get_score(self, score_link):
-        """
-        Find a team's final score.
-
-        Given an HTML string of a team's boxscore, extract the integer
-        representing the final score and return the number.
-
-        Parameters
-        ----------
-        score_link : string
-            An HTML string representing a team's final score in the format
-            '<td class="right">NN</td>' where 'NN' is the team's score.
-
-        Returns
-        -------
-        int
-            Returns an int representing the team's final score in runs.
-        """
-        score = score_link.replace('<td class="right">', "")
-        score = score.replace("</td>", "")
-        return int(score)
-
-    def _get_team_details(self, game):
-        """
-        Find the names and abbreviations for both teams in a game.
-
-        Using the HTML contents in a boxscore, find the name and abbreviation
-        for both teams.
-
-        Parameters
-        ----------
-        game : PyQuery object
-            A PyQuery object of a single boxscore containing information about
-            both teams.
-
-        Returns
-        -------
-        tuple
-            Returns a tuple containing the names and abbreviations of both
-            teams in the following order: Away Name, Away Abbreviation, Away
-            Score, Home Name, Home Abbreviation, Home Score.
-        """
-        links = list(game("td a").items())
-        # The away team is the first link in the boxscore
-        away = links[0]
-        # The home team is the last (3rd) link in the boxscore
-        home = links[-1]
-        scores = re.findall(r'<td class="right">\d+</td>', str(game))
-        away_score = None
-        home_score = None
-        # If the game hasn't started or hasn't been updated on sports-reference
-        # yet, no score will be shown and therefore can't be parsed.
-        if len(scores) == 2:
-            away_score = self._get_score(scores[0])
-            home_score = self._get_score(scores[1])
-        away_name, away_abbr = self._get_name(away)
-        home_name, home_abbr = self._get_name(home)
-        return (away_name, away_abbr, away_score, home_name, home_abbr, home_score)
-
-    def _get_team_results(self, team_result_html):
-        """
-        Extract the winning or losing team's name and abbreviation.
-
-        Depending on which team's data field is passed (either the winner or
-        loser), return the name and abbreviation of that team to denote which
-        team won and which lost the game.
-
-        Parameters
-        ----------
-        team_result_html : PyQuery object
-            A PyQuery object representing either the winning or losing team's
-            data field within the boxscore.
-
-        Returns
-        -------
-        tuple
-            Returns a tuple of the team's name followed by the abbreviation.
-        """
-        link = list(team_result_html("td a").items())
-        # If there are no links, the boxscore is likely misformed and can't be
-        # parsed. In this case, the boxscore should be skipped.
-        if len(link) < 1:
-            return None
-        name, abbreviation = self._get_name(link[0])
-        return name, abbreviation
-
-    def _extract_game_info(self, games):
-        """
-        Parse game information from all boxscores.
-
-        Find the major game information for all boxscores listed on a
-        particular boxscores webpage and return the results in a list.
-
-        Parameters
-        ----------
-        games : generator
-            A generator where each element points to a boxscore on the parsed
-            boxscores webpage.
-
-        Returns
-        -------
-        list
-            Returns a ``list`` of dictionaries where each dictionary contains
-            the name and abbreviations for both the home and away teams, and a
-            link to the game's boxscore.
-        """
-        all_boxscores = []
-
-        for game in games:
-            details = self._get_team_details(game)
-            away_name, away_abbr, away_score, home_name, home_abbr, home_score = details
-            boxscore_url = game('td[class="right gamelink"] a')
-            boxscore_uri = self._get_boxscore_uri(boxscore_url)
-            losers = list(game('tr[class="loser"]').items())
-            winner = self._get_team_results(game('tr[class="winner"]'))
-            loser = self._get_team_results(game('tr[class="loser"]'))
-            # Occurs when the boxscore format is invalid and the game should be
-            # skipped to avoid conflicts populating the game information.
-            if (len(losers) != 2 and loser and not winner) or (
-                len(losers) != 2 and winner and not loser
+        for field in self.__dict__:
+            # Remove the '_' from the name
+            short_field = str(field)[1:]
+            if (
+                short_field == "winner"
+                or short_field == "winning_name"
+                or short_field == "winning_abbr"
+                or short_field == "losing_name"
+                or short_field == "losing_abbr"
+                or short_field == "uri"
+                or short_field == "date"
+                or short_field == "time"
+                or short_field == "stadium"
+                or short_field == "attendance"
+                or short_field == "duration"
+                or short_field == "won_toss"
+                or short_field == "roof"
+                or short_field == "surface"
+                or short_field == "weather"
+                or short_field == "vegas_line"
+                or short_field == "over_under"
             ):
                 continue
-            # Occurs when information couldn't be parsed from the boxscore or
-            # the game hasn't occurred yet. In this case, the winner should be
-            # None to avoid conflicts.
-            if not winner or len(losers) == 2:
-                winning_name = None
-                winning_abbreviation = None
-            else:
-                winning_name, winning_abbreviation = winner
-            # Occurs when information couldn't be parsed from the boxscore or
-            # the game hasn't occurred yet. In this case, the winner should be
-            # None to avoid conflicts.
-            if not loser or len(losers) == 2:
-                losing_name = None
-                losing_abbreviation = None
-            else:
-                losing_name, losing_abbreviation = loser
-            game_info = {
-                "boxscore": boxscore_uri,
-                "away_name": away_name,
-                "away_abbr": away_abbr,
-                "away_score": away_score,
-                "home_name": home_name,
-                "home_abbr": home_abbr,
-                "home_score": home_score,
-                "winning_name": winning_name,
-                "winning_abbr": winning_abbreviation,
-                "losing_name": losing_name,
-                "losing_abbr": losing_abbreviation,
-            }
-            all_boxscores.append(game_info)
-        return all_boxscores
+            if short_field == "away_name" or short_field == "home_name":
+                value = self._parse_name(short_field, boxscore)
+                setattr(self, field, value)
+                continue
+            if short_field == "summary":
+                value = self._parse_summary(boxscore)
+                setattr(self, field, value)
+                continue
+            index = 0
+            if short_field in BOXSCORE_ELEMENT_INDEX.keys():
+                index = BOXSCORE_ELEMENT_INDEX[short_field]
+            value = _parse_field(BOXSCORE_SCHEME, boxscore, short_field, index)
+            setattr(self, field, value)
+        self._parse_game_date_and_location(boxscore)
+        self._parse_game_details(boxscore)
+        self._away_abbr, self._home_abbr = self._alt_abbreviations(boxscore)
+        self._away_players, self._home_players = self._find_players(boxscore)
 
-    def _find_games(self, week, year, end_week):
-        """
-        Retrieve all major games played for a given week.
 
-        Builds a URL based on the requested date and downloads the HTML
-        contents before parsing any and all games played during that week. Any
-        games that are found are added to the boxscores dictionary with
-        high-level game information such as the home and away team names and a
-        link to the boxscore page.
-
-        Parameters
-        ----------
-        week : int
-            The week number to pull games from.
-        year : int
-            The 4-digit year to pull games from.
-        end_week : int (optional)
-            Optionally specify an end week to iterate until. All boxscores
-            starting from the week specified in the 'week' parameter up to and
-            including the boxscores specified in the 'end_week' parameter will
-            be pulled. If left empty, or if 'end_week' is prior to 'week', only
-            the games from the day specified in the 'date' parameter will be
-            saved.
-        """
-        if not end_week or week > end_week:
-            end_week = week
-        while week <= end_week:
-            url = self._create_url(week, year)
-            page = self._get_requested_page(url)
-            games = page('table[class="teams"]').items()
-            boxscores = self._extract_game_info(games)
-            timestamp = f"{week}-{year}"
-            self._boxscores[timestamp] = boxscores
-            week += 1
+if __name__ == "__main__":
+    boxscore = Boxscore("202502090phi")
+    boxscore.dataframe.to_csv("test_boxscores.csv", index=False)

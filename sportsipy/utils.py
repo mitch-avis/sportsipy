@@ -1,12 +1,12 @@
+import logging
 import re
 import time
 from datetime import datetime
 
 import requests
 from lxml.etree import ParserError, XMLSyntaxError
+from playwright.sync_api import sync_playwright
 from pyquery import PyQuery as pq
-
-from sportsipy.constants import RATE_LIMIT_INTERVAL
 
 # {
 #   league name: {
@@ -25,12 +25,6 @@ SEASON_START_MONTH = {
     "nfl": {"start": 9, "wrap": False},
     "nhl": {"start": 10, "wrap": True},
 }
-
-
-def rate_limit_pq(url, sleep=RATE_LIMIT_INTERVAL):
-    ret = pq(url=url)
-    time.sleep(sleep)
-    return ret
 
 
 def todays_date():
@@ -206,7 +200,12 @@ def parse_field(parsing_scheme, html_data, field, index=0, strip=False, secondar
     """
     if field == "abbreviation":
         return parse_abbreviation(html_data)
-    scheme = parsing_scheme[field]
+    try:
+        scheme = parsing_scheme[field]
+    except KeyError:
+        if field != "page_source":
+            logging.error("Key not found in parsing scheme, in utils._parse_field: %s", field)
+        return None
     if strip:
         items = [i.text() for i in html_data(scheme).items() if i.text()]
     else:
@@ -319,7 +318,7 @@ def pull_page(url=None, local_file=None):
         with open(local_file, "r", encoding="utf8") as filehandle:
             return pq(filehandle.read())
     if url:
-        return rate_limit_pq(url=url)
+        return pq(get_page_source(url=url))
     raise ValueError("Expected either a URL or a local data file!")
 
 
@@ -338,3 +337,35 @@ def no_data_found():
         "found. Has the season begun, and is the data available on "
         "www.sports-reference.com?"
     )
+
+
+def get_page_source(url: str):
+    """
+    Use Playwright to retrieve the page source of a given URL.
+
+    This function uses Playwright to navigate to the specified URL, waits for the main content to
+    load, and returns the HTML content of the page.
+    """
+    with sync_playwright() as playwright:
+        # Launch browser
+        browser = playwright.chromium.launch(
+            headless=True, args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"]
+        )
+        page = browser.new_page()
+        try:
+            # Set longer default timeout and navigate to URL
+            page.set_default_timeout(30000)
+            page.goto(url)
+            # Wait for main content to load - adjust selector as needed
+            page.wait_for_selector("body", state="attached", timeout=30000)
+            # Optional: Wait for additional time if needed
+            # time.sleep(2)
+            # Get page content and parse with BeautifulSoup
+            html = page.content()
+            logging.info("Page content successfully retrieved! URL: %s", url)
+            return html
+        except Exception as error:  # pylint: disable=broad-exception-caught
+            logging.error("Error occurred: %s", str(error))
+            return None
+        finally:
+            browser.close()

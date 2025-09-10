@@ -4,7 +4,16 @@ from datetime import datetime
 import pandas as pd
 
 from sportsipy import utils
-from sportsipy.constants import AWAY, HOME, LOSS, NEUTRAL, POST_SEASON, REGULAR_SEASON, TIE, WIN
+from sportsipy.constants import (
+    AWAY,
+    HOME,
+    LOSS,
+    NEUTRAL,
+    POST_SEASON,
+    REGULAR_SEASON,
+    TIE,
+    WIN,
+)
 from sportsipy.nfl.boxscore import Boxscore
 from sportsipy.nfl.constants import CONF_CHAMPIONSHIP, DIVISION, SUPER_BOWL, WILD_CARD
 
@@ -697,7 +706,7 @@ class Schedule:
                 SCHEDULE_URL % (abbreviation.lower(), year)
             ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
                 year = str(int(year) - 1)
-        doc = utils.rate_limit_pq(url=SCHEDULE_URL % (abbreviation.lower(), year))
+        doc = utils.pq(utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year)))
         schedule = utils.get_stats_table(doc, f"table#gamelog{year}")
         if not schedule:
             utils.no_data_found()

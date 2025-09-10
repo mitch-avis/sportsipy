@@ -154,7 +154,7 @@ class Player(AbstractPlayer):
         """
         url = PLAYER_URL % self._player_id
         try:
-            url_data = utils.rate_limit_pq(url=url)
+            url_data = utils.pq(utils.get_page_source(url=url))
         except (HTTPError, ParserError):
             return None
         return pq(utils.remove_html_comment_tags(url_data))
@@ -657,7 +657,7 @@ class Roster:
             Returns a PyQuery object of the team's HTML page.
         """
         try:
-            return utils.rate_limit_pq(url=url)
+            return utils.pq(utils.get_page_source(url=url))
         except HTTPError:
             return None
 

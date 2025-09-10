@@ -486,7 +486,7 @@ class Schedule:
                 SCHEDULE_URL % (abbreviation, str(int(year) - 1))
             ):
                 year = str(int(year) - 1)
-        doc = utils.rate_limit_pq(url=SCHEDULE_URL % (abbreviation, year))
+        doc = utils.pq(utils.get_page_source(url=SCHEDULE_URL % (abbreviation, year)))
         schedule = utils.get_stats_table(doc, "table#team_schedule")
         if not schedule:
             utils.no_data_found()

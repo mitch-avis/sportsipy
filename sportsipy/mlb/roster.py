@@ -6,7 +6,13 @@ import pandas as pd
 from pyquery import PyQuery as pq
 
 from .. import utils
-from .constants import NATIONALITY, PLAYER_ELEMENT_INDEX, PLAYER_SCHEME, PLAYER_URL, ROSTER_URL
+from .constants import (
+    NATIONALITY,
+    PLAYER_ELEMENT_INDEX,
+    PLAYER_SCHEME,
+    PLAYER_URL,
+    ROSTER_URL,
+)
 from .player import AbstractPlayer
 
 
@@ -251,7 +257,7 @@ class Player(AbstractPlayer):
         """
         url = self._build_url()
         try:
-            url_data = utils.rate_limit_pq(url=url)
+            url_data = utils.pq(utils.get_page_source(url=url))
         except HTTPError:
             return None
         return pq(utils.remove_html_comment_tags(url_data))
@@ -1485,7 +1491,7 @@ class Roster:
             Returns a PyQuery object of the team's HTML page.
         """
         try:
-            return utils.rate_limit_pq(url=url)
+            return utils.pq(utils.get_page_source(url=url))
         except HTTPError:
             return None
 

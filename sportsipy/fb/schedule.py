@@ -621,7 +621,7 @@ class Schedule:
         if not doc:
             squad_id = _lookup_team(team_id)
             try:
-                doc = utils.rate_limit_pq(url=SQUAD_URL % squad_id)
+                doc = utils.pq(utils.get_page_source(url=SQUAD_URL % squad_id))
             except HTTPError:
                 return
         schedule = utils.get_stats_table(doc, "table#matchlogs_for")

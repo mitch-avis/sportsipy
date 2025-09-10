@@ -55,7 +55,7 @@ class Rankings:
             Returns a PyQuery object of the rankings HTML page.
         """
         try:
-            return utils.rate_limit_pq(url=RANKINGS_URL % year)
+            return utils.pq(utils.get_page_source(url=RANKINGS_URL % year))
         except HTTPError:
             return None
 

@@ -432,7 +432,9 @@ class Schedule:
             # be pulled instead.
             if year == 2021:
                 try:
-                    doc = utils.rate_limit_pq(url=SCHEDULE_URL % (abbreviation.lower(), year))
+                    doc = utils.pq(
+                        utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year))
+                    )
                 except HTTPError:
                     year = str(int(year) - 1)
             # If stats for the requested season do not exist yet (as is the
@@ -443,7 +445,7 @@ class Schedule:
                 SCHEDULE_URL % (abbreviation.lower(), year)
             ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
                 year = str(int(year) - 1)
-        doc = utils.rate_limit_pq(url=SCHEDULE_URL % (abbreviation, year))
+        doc = utils.pq(utils.get_page_source(url=SCHEDULE_URL % (abbreviation, year)))
         schedule = utils.get_stats_table(doc, "table#games")
         if not schedule:
             utils.no_data_found()

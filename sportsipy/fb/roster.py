@@ -4,7 +4,7 @@ from urllib.error import HTTPError
 import pandas as pd
 from pyquery import PyQuery as pq
 
-from sportsipy.utils import get_stats_table, parse_field, rate_limit_pq, remove_html_comment_tags
+from sportsipy.utils import get_stats_table, parse_field, remove_html_comment_tags
 
 from ..decorators import float_property_decorator, int_property_decorator
 from .constants import ROSTER_SCHEME, SQUAD_URL
@@ -1666,7 +1666,7 @@ class Roster:
         """
         if not doc:
             try:
-                doc = rate_limit_pq(url=SQUAD_URL % self._squad_id)
+                doc = pq(utils.get_page_source(url=SQUAD_URL % self._squad_id))
                 doc = pq(remove_html_comment_tags(doc))
             except HTTPError:
                 return None

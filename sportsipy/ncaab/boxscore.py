@@ -8,7 +8,12 @@ from pyquery import PyQuery as pq
 from .. import utils
 from ..constants import AWAY, HOME
 from ..decorators import float_property_decorator, int_property_decorator
-from .constants import BOXSCORE_ELEMENT_INDEX, BOXSCORE_SCHEME, BOXSCORE_URL, BOXSCORES_URL
+from .constants import (
+    BOXSCORE_ELEMENT_INDEX,
+    BOXSCORE_SCHEME,
+    BOXSCORE_URL,
+    BOXSCORES_URL,
+)
 from .player import AbstractPlayer, _int_property_decorator
 
 
@@ -260,7 +265,7 @@ class Boxscore:
         """
         url = BOXSCORE_URL % uri
         try:
-            url_data = utils.rate_limit_pq(url=url)
+            url_data = utils.pq(utils.get_page_source(url=url))
         except (HTTPError, AttributeError):
             return None
         return pq(utils.remove_html_comment_tags(url_data))
@@ -1667,7 +1672,7 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return utils.rate_limit_pq(url=url)
+        return utils.pq(utils.get_page_source(url=url))
 
     def _get_boxscore_uri(self, url):
         """
