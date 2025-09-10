@@ -4,9 +4,9 @@ from urllib.error import HTTPError
 import pandas as pd
 from pyquery import PyQuery as pq
 
-from sportsipy.utils import get_stats_table, parse_field, remove_html_comment_tags
-
+from .. import utils
 from ..decorators import float_property_decorator, int_property_decorator
+from ..utils import get_stats_table, parse_field, remove_html_comment_tags
 from .constants import ROSTER_SCHEME, SQUAD_URL
 from .fb_utils import _lookup_team
 from .league_ids import LEAGUE_IDS
