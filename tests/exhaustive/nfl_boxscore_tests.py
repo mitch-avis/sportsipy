@@ -1365,7 +1365,7 @@ class Boxscore:
             The relative link to the boxscore HTML page, such as
             '201802040nwe'.
         """
-        url = BOXSCORE_URL % uri
+        _ = BOXSCORE_URL % uri
         boxscore = pq(open("nfl_boxscore_template.html", "r", encoding="utf-8").read())
         # boxscore = pq(get_page_source(url))
         # If the boxscore is None, the game likely hasn't been played yet and
