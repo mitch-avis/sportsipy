@@ -1,2 +1,72 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sportsipy"
+dynamic = ["version"]
+authors = [{ name = "Robert Clark", email = "robdclark@outlook.com" }]
+description = "A free sports API written for python"
+readme = "README.md"
+requires-python = ">=3.12"
+keywords = ["stats", "sports", "api", "sportsipy", "machine learning"]
+license = { text = "MIT" }
+urls = { "Homepage" = "https://github.com/mitch-avis/sportsipy" }
+dependencies = ["numpy", "pandas", "pyquery", "requests"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sportsipy"]
+
+[tool.hatch.version]
+path = "VERSION"
+
 [tool.black]
 line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+lint.select = ["E", "F", "W", "I", "B"]
+lint.ignore = [
+    "E203", # space before ':' (conflicts with black)
+]
+extend-exclude = [
+    ".venv",
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["sportsipy"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = [
+    "-ra",                       # show extra summary for (s)kipped, (x)failed
+    "--strict-markers",
+    "--cov=sportsipy",
+    "--cov-report=term-missing",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+branch = true
+source = ["sportsipy"]
+omit = ["config.py", "config-*.py", "*/config.py", "*/config-*.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = ["pragma: no cover", "if __name__ == \"__main__\":"]
