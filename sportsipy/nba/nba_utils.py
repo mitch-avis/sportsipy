@@ -82,13 +82,7 @@ def _retrieve_all_teams(year, season_file=None):
                     year = str(int(year) - 1)
             except HTTPError:
                 year = str(int(year) - 1)
-        # If stats for the requested season do not exist yet (as is the case
-        # right before a new season begins), attempt to pull the previous
-        # year's stats. If it exists, use the previous year instead.
-        if not utils.url_exists(SEASON_PAGE_URL % year) and utils.url_exists(
-            SEASON_PAGE_URL % str(int(year) - 1)
-        ):
-            year = str(int(year) - 1)
+        year = utils.resolve_year_for_url(year, lambda y: SEASON_PAGE_URL % y)
     doc = utils.pull_page(SEASON_PAGE_URL % year, season_file)
     teams_list = utils.get_stats_table(doc, "div#div_totals-team")
     opp_teams_list = utils.get_stats_table(doc, "div#div_totals-opponent")

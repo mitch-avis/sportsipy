@@ -80,13 +80,7 @@ def _retrieve_all_teams(
 
     if not year:
         year = utils.find_year_for_season("ncaab")
-        # If stats for the requested season do not exist yet (as is the case
-        # right before a new season begins), attempt to pull the previous
-        # year's stats. If it exists, use the previous year instead.
-        if not utils.url_exists(BASIC_STATS_URL % year) and utils.url_exists(
-            BASIC_STATS_URL % str(int(year) - 1)
-        ):
-            year = str(int(year) - 1)
+        year = utils.resolve_year_for_url(year, lambda y: BASIC_STATS_URL % y)
     doc = utils.pull_page(BASIC_STATS_URL % year, basic_stats)
     teams_list = utils.get_stats_table(doc, "table#basic_school_stats")
     doc = utils.pull_page(BASIC_OPPONENT_STATS_URL % year, basic_opp_stats)

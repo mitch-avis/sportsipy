@@ -70,13 +70,7 @@ def _retrieve_all_teams(year, standings_file=None, teams_file=None):
 
     if not year:
         year = utils.find_year_for_season("mlb")
-        # If stats for the requested season do not exist yet (as is the case
-        # right before a new season begins), attempt to pull the previous
-        # year's stats. If it exists, use the previous year instead.
-        if not utils.url_exists(STANDINGS_URL % year) and utils.url_exists(
-            STANDINGS_URL % str(int(year) - 1)
-        ):
-            year = str(int(year) - 1)
+        year = utils.resolve_year_for_url(year, lambda y: STANDINGS_URL % y)
     doc = utils.pull_page(STANDINGS_URL % year, standings_file)
     div_prefix = "div#all_expanded_standings_overall"
     standings = utils.get_stats_table(doc, div_prefix)
