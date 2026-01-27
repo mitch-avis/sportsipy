@@ -332,3 +332,41 @@ class TestUtils:
             secondary_index=4,
         )
         assert not result
+
+    def test_title_matches_year_handles_ranges(self):
+        assert utils._title_matches_year("2017-18 Season Summary", "2018")
+        assert utils._title_matches_year("2017–18 Season Summary", "2018")
+        assert not utils._title_matches_year("2016-17 Season Summary", "2018")
+
+    def test_extract_canonical_url_prefers_link(self):
+        html = (
+            '<link rel="canonical" href="https://example.com/teams/HOU/2017.html" />'
+            '<meta property="og:url" content="https://example.com/teams/NYJ/2017.html" />'
+        )
+        assert utils._extract_canonical_url(html) == "https://example.com/teams/HOU/2017.html"
+
+    def test_slug_matches_content_uses_canonical_when_present(self):
+        html = (
+            '<link rel="canonical" href="https://example.com/teams/NYJ/2017.html" />'
+            '<a href="/teams/HOU/2017.html">Link</a>'
+        )
+        assert not utils._slug_matches_content(html, "HOU")
+
+    def test_slug_matches_content_scans_body_without_canonical(self):
+        html = '<a href="/teams/HOU/2017.html">Link</a>'
+        assert utils._slug_matches_content(html, "HOU")
+
+    def test_resolve_year_for_url_walks_backwards(self, monkeypatch):
+        def fake_exists(url: str) -> bool:
+            return url.endswith("/2017")
+
+        monkeypatch.setattr(utils, "url_exists", fake_exists)
+        result = utils.resolve_year_for_url(2019, lambda y: f"https://example.com/{y}")
+        assert result == "2017"
+
+    def test_resolve_year_for_url_returns_input_when_unparseable(self, monkeypatch):
+        def fake_exists(url: str) -> bool:
+            raise AssertionError("url_exists should not be called for non-numeric years")
+
+        monkeypatch.setattr(utils, "url_exists", fake_exists)
+        assert utils.resolve_year_for_url("BAD", lambda y: f"https://example.com/{y}") == "BAD"
