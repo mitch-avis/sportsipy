@@ -508,8 +508,7 @@ class TestMLBBoxscores:
         flexmock(Boxscores).should_receive("_get_team_details").and_return(
             (None, None, None, None, None, None)
         )
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
 <tr class="loser">
     <td class="right">1</td>
@@ -523,8 +522,7 @@ class TestMLBBoxscores:
     </td>
 </tr>
 </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert len(games) == 0
@@ -533,8 +531,7 @@ class TestMLBBoxscores:
         flexmock(Boxscores).should_receive("_get_team_details").and_return(
             (None, None, None, None, None, None)
         )
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
 <tr class="loser">
     <td><a href="/teams/LAK/2019.html">Los Angeles Kings</a></td>
@@ -549,15 +546,13 @@ class TestMLBBoxscores:
     </td>
 </tr>
 </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert len(games) == 0
 
     def test_boxscore_with_no_score_returns_none(self):
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
 <tr class="loser">
     <td><a href="/teams/LAK/2019.html">Los Angeles Kings</a></td>
@@ -571,8 +566,7 @@ class TestMLBBoxscores:
     </td>
 </tr>
 </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert games == [

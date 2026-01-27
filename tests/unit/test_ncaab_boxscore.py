@@ -295,9 +295,7 @@ class TestNCAABBoxscore:
         assert self.boxscore.home_losses == 0
 
     def test_game_summary_with_no_scores_returns_none(self):
-        result = Boxscore(None)._parse_summary(
-            pq(
-                """<table id="line-score">
+        result = Boxscore(None)._parse_summary(pq("""<table id="line-score">
     <tbody>
         <tr>
             <td class="right"></td>
@@ -308,9 +306,7 @@ class TestNCAABBoxscore:
             <td class="right"></td>
         </tr>
     </tbody>
-</table>"""
-            )
-        )
+</table>"""))
 
         assert result == {"away": [None], "home": [None]}
 
@@ -373,7 +369,10 @@ class TestNCAABBoxscore:
         assert ranking is None
 
     def test_ncaab_game_info(self):
-        fields = {"date": "November 9, 2018", "location": "WVU Coliseum, Morgantown, West Virginia"}
+        fields = {
+            "date": "November 9, 2018",
+            "location": "WVU Coliseum, Morgantown, West Virginia",
+        }
 
         mock_field = """November 9, 2018
 WVU Coliseum, Morgantown, West Virginia
@@ -406,8 +405,7 @@ class TestNCAABBoxscores:
         self.boxscores = Boxscores(None)
 
     def test_boxscore_with_no_score_returns_none(self):
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
 <tr class="loser">
     <td><a href="/cbb/schools/south-dakota/2019.html">South Dakota</a></td>
@@ -423,8 +421,7 @@ class TestNCAABBoxscores:
     </td>
 </tr>
 </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert games == [

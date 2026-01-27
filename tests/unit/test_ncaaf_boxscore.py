@@ -264,8 +264,7 @@ class TestNCAAFBoxscore:
 
     def test_game_summary_with_no_scores_returns_none(self):
         result = Boxscore(None)._parse_summary(
-            pq(
-                """<table class="linescore nohover stats_table no_freeze">
+            pq("""<table class="linescore nohover stats_table no_freeze">
     <tbody>
         <tr>
             <td class="center"></td>
@@ -276,8 +275,7 @@ class TestNCAAFBoxscore:
             <td class="center"></td>
         </tr>
     </tbody>
-</table>"""
-            )
+</table>""")
         )
 
         assert result == {"away": [None], "home": [None]}
@@ -407,8 +405,7 @@ class TestNCAABBoxscores:
         self.boxscores = Boxscores(None)
 
     def test_boxscore_with_no_score_returns_none(self):
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
 <tr class="date"><td colspan=3>Armed Forces Bowl</td></tr>
 
@@ -427,8 +424,7 @@ class TestNCAABBoxscores:
     </td>
 </tr>
 </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert games == [

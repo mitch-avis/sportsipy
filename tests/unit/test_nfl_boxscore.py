@@ -164,8 +164,7 @@ class TestNFLBoxscore:
 
     def test_game_summary_with_no_scores_returns_none(self):
         result = Boxscore(None)._parse_summary(
-            pq(
-                """<table class="linescore nohover stats_table no_freeze">
+            pq("""<table class="linescore nohover stats_table no_freeze">
     <tbody>
         <tr>
             <td class="center"></td>
@@ -176,8 +175,7 @@ class TestNFLBoxscore:
             <td class="center"></td>
         </tr>
     </tbody>
-</table>"""
-            )
+</table>""")
         )
 
         assert result == {"away": [None], "home": [None]}
@@ -258,19 +256,15 @@ Logos via Sports Logos.net / About logos
             assert getattr(self.boxscore, field) == value
 
     def test_nfl_away_abbreviation(self):
-        away_name = PropertyMock(
-            return_value='<a href="/teams/kan/2018.htm" \
-itemprop="name">Kansas City Chiefs</a>'
-        )
+        away_name = PropertyMock(return_value='<a href="/teams/kan/2018.htm" \
+itemprop="name">Kansas City Chiefs</a>')
         type(self.boxscore)._away_name = away_name
 
         assert self.boxscore.away_abbreviation == "kan"
 
     def test_nfl_home_abbreviation(self):
-        home_name = PropertyMock(
-            return_value='<a href="/teams/nwe/2018.htm" \
-itemprop="name">New England Patriots</a>'
-        )
+        home_name = PropertyMock(return_value='<a href="/teams/nwe/2018.htm" \
+itemprop="name">New England Patriots</a>')
         type(self.boxscore)._home_name = home_name
 
         assert self.boxscore.home_abbreviation == "nwe"
@@ -350,8 +344,7 @@ class TestNFLBoxscores:
         flexmock(Boxscores).should_receive("_get_team_details").and_return(
             (None, None, None, None, None, None)
         )
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
 <tr class="date"><td colspan=3>Dec 9, 2018</td></tr>
 
@@ -368,8 +361,7 @@ class TestNFLBoxscores:
     </td>
 </tr>
 </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert len(games) == 0
@@ -378,8 +370,7 @@ class TestNFLBoxscores:
         flexmock(Boxscores).should_receive("_get_team_details").and_return(
             (None, None, None, None, None, None)
         )
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
 <tr class="date"><td colspan=3>Dec 9, 2018</td></tr>
 
@@ -395,15 +386,13 @@ class TestNFLBoxscores:
     </td>
 </tr>
 </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert len(games) == 0
 
     def test_boxscore_with_no_score_returns_none(self):
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
 <tr class="date"><td colspan=3>Dec 9, 2018</td></tr>
 
@@ -419,8 +408,7 @@ class TestNFLBoxscores:
     </td>
 </tr>
 </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert games == [

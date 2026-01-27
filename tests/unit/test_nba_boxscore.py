@@ -312,9 +312,7 @@ class TestNBABoxscore:
         assert isinstance(self.boxscore.home_two_point_field_goal_percentage, float)
 
     def test_game_summary_with_no_scores_returns_none(self):
-        result = Boxscore(None)._parse_summary(
-            pq(
-                """<table id="line_score">
+        result = Boxscore(None)._parse_summary(pq("""<table id="line_score">
     <tbody>
         <tr>
             <td class="center"></td>
@@ -325,9 +323,7 @@ class TestNBABoxscore:
             <td class="center"></td>
         </tr>
     </tbody>
-</table>"""
-            )
-        )
+</table>"""))
 
         assert result == {"away": [None], "home": [None]}
 
@@ -384,8 +380,7 @@ class TestNBABoxscores:
         flexmock(Boxscores).should_receive("_get_team_details").and_return(
             (None, None, None, None, None, None)
         )
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
     <tr class="loser">
             <td class="right">84</td>
@@ -399,8 +394,7 @@ class TestNBABoxscores:
             </td>
     </tr>
     </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert len(games) == 0
@@ -409,8 +403,7 @@ class TestNBABoxscores:
         flexmock(Boxscores).should_receive("_get_team_details").and_return(
             (None, None, None, None, None, None)
         )
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
     <tr class="loser">
             <td><a href="/teams/DET/2017.html">Detroit</a></td>
@@ -425,15 +418,13 @@ class TestNBABoxscores:
             </td>
     </tr>
     </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert len(games) == 0
 
     def test_boxscore_with_no_score_returns_none(self):
-        mock_html = pq(
-            """<table class="teams">
+        mock_html = pq("""<table class="teams">
 <tbody>
     <tr class="loser">
             <td><a href="/teams/DET/2017.html">Detroit</a></td>
@@ -447,8 +438,7 @@ class TestNBABoxscores:
             </td>
     </tr>
     </tbody>
-</table>"""
-        )
+</table>""")
         games = self.boxscores._extract_game_info([mock_html])
 
         assert games == [
