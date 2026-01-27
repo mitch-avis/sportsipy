@@ -88,7 +88,11 @@ def _rate_limit_seconds() -> float:
 
 
 def _rate_limit_enabled() -> bool:
-    if _env_flag("SPORTSIPY_DISABLE_RATE_LIMIT") or _env_flag("SPORTSIPY_OFFLINE"):
+    if _env_flag("SPORTSIPY_DISABLE_RATE_LIMIT"):
+        return False
+    if _env_flag("SPORTSIPY_FORCE_RATE_LIMIT"):
+        return True
+    if _env_flag("SPORTSIPY_OFFLINE"):
         return False
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return False
@@ -534,6 +538,8 @@ def _fallback_fixture_by_context(root: Path, url: str) -> Optional[Path]:
     def _pick_first(paths: list[Path]) -> Optional[Path]:
         return sorted(paths)[0] if paths else None
 
+    fixture_root = root / "integration" if (root / "integration").exists() else root
+
     sport_hint = None
     if "basketball-reference.com" in url_lower:
         sport_hint = "nba"
@@ -551,10 +557,10 @@ def _fallback_fixture_by_context(root: Path, url: str) -> Optional[Path]:
         sport_hint = "fb"
 
     if sport_hint == "fb" and "squads" in url_lower:
-        return _pick_first(list(root.rglob("integration/roster/fb/*")))
+        return _pick_first(list(fixture_root.rglob("roster/fb/*")))
 
     if "polls" in url_lower and sport_hint:
-        return _pick_first(list(root.rglob(f"integration/rankings/{sport_hint}/*")))
+        return _pick_first(list(fixture_root.rglob(f"rankings/{sport_hint}/*")))
 
     if ("/conferences/" in url_lower or "/seasons/" in url_lower) and sport_hint in {
         "ncaab",
@@ -562,33 +568,31 @@ def _fallback_fixture_by_context(root: Path, url: str) -> Optional[Path]:
     }:
         season_pages = [
             p
-            for p in root.rglob(f"integration/conferences/{sport_hint}/*")
+            for p in fixture_root.rglob(f"conferences/{sport_hint}/*")
             if re.fullmatch(r"\d{4}\.html", p.name)
         ]
         return _pick_first(season_pages)
 
     if ("boxscores" in url_lower or "/boxes/" in url_lower) and sport_hint:
-        return _pick_first(list(root.rglob(f"integration/boxscore/{sport_hint}/*")))
+        return _pick_first(list(fixture_root.rglob(f"boxscore/{sport_hint}/*")))
 
     if "gamelog" in url_lower or "_games" in url_lower or "schedule" in url_lower:
         if sport_hint:
-            return _pick_first(list(root.rglob(f"integration/schedule/{sport_hint}/*")))
+            return _pick_first(list(fixture_root.rglob(f"schedule/{sport_hint}/*")))
 
     if "/players/" in url_lower and sport_hint:
-        return _pick_first(list(root.rglob(f"integration/roster/{sport_hint}/*")))
+        return _pick_first(list(fixture_root.rglob(f"roster/{sport_hint}/*")))
 
     if "/teams/" in url_lower and sport_hint in {"nba", "nhl", "mlb"}:
         team_pages = [
-            p
-            for p in root.rglob(f"integration/roster/{sport_hint}/*")
-            if re.search(r"\d{4}", p.name)
+            p for p in fixture_root.rglob(f"roster/{sport_hint}/*") if re.search(r"\d{4}", p.name)
         ]
         return _pick_first(team_pages)
 
     if (
         "/leagues/" in url_lower or (sport_hint == "nfl" and "/years/" in url_lower)
     ) and sport_hint:
-        return _pick_first(list(root.rglob(f"integration/teams/{sport_hint}_stats/*")))
+        return _pick_first(list(fixture_root.rglob(f"teams/{sport_hint}_stats/*")))
 
     return None
 
