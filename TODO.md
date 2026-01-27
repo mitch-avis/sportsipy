@@ -6,6 +6,10 @@
 
 Make integration tests fully offline and deterministic while keeping current coverage.
 
+### Status
+
+In progress: offline env/fixture registry scaffolding added. Tests not rewired yet.
+
 ### Plan (Offline Integration Tests)
 
 1) Inventory live requests
@@ -35,6 +39,12 @@ Make integration tests fully offline and deterministic while keeping current cov
 
 - Respect >= 3s delay between requests (20 requests/minute max).
 - Scraping only; no API access.
+
+### Status
+
+Mostly complete: centralized request helper with rate limiting, retries, caching,
+and offline gating added in `sportsipy/utils.py`. Remaining work includes
+tests + Sphinx doc updates.
 
 ### Plan (Throttling / Retry / Caching)
 
@@ -72,6 +82,11 @@ Make integration tests fully offline and deterministic while keeping current cov
 Move the project README to Markdown and point the primary repo links at the
 current fork while preserving credit to the original and prior fork.
 
+### Status
+
+Completed: `README.md` created, `README.rst` removed, links updated, and
+`pyproject.toml` updated to reference Markdown.
+
 ### Plan (Convert README.rst to README.md + Update GitHub Links)
 
 1) Convert `README.rst` → `README.md`
@@ -93,6 +108,10 @@ current fork while preserving credit to the original and prior fork.
 
 Resolve all failing unit + integration tests and ensure offline/ratelimit
 changes do not reintroduce regressions.
+
+### Status
+
+Completed for the latest run: all tests pass (see most recent `pytest` run).
 
 ### Observed Failures (grouped)
 
