@@ -1,6 +1,5 @@
 from os.path import dirname, join
 
-import mock
 import pytest
 from flexmock import flexmock
 
@@ -762,7 +761,6 @@ class TestNCAAFRankings:
         self.results = results
         self.results_complete = results_complete
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
@@ -774,13 +772,10 @@ class TestNCAAFRankings:
         for week, data in self.results_complete.items():
             assert rankings.complete[week] == data
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
             Rankings("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
@@ -791,7 +786,6 @@ class TestNCAAFRankings:
         for week, data in self.results_complete.items():
             assert rankings.complete[week] == data
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_string_representation(self, *args, **kwargs):
         rankings = Rankings()
 
@@ -2422,7 +2416,6 @@ class TestCFPNCAAFRankings:
         self.results = results
         self.results_complete = results_complete
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
@@ -2432,13 +2425,10 @@ class TestCFPNCAAFRankings:
         assert rankings.current == self.results
         assert rankings.complete == self.results_complete
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
             CFPRankings("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
@@ -3165,7 +3155,6 @@ class TestCoachesNCAAFRankings:
         self.results = results
         self.results_complete = results_complete
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
@@ -3177,13 +3166,10 @@ class TestCoachesNCAAFRankings:
         for week, data in self.results_complete.items():
             assert rankings.complete[week] == data
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
             CoachesRankings("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
