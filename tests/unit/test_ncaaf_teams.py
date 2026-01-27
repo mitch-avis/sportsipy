@@ -1,3 +1,5 @@
+from typing import Any
+
 from flexmock import flexmock
 
 from sportsipy.ncaaf.schedule import Schedule
@@ -8,7 +10,7 @@ class TestNCAAFTeams:
     def setup_method(self, *args, **kwargs):
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
 
-        self.team = Team(None)
+        self.team: Any = Team(None)
 
     def test_no_conference_wins_data_returns_default(self):
         self.team._conference_wins = ""

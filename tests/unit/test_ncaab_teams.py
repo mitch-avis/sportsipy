@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 from flexmock import flexmock
 
 from sportsipy.ncaab.schedule import Schedule
@@ -18,10 +20,11 @@ class TestNCAABTeams:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
         team = Team(None, 1)
-        team._field_goals = 0
-        team._three_point_field_goals = 0
-        team._field_goal_attempts = 0
-        team._three_point_field_goal_attempts = 0
+        typed_team = cast(Any, team)
+        typed_team._field_goals = 0
+        typed_team._three_point_field_goals = 0
+        typed_team._field_goal_attempts = 0
+        typed_team._three_point_field_goal_attempts = 0
 
         result = team.two_point_field_goal_percentage
 
@@ -32,10 +35,11 @@ class TestNCAABTeams:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
         team = Team(None, 1)
-        team._opp_field_goals = 0
-        team._opp_three_point_field_goals = 0
-        team._opp_field_goal_attempts = 0
-        team._opp_three_point_field_goal_attempts = 0
+        typed_team = cast(Any, team)
+        typed_team._opp_field_goals = 0
+        typed_team._opp_three_point_field_goals = 0
+        typed_team._opp_field_goal_attempts = 0
+        typed_team._opp_three_point_field_goal_attempts = 0
 
         result = team.opp_two_point_field_goal_percentage
 
