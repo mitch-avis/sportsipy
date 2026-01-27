@@ -1,3 +1,5 @@
+from typing import Any
+
 from flexmock import flexmock
 from mock import patch
 from pyquery import PyQuery as pq
@@ -49,7 +51,7 @@ class TestNHLBoxscore:
     def setup_method(self, *args, **kwargs):
         flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
 
-        self.boxscore = Boxscore(None)
+        self.boxscore: Any = Boxscore(None)
 
     def test_away_team_wins(self):
         self.boxscore._away_goals = 4
