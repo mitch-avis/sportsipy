@@ -1096,7 +1096,12 @@ class Teams:
     """
 
     def __init__(
-        self, year=None, basic_stats=None, basic_opp_stats=None, adv_stats=None, adv_opp_stats=None
+        self,
+        year=None,
+        basic_stats=None,
+        basic_opp_stats=None,
+        adv_stats=None,
+        adv_opp_stats=None,
     ):
         self._teams = []
         self._conferences_dict = Conferences(year).team_conference
