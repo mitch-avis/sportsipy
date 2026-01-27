@@ -169,7 +169,7 @@ If the tests are successful, it will return a green line with a message at the
 end of the output similar to the following:
 
 ```text
-======================= 380 passed in 245.56 seconds =======================
+======================= 778 passed in 239.89s (0:03:59) ========================
 ```
 
 If a test fails, it will show the number of failed tests and what went wrong.
