@@ -32,7 +32,6 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         element_ind = 0
@@ -52,7 +51,6 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         element_ind = 0
@@ -70,14 +68,16 @@ def _most_recent_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         season = args[0]._most_recent_season
         seasons = args[0]._season
         index = seasons.index(season)
         prop = func(*args)
         element_ind = 0
         try:
-            return prop[index][element_ind]
+            value = prop[index][element_ind]
+            if value == "":
+                return None
+            return value
         except (TypeError, IndexError):
             # If there is no value, default to None
             return None
@@ -114,7 +114,7 @@ class Player(AbstractPlayer):
     def __init__(self, player_id):
         self._most_recent_season = ""
         self._index = None
-        self._player_id = player_id
+        self._player_id: str | None = player_id
         self._season = None
         self._name = None
         self._team_abbreviation = None
@@ -476,8 +476,7 @@ class Player(AbstractPlayer):
             contract[year] = {"age": age, "team": team, "salary": salary}
         self._contract = contract
 
-    def _parse_value(self, html_data, field):
-        # pylint: disable=arguments-renamed
+    def _parse_value(self, stats, field):
         """
         Parse the HTML table to find the requested field's value.
 
@@ -504,7 +503,7 @@ class Player(AbstractPlayer):
             could be found, returns None.
         """
         scheme = PLAYER_SCHEME[field]
-        items = [i.text() for i in html_data(scheme).items()]
+        items = [i.text() for i in stats(scheme).items()]
         # Stats can be added and removed on a yearly basis. If no stats are
         # found, return None and have that be the value.
         if len(items) == 0:
@@ -725,7 +724,7 @@ class Player(AbstractPlayer):
         '2017'. If no season was requsted, the career stats will be
         returned for the player and the season will default to 'Career'.
         """
-        if self._season is not None:
+        if self._season is not None and self._index is not None:
             return self._season[self._index]
         return None
 
@@ -1457,10 +1456,7 @@ class Roster:
         self._team = team
         self._slim = slim
         self._coach = None
-        if slim:
-            self._players = {}
-        else:
-            self._players = []
+        self._players = {} if slim else []
 
         self._find_players_with_coach(year)
 
@@ -1468,7 +1464,10 @@ class Roster:
         """
         Return the string representation of the class.
         """
-        players = [f"{player.name} ({player.player_id})".strip() for player in self._players]
+        if isinstance(self._players, dict):
+            players = [f"{name} ({player_id})".strip() for player_id, name in self._players.items()]
+        else:
+            players = [f"{player.name} ({player.player_id})".strip() for player in self._players]
         return "\n".join(players)
 
     def __repr__(self):
@@ -1606,14 +1605,7 @@ class Roster:
         """
         if not year:
             year = utils.find_year_for_season("mlb")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(self._create_url(year)) and utils.url_exists(
-                self._create_url(str(int(year) - 1))
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: self._create_url(y))
         url = self._create_url(year)
         page = self._pull_team_page(url)
         if not page:
@@ -1627,10 +1619,12 @@ class Roster:
             player_id = self._get_id(player)
             if self._slim:
                 name = self._get_name(player)
-                self._players[player_id] = name
+                if isinstance(self._players, dict):
+                    self._players[player_id] = name
             else:
                 player_instance = Player(player_id)
-                self._players.append(player_instance)
+                if isinstance(self._players, list):
+                    self._players.append(player_instance)
             players_parsed.append(player_id)
         for player in page("table#team_pitching tbody tr").items():
             if 'class="thead"' in str(player):
@@ -1642,10 +1636,12 @@ class Roster:
                 continue
             if self._slim:
                 name = self._get_name(player)
-                self._players[player_id] = name
+                if isinstance(self._players, dict):
+                    self._players[player_id] = name
             else:
                 player_instance = Player(player_id)
-                self._players.append(player_instance)
+                if isinstance(self._players, list):
+                    self._players.append(player_instance)
 
         self._coach = self._parse_coach(page)
 

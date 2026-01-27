@@ -39,7 +39,7 @@ class SquadPlayer:
         self._age = None
         self._matches_played = None
         self._starts = None
-        self._minutes = None
+        self._minutes: str | None = None
         self._goals = None
         self._assists = None
         self._penalty_kicks = None
@@ -213,10 +213,11 @@ class SquadPlayer:
         country = player_data(ROSTER_SCHEME["nationality"])
         if not country:
             return None
-        country = country.attr("href")
-        country = re.sub(r".*\/", "", country)
-        country = country.replace("-Football", "")
-        return country
+        href = country.attr("href")
+        if not href:
+            return None
+        country_value = re.sub(r".*\/", "", href)
+        return country_value.replace("-Football", "")
 
     def _parse_player_stats(self, player_data):
         """
@@ -393,7 +394,10 @@ class SquadPlayer:
             "tackle_percentage": self.tackle_percentage,
             "times_dribbled_past": self.times_dribbled_past,
         }
-        return pd.DataFrame([fields_to_include], index=[self.player_id])
+        # Pandas stubs can trip Pyright/Pylance here; runtime is correct.
+        return pd.DataFrame(
+            [fields_to_include], index=[self.player_id]
+        )  # pyright: ignore[reportGeneralTypeIssues]
 
     @property
     def name(self):
@@ -454,6 +458,8 @@ class SquadPlayer:
         Returns an ``int`` of the number of minutes the player has spent on the
         field in all competitions.
         """
+        if not self._minutes:
+            return None
         return self._minutes.replace(",", "")
 
     @int_property_decorator
@@ -1634,11 +1640,18 @@ class Roster:
             # after a strong tag containing the exact text "Record:", and
             # needs to be parsed with a regex from the attribute
             strong = pq(line).find("strong")
-            if hasattr(strong, "text") and strong.text().strip() == "Record:":
-                href = pq(strong).nextAll("a").attr("href")
+            text_value = str(strong.text() or "") if hasattr(strong, "text") else ""
+            if text_value.strip() == "Record:":
+                next_all = getattr(pq(strong), "nextAll", None)
+                links: pq | None = next_all("a") if callable(next_all) else None
+                href = links.attr("href") if links is not None else None
                 try:
-                    comp_id = re.compile(r"/comps/(\d+)/").search(href).group(1)
-                    return comp_id
+                    if not href:
+                        continue
+                    match = re.search(r"/comps/(\d+)/", href)
+                    if match is None:
+                        continue
+                    return match.group(1)
                 except AttributeError:
                     continue
         return None

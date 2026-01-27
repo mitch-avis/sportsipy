@@ -28,7 +28,6 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -45,7 +44,6 @@ def _int_property_decorator_default_zero(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -62,7 +60,6 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -79,7 +76,6 @@ def _most_recent_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         season = args[0]._most_recent_season
         seasons = args[0]._season
         index = seasons.index(season)
@@ -118,14 +114,14 @@ class Player(AbstractPlayer):
     def __init__(self, player_id):
         self._most_recent_season = ""
         self._index = None
-        self._player_id = player_id
-        self._season = None
+        self._player_id: str | None = player_id
+        self._season: list[str] | None = None
         self._name = None
         self._team_abbreviation = None
         self._position = None
         self._height = None
-        self._weight = None
-        self._birth_date = None
+        self._weight: str | None = None
+        self._birth_date: str | None = None
         self._nationality = None
         self._games_played = None
         self._games_started = None
@@ -536,7 +532,7 @@ class Player(AbstractPlayer):
         self._parse_birth_date(player_info)
         self._parse_contract(player_info)
         all_stats = self._combine_all_stats(player_info)
-        self._season = all_stats.keys()
+        self._season = list(all_stats.keys())
         return all_stats
 
     def find_initial_index(self):
@@ -775,17 +771,20 @@ class Player(AbstractPlayer):
         """
         Returns an ``int`` of the player's weight in pounds.
         """
+        if not self._weight:
+            return None
         try:
-            result = int(self._weight.replace("lb", ""))
-        except AttributeError:
-            result = None
-        return result
+            return int(self._weight.replace("lb", ""))
+        except ValueError:
+            return None
 
     @property
     def birth_date(self):
         """
         Returns a ``datetime`` object of the day and year the player was born.
         """
+        if not self._birth_date:
+            return None
         return datetime.strptime(self._birth_date, "%Y-%m-%d")
 
     @property
@@ -1392,6 +1391,7 @@ class Roster:
         self._team = team
         self._slim = slim
         self._coach = None
+        self._players: dict[str, str] | list[Player]
         if slim:
             self._players = {}
         else:
@@ -1402,7 +1402,10 @@ class Roster:
         """
         Return the string representation of the class.
         """
-        players = [f"{player.name} ({player.player_id})".strip() for player in self._players]
+        if isinstance(self._players, dict):
+            players = [f"{name} ({player_id})".strip() for player_id, name in self._players.items()]
+        else:
+            players = [f"{player.name} ({player.player_id})".strip() for player in self._players]
         return "\n".join(players)
 
     def __repr__(self):
@@ -1551,14 +1554,7 @@ class Roster:
                         year = str(int(year) - 1)
                 except HTTPError:
                     year = str(int(year) - 1)
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(self._create_url(year)) and utils.url_exists(
-                self._create_url(str(int(year) - 1))
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: self._create_url(y))
         url = self._create_url(year)
         page = self._pull_team_page(url)
         if not page:
@@ -1571,10 +1567,12 @@ class Roster:
                 continue  # pragma: no cover
             if self._slim:
                 name = self._get_name(player)
-                self._players[player_id] = name
+                if isinstance(self._players, dict):
+                    self._players[player_id] = name
             else:
                 player_instance = Player(player_id)
-                self._players.append(player_instance)
+                if isinstance(self._players, list):
+                    self._players.append(player_instance)
 
         self._coach = self._parse_coach(page)
 
