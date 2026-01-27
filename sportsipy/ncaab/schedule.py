@@ -55,7 +55,7 @@ class Game:
         self._result: str | None = None
         self._points_for = None
         self._points_against = None
-        self._overtimes = None
+        self._overtimes: str | None = None
         self._season_wins = None
         self._season_losses = None
         self._streak = None
