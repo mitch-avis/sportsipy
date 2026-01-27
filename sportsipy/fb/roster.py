@@ -1666,7 +1666,10 @@ class Roster:
         """
         if not doc:
             try:
-                doc = pq(utils.get_page_source(url=SQUAD_URL % self._squad_id))
+                page_source = utils.get_page_source(url=SQUAD_URL % self._squad_id)
+                if not page_source:
+                    return None
+                doc = pq(page_source)
                 doc = pq(remove_html_comment_tags(doc))
             except HTTPError:
                 return None
