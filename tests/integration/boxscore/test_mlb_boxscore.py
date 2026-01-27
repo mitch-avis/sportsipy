@@ -135,7 +135,7 @@ class TestMLBBoxscore:
     def test_mlb_boxscore_returns_requested_boxscore(self):
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
-        assert getattr(self.boxscore, "summary") == {
+        assert self.boxscore.summary == {
             "away": [2, 0, 0, 0, 1, 3, 0, 0, 0],
             "home": [0, 0, 2, 0, 3, 0, 0, 0, 2],
         }

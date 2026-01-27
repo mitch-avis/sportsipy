@@ -119,7 +119,10 @@ class TestNFLBoxscore:
     def test_nfl_boxscore_returns_requested_boxscore(self):
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
-        assert getattr(self.boxscore, "summary") == {"away": [7, 0, 0, 13], "home": [0, 17, 7, 10]}
+        assert self.boxscore.summary == {
+            "away": [7, 0, 0, 13],
+            "home": [0, 17, 7, 10],
+        }
 
     def test_invalid_url_yields_empty_class(self):
         flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)

@@ -143,7 +143,7 @@ class TestNCAABBoxscore:
     def test_ncaab_boxscore_returns_requested_boxscore(self):
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
-        assert getattr(self.boxscore, "summary") == {
+        assert self.boxscore.summary == {
             # Box score is not parsed correctly
             "away": [],
             "home": [],
