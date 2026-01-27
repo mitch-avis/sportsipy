@@ -53,7 +53,7 @@ class Team:
     def __init__(self, team_name=None, team_data=None, rank=None, year=None, season_page=None):
         self._year = year
         self._rank = rank
-        self._abbreviation = None
+        self._abbreviation: str | None = None
         self._name = None
         self._wins = None
         self._losses = None
@@ -297,7 +297,13 @@ class Team:
         Returns a ``string constant`` denoting how far the team made it in the
         post-season.
         """
-        final_game = self.schedule[-1]
+        schedule = self.schedule
+        if not schedule:
+            return None
+        try:
+            final_game = schedule[-1]
+        except IndexError:
+            return None
         result = final_game.result
         if result == LOSS and final_game.week in [WILD_CARD, 18]:
             return LOST_WILD_CARD

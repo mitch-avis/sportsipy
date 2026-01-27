@@ -43,7 +43,7 @@ class Team:
     def __init__(self, team_name=None, team_data=None, rank=None, year=None, season_file=None):
         self._year = year
         self._rank = rank
-        self._abbreviation = None
+        self._abbreviation: str | None = None
         self._name = None
         self._games_played = None
         self._wins = None
@@ -674,7 +674,7 @@ class Teams:
 
         team_data_dict, year = _retrieve_all_teams(year, season_file)
         if team_data_dict is None:
-            raise ValueError("No team data found for the requested season.")
+            return
         self._instantiate_teams(team_data_dict, year)
 
     def __getitem__(self, abbreviation):

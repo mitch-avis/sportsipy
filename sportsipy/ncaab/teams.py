@@ -63,7 +63,7 @@ class Team:
     ):
         self._team_conference = team_conference
         self._year = year
-        self._abbreviation = None
+        self._abbreviation: str | None = None
         self._name = None
         self._games_played = None
         self._wins = None

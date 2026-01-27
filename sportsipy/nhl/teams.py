@@ -44,7 +44,7 @@ class Team:
     def __init__(self, team_name=None, team_data=None, rank=None, year=None, season_page=None):
         self._year = year
         self._rank = rank
-        self._abbreviation = None
+        self._abbreviation: str | None = None
         self._name = None
         self._average_age = None
         self._games_played = None
