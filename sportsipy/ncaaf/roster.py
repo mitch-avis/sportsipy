@@ -70,7 +70,7 @@ class Player(AbstractPlayer):
         self._index = None
         self._player_id: str | None = player_id
         self._season: list[str] | None = None
-        self._name = None
+        self._name: str | None = None
         self._team_abbreviation = None
         self._position = None
         self._height = None
@@ -204,7 +204,8 @@ class Player(AbstractPlayer):
         season = utils.parse_field(PLAYER_SCHEME, row, "season")
         if not season:
             return None
-        return season.replace("*", "").replace("+", "")
+        season_str = str(season)
+        return season_str.replace("*", "").replace("+", "")
 
     def _combine_season_stats(self, table_rows, career_stats, all_stats_dict):
         """
@@ -502,6 +503,8 @@ class Player(AbstractPlayer):
         if self._position is not None and self._index is not None:
             if self.season == "Career" and self._position[self._index] == "":
                 if self._season is None:
+                    return None
+                if not self._most_recent_season:
                     return None
                 index = self._season.index(self._most_recent_season)
                 return self._position[index]
@@ -990,7 +993,8 @@ class Roster:
         """
         name_tag = player('th[data-stat="player"] a')
         name = re.sub(r".*/players/", "", str(name_tag))
-        return re.sub(r"\.htm.*", "", name)
+        player_id = re.sub(r"\.htm.*", "", name)
+        return str(player_id or "")
 
     def _get_name(self, player):
         """
@@ -1011,7 +1015,7 @@ class Roster:
             Returns a string of the player's name.
         """
         name_tag = player('th[data-stat="player"] a')
-        return name_tag.text()
+        return str(name_tag.text() or "")
 
     def _parse_coach(self, page):
         """
@@ -1063,12 +1067,17 @@ class Roster:
             raise ValueError(output)
         for player in page("table#roster tbody tr").items():
             player_id = self._get_id(player)
+            if not player_id:
+                continue
             if self._slim:
                 name = self._get_name(player)
                 if isinstance(self._players, dict):
                     self._players[player_id] = name
             else:
+                name = self._get_name(player)
                 player_instance = Player(player_id)
+                if player_instance.name is None:
+                    player_instance._name = name
                 if isinstance(self._players, list):
                     self._players.append(player_instance)
 

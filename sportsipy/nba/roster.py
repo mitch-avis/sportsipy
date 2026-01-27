@@ -223,6 +223,8 @@ class Player(AbstractPlayer):
         """
         # The first letter of the player's last name is used to sort the player
         # list and is a part of the URL.
+        if self._player_id is None:
+            raise ValueError("Player ID is None. Cannot build URL.")
         first_character = self._player_id[0]
         return PLAYER_URL % (first_character, self._player_id)
 
@@ -737,7 +739,7 @@ class Player(AbstractPlayer):
         '2017-18'. If no season was requested, the career stats will be
         returned for the player and the season will default to 'Career'.
         """
-        if self._season is not None:
+        if self._season is not None and self._index is not None:
             return self._season[self._index]
         return None
 
@@ -747,7 +749,7 @@ class Player(AbstractPlayer):
         Returns a ``string`` of the abbrevation for the team the player plays
         for, such as 'HOU' for James Harden.
         """
-        if self._team_abbreviation is not None:
+        if self._team_abbreviation is not None and self._index is not None:
             return self._team_abbreviation[self._index]
         return None
 
@@ -1500,7 +1502,7 @@ class Roster:
             Returns a string of the player's name.
         """
         name_tag = player('td[data-stat="player"] a')
-        return name_tag.text()
+        return str(name_tag.text() or "")
 
     def _parse_coach(self, page):
         """

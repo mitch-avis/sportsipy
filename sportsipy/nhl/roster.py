@@ -193,6 +193,8 @@ class Player(AbstractPlayer):
         """
         # The first letter of the player's last name is used to sort the player
         # list and is a part of the URL.
+        if self._player_id is None:
+            raise ValueError("Player ID is None. Cannot build URL.")
         first_character = self._player_id[0]
         return PLAYER_URL % (first_character, self._player_id)
 
@@ -243,7 +245,8 @@ class Player(AbstractPlayer):
         season = utils.parse_field(PLAYER_SCHEME, row, "season")
         if not season:
             return None
-        return season.replace("*", "").replace("+", "")
+        season_str = str(season)
+        return season_str.replace("*", "").replace("+", "")
 
     def _combine_season_stats(self, table_rows, career_stats, all_stats_dict):
         """
@@ -1207,7 +1210,8 @@ class Roster:
         string
             Returns a string of the player ID.
         """
-        return player('td[data-stat="player"]').attr("data-append-csv")
+        player_id = player('td[data-stat="player"]').attr("data-append-csv")
+        return str(player_id or "")
 
     def _get_name(self, player):
         """
@@ -1228,7 +1232,7 @@ class Roster:
             Returns a string of the player's name.
         """
         name_tag = player('td[data-stat="player"] a')
-        return name_tag.text()
+        return str(name_tag.text() or "")
 
     def _parse_coach(self, page):
         """
@@ -1280,6 +1284,8 @@ class Roster:
             raise ValueError(output)
         for player in page("table#roster tbody tr").items():
             player_id = self._get_id(player)
+            if not player_id:
+                continue
             if self._slim:
                 name = self._get_name(player)
                 if isinstance(self._players, dict):

@@ -116,7 +116,7 @@ class Player(AbstractPlayer):
         self._index = None
         self._player_id: str | None = player_id
         self._season = None
-        self._name = None
+        self._name: str | None = None
         self._team_abbreviation = None
         self._position = None
         self._height = None
@@ -211,7 +211,8 @@ class Player(AbstractPlayer):
 
         player_data = self._pull_player_data()
         self.find_initial_index()
-        AbstractPlayer.__init__(self, player_id, self._name, player_data)
+        if player_data is not None:
+            AbstractPlayer.__init__(self, player_id, self._name, player_data)
 
     def __str__(self):
         """
@@ -239,6 +240,8 @@ class Player(AbstractPlayer):
         """
         # The first letter of the player's last name is used to sort the player
         # list and is a part of the URL.
+        if self._player_id is None:
+            raise ValueError("Player ID is None. Cannot build URL.")
         first_character = self._player_id[0]
         return PLAYER_URL % (first_character, self._player_id)
 
@@ -527,6 +530,8 @@ class Player(AbstractPlayer):
             stats.
         """
         player_info = self._retrieve_html_page()
+        if not player_info:
+            return None
         self._parse_player_information(player_info)
         self._parse_nationality(player_info)
         self._parse_birth_date(player_info)
@@ -1562,7 +1567,10 @@ class Roster:
             Returns a string of the player's name.
         """
         name_tag = player('td[data-stat="player"] a')
-        return name_tag.text()
+        name = name_tag.text()
+        if not isinstance(name, str):
+            name = str(name) if name is not None else ""
+        return name
 
     def _parse_coach(self, page):
         """
@@ -1623,7 +1631,10 @@ class Roster:
                 if isinstance(self._players, dict):
                     self._players[player_id] = name
             else:
+                name = self._get_name(player)
                 player_instance = Player(player_id)
+                if player_instance.name is None:
+                    player_instance._name = name
                 if isinstance(self._players, list):
                     self._players.append(player_instance)
             players_parsed.append(player_id)
@@ -1640,7 +1651,10 @@ class Roster:
                 if isinstance(self._players, dict):
                     self._players[player_id] = name
             else:
+                name = self._get_name(player)
                 player_instance = Player(player_id)
+                if player_instance.name is None:
+                    player_instance._name = name
                 if isinstance(self._players, list):
                     self._players.append(player_instance)
 

@@ -730,7 +730,10 @@ class Roster:
             Returns a string of the player's name.
         """
         name_tag = player('th[data-stat="player"] a')
-        return name_tag.text()
+        name = name_tag.text()
+        if not isinstance(name, str):
+            name = str(name) if name is not None else ""
+        return name
 
     def _parse_coach(self, page):
         """
