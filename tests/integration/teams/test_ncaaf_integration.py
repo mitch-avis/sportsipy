@@ -1,6 +1,5 @@
 import os
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -67,7 +66,6 @@ class MockDateTime:
 
 
 class TestNCAAFIntegration:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "conference": "big-ten",
@@ -439,7 +437,6 @@ class TestNCAAFIntegration:
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaaf_empty_page_returns_no_teams(self, *args, **kwargs):
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
@@ -448,20 +445,17 @@ class TestNCAAFIntegration:
 
         assert len(teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_pulling_team_directly(self, *args, **kwargs):
         purdue = Team("PURDUE")
 
         for attribute, value in self.results.items():
             assert getattr(purdue, attribute) == value
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_team_string_representation(self, *args, **kwargs):
         purdue = Team("PURDUE")
 
         assert repr(purdue) == "Purdue (PURDUE) - 2017"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_teams_string_representation(self, *args, **kwargs):
         expected = """Clemson (CLEMSON)
 North Carolina State (NORTH-CAROLINA-STATE)
@@ -600,8 +594,6 @@ Texas State (TEXAS-STATE)"""
 
 
 class TestNCAAFIntegrationInvalidYear:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         team_conference = {
             "florida-state": "acc",
@@ -748,8 +740,6 @@ class TestNCAAFIntegrationInvalidYear:
 
 
 class TestNCAAFIntegrationInvalidConference:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_conference_returns_none(self, *args, **kwargs):
         team_conference = {
             "florida-state": "acc",

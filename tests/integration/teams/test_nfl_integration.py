@@ -1,6 +1,5 @@
 import os
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -68,8 +67,6 @@ class MockSchedule:
 
 
 class TestNFLIntegration:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "rank": 6,
@@ -154,8 +151,6 @@ class TestNFLIntegration:
     def test_nfl_integration_returns_correct_number_of_teams(self):
         assert len(self.teams) == len(self.abbreviations)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_nfl_integration_returns_correct_attributes_for_team(self, *args, **kwargs):
         kansas = self.teams("KAN")
 
@@ -166,7 +161,6 @@ class TestNFLIntegration:
         for team in self.teams:
             assert team.abbreviation in self.abbreviations
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nfl_integration_dataframe_returns_dataframe(self, *args, **kwargs):
         df = pd.DataFrame([self.results], index=["KAN"])
 
@@ -182,19 +176,16 @@ class TestNFLIntegration:
 
         assert df1.empty
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nfl_integration_all_teams_dataframe_returns_dataframe(self, *args, **kwargs):
         result = self.teams.dataframes.drop_duplicates(keep=False)
 
         assert len(result) == len(self.abbreviations)
         assert set(result.columns.values) == set(self.results.keys())
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nfl_invalid_team_name_raises_value_error(self, *args, **kwargs):
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nfl_empty_page_returns_no_teams(self, *args, **kwargs):
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
@@ -203,7 +194,6 @@ class TestNFLIntegration:
 
         assert len(teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_pulling_team_directly(self, *args, **kwargs):
         schedule = MockSchedule(None, None)
 
@@ -214,13 +204,11 @@ class TestNFLIntegration:
         for attribute, value in self.results.items():
             assert getattr(kansas, attribute) == value
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_team_string_representation(self, *args, **kwargs):
         kansas = Team("KAN")
 
         assert repr(kansas) == "Kansas City Chiefs (KAN) - 2017"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_teams_string_representation(self, *args, **kwargs):
         expected = """Los Angeles Rams (RAM)
 New England Patriots (NWE)
@@ -261,8 +249,6 @@ Cleveland Browns (CLE)"""
 
 
 class TestNFLIntegrationInvalidYear:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 

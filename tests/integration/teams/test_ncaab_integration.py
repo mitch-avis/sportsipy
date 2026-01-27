@@ -1,6 +1,5 @@
 import os
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -73,7 +72,6 @@ class MockDateTime:
 
 
 class TestNCAABIntegration:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "conference": "big-ten",
@@ -913,7 +911,6 @@ class TestNCAABIntegration:
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaab_empty_page_returns_no_teams(self, *args, **kwargs):
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
@@ -922,7 +919,6 @@ class TestNCAABIntegration:
 
         assert len(teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaab_no_conference_info_skips_team(self, *args, **kwargs):
         flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
         flexmock(Conferences).should_receive("team_conference").and_return({})
@@ -932,20 +928,17 @@ class TestNCAABIntegration:
 
         assert len(teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_pulling_team_directly(self, *args, **kwargs):
         purdue = Team("PURDUE")
 
         for attribute, value in self.results.items():
             assert getattr(purdue, attribute) == value
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_team_string_representation(self, *args, **kwargs):
         purdue = Team("PURDUE")
 
         assert repr(purdue) == "Purdue (PURDUE) - 2018"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_teams_string_representation(self, *args, **kwargs):
         expected = """Abilene Christian (ABILENE-CHRISTIAN)
 Air Force (AIR-FORCE)
@@ -1305,8 +1298,6 @@ Youngstown State (YOUNGSTOWN-STATE)"""
 
 
 class TestNCAABIntegrationInvalidYear:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_pyquery)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         team_conference = {
             "kansas": "big-12",

@@ -1,6 +1,5 @@
 import os
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -50,7 +49,6 @@ class MockDateTime:
 
 
 class TestNHLIntegration:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "rank": 25,
@@ -158,7 +156,6 @@ class TestNHLIntegration:
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nhl_empty_page_returns_no_teams(self, *args, **kwargs):
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
@@ -167,20 +164,17 @@ class TestNHLIntegration:
 
         assert len(teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_pulling_team_directly(self, *args, **kwargs):
         detroit = Team("DET")
 
         for attribute, value in self.results.items():
             assert getattr(detroit, attribute) == value
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_team_string_representation(self, *args, **kwargs):
         detroit = Team("DET")
 
         assert repr(detroit) == "Detroit Red Wings (DET) - 2017"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_teams_string_representation(self, *args, **kwargs):
         expected = """Washington Capitals (WSH)
 Pittsburgh Penguins (PIT)
@@ -219,8 +213,6 @@ Colorado Avalanche (COL)"""
 
 
 class TestNHLIntegrationInvalidYear:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 

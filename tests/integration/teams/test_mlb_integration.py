@@ -1,6 +1,5 @@
 import os
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -60,7 +59,6 @@ class MockDateTime:
 
 
 class TestMLBIntegration:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "rank": 5,
@@ -202,13 +200,11 @@ class TestMLBIntegration:
 
         flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_returns_correct_number_of_teams(self, *args, **kwargs):
         teams = Teams()
 
         assert len(teams) == len(self.abbreviations)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_returns_correct_attributes_for_team(self, *args, **kwargs):
         teams = Teams()
 
@@ -217,14 +213,12 @@ class TestMLBIntegration:
         for attribute, value in self.results.items():
             assert getattr(houston, attribute) == value
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_returns_correct_team_abbreviations(self, *args, **kwargs):
         teams = Teams()
 
         for team in teams:
             assert team.abbreviation in self.abbreviations
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_dataframe_returns_dataframe(self, *args, **kwargs):
         teams = Teams()
         df = pd.DataFrame([self.results], index=["HOU"])
@@ -241,7 +235,6 @@ class TestMLBIntegration:
 
         assert df1.empty
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_all_teams_dataframe_returns_dataframe(self, *args, **kwargs):
         teams = Teams()
         result = teams.dataframes.drop_duplicates(keep=False)
@@ -249,22 +242,18 @@ class TestMLBIntegration:
         assert len(result) == len(self.abbreviations)
         assert set(result.columns.values) == set(self.results.keys())
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_pulling_team_directly(self, *args, **kwargs):
         hou = Team("HOU")
 
         for attribute, value in self.results.items():
             assert getattr(hou, attribute) == value
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_invalid_team_name_raises_value_error(self, *args, **kwargs):
         teams = Teams()
 
         with pytest.raises(ValueError):
             teams("INVALID_NAME")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2022)
 
@@ -273,7 +262,6 @@ class TestMLBIntegration:
         for team in teams:
             assert team._year == "2021"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_empty_page_returns_no_teams(self, *args, **kwargs):
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
@@ -282,13 +270,11 @@ class TestMLBIntegration:
 
         assert len(teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_team_string_representation(self, *args, **kwargs):
         hou = Team("HOU")
 
         assert repr(hou) == "Houston Astros (HOU) - 2021"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_teams_string_representation(self, *args, **kwargs):
         expected = """San Francisco Giants (SFG)
 Los Angeles Dodgers (LAD)
