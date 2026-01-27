@@ -163,12 +163,16 @@ class TestMLBBoxscore:
         assert df1.empty
 
     def test_mlb_boxscore_player(self):
-        assert len(self.boxscore.home_players) == 15
-        assert len(self.boxscore.away_players) == 15
+        home_players = self.boxscore.home_players
+        away_players = self.boxscore.away_players
+        assert home_players is not None
+        assert away_players is not None
+        assert len(home_players) == 15
+        assert len(away_players) == 15
 
-        for player in self.boxscore.home_players:
+        for player in home_players:
             assert not player.dataframe.empty
-        for player in self.boxscore.away_players:
+        for player in away_players:
             assert not player.dataframe.empty
 
     def test_mlb_boxscore_string_representation(self):
