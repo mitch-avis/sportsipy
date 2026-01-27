@@ -1,5 +1,4 @@
 import re
-import warnings
 from urllib.error import HTTPError
 
 from lxml.etree import ParserError
@@ -64,9 +63,12 @@ class Conference:
             A string of the requested year to pull conference information from.
         """
         try:
-            return utils.pq(
-                utils.get_page_source(url=CONFERENCE_URL % (conference_abbreviation, year))
+            page_source = utils.get_page_source(
+                url=CONFERENCE_URL % (conference_abbreviation, year)
             )
+            if not page_source:
+                return None
+            return utils.pq(page_source)
         except (HTTPError, ParserError):
             return None
 
@@ -125,7 +127,6 @@ class Conference:
             url = CONFERENCE_URL % (conference_abbreviation, year)
             output = f"Can't pull requested conference page. Ensure the following URL exists: {url}"
             if self._ignore_missing:
-                warnings.warn(output)
                 return
             raise ValueError(output)
         conference = page("table#standings tbody tr").items()
@@ -204,7 +205,10 @@ class Conferences:
             Returns a PyQuery object of the conference HTML page.
         """
         try:
-            return utils.pq(utils.get_page_source(url=CONFERENCES_URL % year))
+            page_source = utils.get_page_source(url=CONFERENCES_URL % year)
+            if not page_source:
+                return None
+            return utils.pq(page_source)
         except HTTPError:
             return None
 
