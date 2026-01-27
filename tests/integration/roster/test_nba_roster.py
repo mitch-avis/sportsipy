@@ -1274,7 +1274,12 @@ class TestNBARoster:
         assert len(roster.players) == 4
 
         for player in roster.players:
-            assert player.name in ["James Harden", "Tarik Black", "Ryan Anderson", "Trevor Ariza"]
+            assert player.name in [
+                "James Harden",
+                "Tarik Black",
+                "Ryan Anderson",
+                "Trevor Ariza",
+            ]
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_bad_url_raises_value_error(self, *args, **kwargs):
@@ -1291,7 +1296,12 @@ class TestNBARoster:
         assert len(team.roster.players) == 4
 
         for player in team.roster.players:
-            assert player.name in ["James Harden", "Tarik Black", "Ryan Anderson", "Trevor Ariza"]
+            assert player.name in [
+                "James Harden",
+                "Tarik Black",
+                "Ryan Anderson",
+                "Trevor Ariza",
+            ]
 
         type(team)._abbreviation = None
 
@@ -1318,7 +1328,12 @@ class TestNBARoster:
         assert len(roster.players) == 4
 
         for player in roster.players:
-            assert player.name in ["James Harden", "Tarik Black", "Ryan Anderson", "Trevor Ariza"]
+            assert player.name in [
+                "James Harden",
+                "Tarik Black",
+                "Ryan Anderson",
+                "Trevor Ariza",
+            ]
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_rows_are_skipped(self, *args, **kwargs):

@@ -724,7 +724,10 @@ class TestNHLRoster:
         roster = Roster("DET", slim=True)
 
         assert len(roster.players) == 2
-        assert roster.players == {"howarja02": "Jimmy Howard", "zettehe01": "Henrik Zetterberg"}
+        assert roster.players == {
+            "howarja02": "Jimmy Howard",
+            "zettehe01": "Henrik Zetterberg",
+        }
 
     @mock.patch("requests.get", side_effect=mock_pyquery)
     @mock.patch("requests.head", side_effect=mock_request)
