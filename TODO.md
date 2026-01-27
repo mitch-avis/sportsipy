@@ -8,7 +8,8 @@ Make integration tests fully offline and deterministic while keeping current cov
 
 ### Status
 
-In progress: offline env/fixture registry scaffolding added. Tests not rewired yet.
+In progress: fixture registry + offline mode enabled for integration tests,
+fixtures copied into `tests/fixtures/integration`, and capture tooling added.
 
 ### Plan (Offline Integration Tests)
 
@@ -32,6 +33,12 @@ In progress: offline env/fixture registry scaffolding added. Tests not rewired y
 7) Add CI guardrails
    - Add a test that fails if network calls occur during integration tests.
    - Document offline mode and fixture update steps in `CONTRIBUTING.md`.
+
+Notes (current progress):
+- `tests/fixtures/url_map.json` now maps fixture patterns to HTML files.
+- `tests/integration` now runs with offline fixtures via `tests/integration/conftest.py`.
+- `scripts/capture_fixtures.py` added for opt-in fixture capture.
+- Remaining: verify coverage of fixture map, remove legacy per-test mocks, and add CI guardrails.
 
 ## TODO: Throttling / Retry / Caching
 
