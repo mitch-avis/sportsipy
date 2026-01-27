@@ -232,7 +232,7 @@ class Team:
         name = team_data("a")[0].text
         name = re.sub(r'.*title="', "", str(name))
         name = re.sub(r'".*', "", name)
-        setattr(self, "_name", name)
+        self._name = name
 
     def _parse_team_data(self, team_data):
         """
