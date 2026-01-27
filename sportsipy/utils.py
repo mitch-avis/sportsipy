@@ -1,17 +1,30 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import re
+import threading
+import time
 from datetime import datetime
+from pathlib import Path
 from typing import Generator, Optional
 
 import requests
 from lxml.etree import ParserError, XMLSyntaxError
 from pyquery import PyQuery
 
+from .constants import RATE_LIMIT_INTERVAL
+
+_RATE_LIMIT_LOCK = threading.Lock()
+_LAST_REQUEST_TIME = 0.0
+_FIXTURE_MAP = None
+
 
 # Backward-compatible callable matching prior usage: utils.pq(...)
 def pq(*args, **kwargs):  # pylint: disable=invalid-name
+    if len(args) == 1 and args[0] is None:
+        return PyQuery("")
     return PyQuery(*args, **kwargs)
 
 
@@ -57,6 +70,168 @@ def todays_date() -> datetime:
     return datetime.now()
 
 
+def _env_flag(name: str) -> bool:
+    value = os.environ.get(name, "")
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _rate_limit_seconds() -> float:
+    value = os.environ.get("SPORTSIPY_RATE_LIMIT_SECONDS")
+    if value:
+        try:
+            return max(float(value), 3.0)
+        except ValueError:
+            return max(float(RATE_LIMIT_INTERVAL), 3.0)
+    return max(float(RATE_LIMIT_INTERVAL), 3.0)
+
+
+def _rate_limit_enabled() -> bool:
+    if _env_flag("SPORTSIPY_DISABLE_RATE_LIMIT") or _env_flag("SPORTSIPY_OFFLINE"):
+        return False
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return False
+    return True
+
+
+def _rate_limit_wait() -> None:
+    if not _rate_limit_enabled():
+        return
+    interval = _rate_limit_seconds()
+    global _LAST_REQUEST_TIME  # pylint: disable=global-statement
+    with _RATE_LIMIT_LOCK:
+        now = time.monotonic()
+        wait = _LAST_REQUEST_TIME + interval - now
+        if wait > 0:
+            time.sleep(wait)
+        _LAST_REQUEST_TIME = time.monotonic()
+
+
+def _cache_dir() -> Optional[Path]:
+    value = os.environ.get("SPORTSIPY_CACHE_DIR")
+    if not value:
+        return None
+    return Path(value)
+
+
+def _cache_ttl_seconds() -> Optional[float]:
+    value = os.environ.get("SPORTSIPY_CACHE_TTL_SECONDS")
+    if not value:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def _cache_key(url: str) -> str:
+    return hashlib.sha256(url.encode("utf-8")).hexdigest()
+
+
+def _cache_read(url: str) -> Optional[str]:
+    cache_dir = _cache_dir()
+    ttl = _cache_ttl_seconds()
+    if not cache_dir or ttl is None:
+        return None
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = cache_dir / f"{_cache_key(url)}.json"
+    if not cache_file.exists():
+        return None
+    try:
+        data = json.loads(cache_file.read_text(encoding="utf-8"))
+        if time.time() - data.get("timestamp", 0) > ttl:
+            return None
+        return data.get("text")
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _cache_write(url: str, text: str) -> None:
+    cache_dir = _cache_dir()
+    ttl = _cache_ttl_seconds()
+    if not cache_dir or ttl is None:
+        return
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = cache_dir / f"{_cache_key(url)}.json"
+    payload = {"url": url, "timestamp": time.time(), "text": text}
+    try:
+        cache_file.write_text(json.dumps(payload), encoding="utf-8")
+    except OSError:
+        return
+
+
+def _fixture_map() -> dict:
+    global _FIXTURE_MAP  # pylint: disable=global-statement
+    if _FIXTURE_MAP is not None:
+        return _FIXTURE_MAP
+    fixture_map = os.environ.get("SPORTSIPY_FIXTURE_MAP")
+    fixture_dir = os.environ.get("SPORTSIPY_FIXTURE_DIR")
+    if not fixture_map and fixture_dir:
+        fixture_map = os.path.join(fixture_dir, "url_map.json")
+    if fixture_map and os.path.exists(fixture_map):
+        try:
+            with open(fixture_map, "r", encoding="utf-8") as handle:
+                _FIXTURE_MAP = json.load(handle)
+        except (OSError, json.JSONDecodeError):
+            _FIXTURE_MAP = {}
+    else:
+        _FIXTURE_MAP = {}
+    return _FIXTURE_MAP
+
+
+def _fixture_for_url(url: str) -> Optional[str]:
+    if not _env_flag("SPORTSIPY_OFFLINE"):
+        return None
+    mapping = _fixture_map()
+    rel_path = mapping.get(url)
+    if not rel_path:
+        return None
+    fixture_dir = os.environ.get("SPORTSIPY_FIXTURE_DIR", "")
+    path = Path(fixture_dir) / rel_path
+    if not path.exists():
+        return None
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
+def _request_with_retries(method: str, url: str, **kwargs):
+    max_retries_value = os.environ.get("SPORTSIPY_MAX_RETRIES", "2")
+    try:
+        max_retries = max(int(max_retries_value), 0)
+    except ValueError:
+        max_retries = 2
+    for attempt in range(max_retries + 1):
+        _rate_limit_wait()
+        try:
+            if method.upper() == "HEAD":
+                response = requests.head(url, **kwargs)
+            elif method.upper() == "GET":
+                response = requests.get(url, **kwargs)
+            else:
+                response = requests.request(method, url, **kwargs)
+        except requests.RequestException as exc:
+            if attempt >= max_retries:
+                raise exc
+            time.sleep(min(2**attempt, 10))
+            continue
+        if response.status_code in {429} or response.status_code >= 500:
+            if attempt >= max_retries:
+                return response
+            headers = response.headers or {}
+            retry_after = headers.get("Retry-After")
+            if retry_after:
+                try:
+                    time.sleep(min(float(retry_after), 30.0))
+                except ValueError:
+                    time.sleep(min(2**attempt, 10))
+            else:
+                time.sleep(min(2**attempt, 10))
+            continue
+        return response
+    return None
+
+
 def url_exists(url: str) -> bool:
     """
     Determine if a URL is valid and exists.
@@ -78,12 +253,16 @@ def url_exists(url: str) -> bool:
         False.
     """
     try:
-        response = requests.head(url, timeout=10)
+        if _env_flag("SPORTSIPY_OFFLINE"):
+            return _fixture_for_url(url) is not None
+        response = _request_with_retries("HEAD", url, timeout=10)
+        if response is None:
+            return False
         if response.status_code == 301:
-            new_response = requests.get(url, timeout=10)
-            return bool(new_response.status_code < 400)
+            new_response = _request_with_retries("GET", url, timeout=10)
+            return bool(new_response and new_response.status_code < 400)
         return bool(response.status_code < 400)
-    except requests.RequestException:
+    except Exception:
         return False
 
 
@@ -135,12 +314,8 @@ def find_year_for_season(league: str) -> int:
     if wrap and (start - 1) <= today.month <= 12:
         return today.year + 1
 
-    # Non-wrapping seasons starting January need December -> previous year logic
-    if not wrap and start == 1 and today.month == 12:
-        return today.year + 1
-
-    # Non-wrapping (MLB, NFL, NCAAF): before start month -> prior year season
-    if not wrap and today.month < start:
+    # Non-wrapping seasons: consider the season "current" starting one month prior
+    if not wrap and today.month < (start - 1):
         return today.year - 1
 
     return today.year
@@ -321,7 +496,7 @@ def get_stats_table(
     """
     try:
         raw = html_page(div)
-    except (ParserError, XMLSyntaxError):
+    except (ParserError, XMLSyntaxError, TypeError):
         return None
     if not raw:
         return None
@@ -380,13 +555,10 @@ def pull_page(url: str | None = None, local_file: str | None = None):
         with open(local_file, "r", encoding="utf-8") as file_handle:
             return pq(file_handle.read())
     if url:
-        try:
-            resp = requests.get(url, timeout=20)
-            if resp.status_code != 200:
-                return None
-            return pq(resp.text)
-        except requests.RequestException:
+        html = get_page_source(url)
+        if not html:
             return None
+        return pq(html)
     raise ValueError("Expected either a URL or a local data file!")
 
 
@@ -413,15 +585,23 @@ def get_page_source(url: str) -> Optional[str]:
     """
     Basic HTML fetch; Playwright fallback only if available and requests fails.
     """
+    if _env_flag("SPORTSIPY_OFFLINE"):
+        return _fixture_for_url(url)
+
+    cached = _cache_read(url)
+    if cached is not None:
+        return cached
+
     try:
-        resp = requests.get(url, timeout=20)
-        if resp.status_code == 200:
+        resp = _request_with_retries("GET", url, timeout=20)
+        if resp is not None and resp.status_code == 200:
+            _cache_write(url, resp.text)
             return resp.text
     except requests.RequestException:
         pass
 
     # Optional dynamic fallback (rarely needed for test fixtures)
-    if _PLAYWRIGHT_AVAILABLE:
+    if _PLAYWRIGHT_AVAILABLE and _env_flag("SPORTSIPY_ENABLE_PLAYWRIGHT"):
         try:
             with sync_playwright() as playwright_session:
                 browser = playwright_session.chromium.launch(headless=True)
