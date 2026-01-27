@@ -22,7 +22,6 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -39,7 +38,6 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -212,10 +210,10 @@ class AbstractPlayer:
         """
         return self._name
 
-    @_int_property_decorator
+    @_float_property_decorator
     def minutes_played(self):
         """
-        Returns an ``int`` of the total number of minutes the player played.
+        Returns a ``float`` of the total number of minutes the player played.
         """
         return self._minutes_played
 
