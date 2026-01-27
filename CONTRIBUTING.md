@@ -66,7 +66,7 @@ overall structure of the project, several styling guidelines should be followed.
 The git commit message is a crucial part of any code update and should follow
 certain guidelines to describe what the commit is for, why it the changes are
 being made, and who wrote the commit. A great resource on writing a strong
-commit message can be found [here](https://chris.beams.io/posts/git-commit/).
+commit message can be found here: <https://chris.beams.io/posts/git-commit/>.
 The seven rules should be followed unless a compelling circumstance arises.
 These rules are as follows (taken from the linked page):
 
