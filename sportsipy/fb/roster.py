@@ -1,4 +1,5 @@
 import re
+from typing import cast
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -1643,12 +1644,13 @@ class Roster:
             text_value = str(strong.text() or "") if hasattr(strong, "text") else ""
             if text_value.strip() == "Record:":
                 next_all = getattr(pq(strong), "nextAll", None)
-                links: pq | None = next_all("a") if callable(next_all) else None
+                links = cast(pq, next_all("a")) if callable(next_all) else None
                 href = links.attr("href") if links is not None else None
                 try:
                     if not href:
                         continue
-                    match = re.search(r"/comps/(\d+)/", href)
+                    href_value = str(href)
+                    match = re.search(r"/comps/(\d+)/", href_value)
                     if match is None:
                         continue
                     return match.group(1)
