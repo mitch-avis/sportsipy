@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 from functools import wraps
+from typing import Any
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -233,8 +234,8 @@ class Boxscore:
         self._stadium = None
         self._attendance = None
         self._duration = None
-        self._away_name: pq | None = None
-        self._home_name: pq | None = None
+        self._away_name: Any = None
+        self._home_name: Any = None
         self._winner = None
         self._winning_name = None
         self._winning_abbr = None

@@ -1,5 +1,6 @@
 import re
 from datetime import timedelta
+from typing import Any
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -143,8 +144,8 @@ class Boxscore:
         self._uri = uri
         self._date = None
         self._location = None
-        self._home_name: str | None = None
-        self._away_name: str | None = None
+        self._home_name: Any = None
+        self._away_name: Any = None
         self._winner = None
         self._winning_name = None
         self._winning_abbr = None

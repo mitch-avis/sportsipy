@@ -1,5 +1,6 @@
 import re
 from datetime import timedelta
+from typing import Any
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -109,7 +110,7 @@ class BoxscorePlayer(AbstractPlayer):
         return pd.DataFrame([fields_to_include], index=[self._player_id])
 
     @property
-    def minutes_played(self):
+    def minutes_played(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Returns a ``float`` of the number of game minutes the player was on the
         court for.
@@ -119,16 +120,18 @@ class BoxscorePlayer(AbstractPlayer):
         value = self._minutes_played[self._index]
         if not value:
             return None
+        if not isinstance(value, str):
+            return None
         parts = value.split(":")
         if len(parts) != 2:
             return None
-        minutes, seconds = parts
+        minutes = parts[0]
+        seconds = parts[1]
         try:
             minutes_value = float(minutes) + float(seconds) / 60
         except ValueError:
             return None
         return float(minutes_value)
-        return None
 
     @property
     def two_pointers(self):
@@ -220,8 +223,8 @@ class Boxscore:
         self._uri = uri
         self._date = None
         self._location = None
-        self._home_name: str | None = None
-        self._away_name: str | None = None
+        self._home_name: Any = None
+        self._away_name: Any = None
         self._winner = None
         self._winning_name = None
         self._winning_abbr = None

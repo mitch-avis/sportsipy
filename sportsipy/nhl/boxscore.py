@@ -1,6 +1,7 @@
 import re
 from datetime import timedelta
 from functools import wraps
+from typing import Any
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -242,8 +243,8 @@ class Boxscore:
         self._arena = None
         self._attendance = None
         self._duration = None
-        self._away_name: pq | None = None
-        self._home_name: pq | None = None
+        self._away_name: Any = None
+        self._home_name: Any = None
         self._winner = None
         self._winning_name = None
         self._winning_abbr = None
@@ -281,8 +282,8 @@ class Boxscore:
         self._home_saves: list[str] | None = None
         self._home_save_percentage = None
         self._home_shutout = None
-        self._away_skaters = 0
-        self._away_goalies = 0
+        self._away_skaters = None
+        self._away_goalies = None
 
         self._parse_game_data(uri)
 
