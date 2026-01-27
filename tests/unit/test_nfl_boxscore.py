@@ -2,7 +2,7 @@ from datetime import datetime
 from os.path import dirname, join
 
 from flexmock import flexmock
-from mock import PropertyMock, patch
+from mock import patch
 from pyquery import PyQuery as pq
 
 from sportsipy import utils
@@ -67,38 +67,32 @@ class TestNFLBoxscore:
         self.boxscore = Boxscore(None)
 
     def test_away_team_wins(self):
-        fake_away_points = PropertyMock(return_value=28)
-        fake_home_points = PropertyMock(return_value=21)
-        type(self.boxscore)._away_points = fake_away_points
-        type(self.boxscore)._home_points = fake_home_points
+        self.boxscore._away_points = 28
+        self.boxscore._home_points = 21
 
         assert self.boxscore.winner == AWAY
 
     def test_home_team_wins(self):
-        fake_away_points = PropertyMock(return_value=21)
-        fake_home_points = PropertyMock(return_value=28)
-        type(self.boxscore)._away_points = fake_away_points
-        type(self.boxscore)._home_points = fake_home_points
+        self.boxscore._away_points = 21
+        self.boxscore._home_points = 28
 
         assert self.boxscore.winner == HOME
 
     def test_winning_name_is_home(self):
         expected_name = "Home Name"
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_home_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_name = fake_home_name
+        self.boxscore._away_points = 21
+        self.boxscore._home_points = 28
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.winning_name == expected_name
 
     def test_winning_name_is_away(self):
         expected_name = "Away Name"
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_away_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_name = fake_away_name
+        self.boxscore._away_points = 28
+        self.boxscore._home_points = 21
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.winning_name == expected_name
 
@@ -107,8 +101,9 @@ class TestNFLBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=HOME)
-        type(self.boxscore).winner = fake_winner
+        self.boxscore._away_points = 21
+        self.boxscore._home_points = 28
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.winning_abbr == expected_name
 
@@ -117,28 +112,27 @@ class TestNFLBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        type(self.boxscore).winner = fake_winner
+        self.boxscore._away_points = 28
+        self.boxscore._home_points = 21
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.winning_abbr == expected_name
 
     def test_losing_name_is_home(self):
         expected_name = "Home Name"
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_home_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_name = fake_home_name
+        self.boxscore._away_points = 28
+        self.boxscore._home_points = 21
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.losing_name == expected_name
 
     def test_losing_name_is_away(self):
         expected_name = "Away Name"
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_away_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_name = fake_away_name
+        self.boxscore._away_points = 21
+        self.boxscore._home_points = 28
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.losing_name == expected_name
 
@@ -147,8 +141,9 @@ class TestNFLBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        type(self.boxscore).winner = fake_winner
+        self.boxscore._away_points = 28
+        self.boxscore._home_points = 21
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.losing_abbr == expected_name
 
@@ -157,8 +152,9 @@ class TestNFLBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=HOME)
-        type(self.boxscore).winner = fake_winner
+        self.boxscore._away_points = 21
+        self.boxscore._home_points = 28
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.losing_abbr == expected_name
 
@@ -193,21 +189,18 @@ class TestNFLBoxscore:
         assert result is None
 
     def test_no_class_information_returns_dataframe_of_none(self):
-        mock_points = PropertyMock(return_value=None)
-        type(self.boxscore)._home_points = mock_points
-        type(self.boxscore)._away_points = mock_points
+        self.boxscore._home_points = None
+        self.boxscore._away_points = None
 
         assert self.boxscore.dataframe is None
 
     def test_empty_attribute_returns_none(self):
-        fake_rushes = PropertyMock(return_value=None)
-        type(self.boxscore)._away_rush_attempts = fake_rushes
+        self.boxscore._away_rush_attempts = None
 
         assert self.boxscore.away_rush_attempts is None
 
     def test_non_int_value_returns_none(self):
-        fake_rushes = PropertyMock(return_value="bad")
-        type(self.boxscore)._away_rush_attempts = fake_rushes
+        self.boxscore._away_rush_attempts = "bad"
 
         assert self.boxscore.away_rush_attempts is None
 
@@ -256,24 +249,22 @@ Logos via Sports Logos.net / About logos
             assert getattr(self.boxscore, field) == value
 
     def test_nfl_away_abbreviation(self):
-        away_name = PropertyMock(return_value='<a href="/teams/kan/2018.htm" \
-itemprop="name">Kansas City Chiefs</a>')
-        type(self.boxscore)._away_name = away_name
+        self.boxscore._away_name = (
+            '<a href="/teams/kan/2018.htm" itemprop="name">Kansas City Chiefs</a>'
+        )
 
         assert self.boxscore.away_abbreviation == "kan"
 
     def test_nfl_home_abbreviation(self):
-        home_name = PropertyMock(return_value='<a href="/teams/nwe/2018.htm" \
-itemprop="name">New England Patriots</a>')
-        type(self.boxscore)._home_name = home_name
+        self.boxscore._home_name = (
+            '<a href="/teams/nwe/2018.htm" itemprop="name">New England Patriots</a>'
+        )
 
         assert self.boxscore.home_abbreviation == "nwe"
 
     def test_nfl_datetime_missing_time(self):
-        date = PropertyMock(return_value="Sunday Oct 7, 2018")
-        time = PropertyMock(return_value=None)
-        type(self.boxscore)._date = date
-        type(self.boxscore)._time = time
+        self.boxscore._date = "Sunday Oct 7, 2018"
+        self.boxscore._time = None
 
         assert self.boxscore.datetime == datetime(2018, 10, 7)
 
@@ -309,20 +300,18 @@ itemprop="name">New England Patriots</a>')
 
     def test_finding_home_team_with_no_abbrs(self):
         mock_html = pq('<td data-stat="team">KAN</td>')
-        abbr = PropertyMock(return_value="KAN")
         self.boxscore._home_abbr = None
         self.boxscore._away_abbr = None
-        type(self.boxscore).home_abbreviation = abbr
+        self.boxscore._home_name = '<a href="/teams/kan/2018.htm">Kansas City Chiefs</a>'
         team = self.boxscore._find_home_or_away(mock_html)
 
         assert team == HOME
 
     def test_finding_away_team_with_no_abbrs(self):
         mock_html = pq('<td data-stat="team">HTX</td>')
-        abbr = PropertyMock(return_value="KAN")
         self.boxscore._home_abbr = None
         self.boxscore._away_abbr = None
-        type(self.boxscore).home_abbreviation = abbr
+        self.boxscore._home_name = '<a href="/teams/kan/2018.htm">Kansas City Chiefs</a>'
         team = self.boxscore._find_home_or_away(mock_html)
 
         assert team == AWAY

@@ -1,5 +1,5 @@
 from flexmock import flexmock
-from mock import PropertyMock, patch
+from mock import patch
 from pyquery import PyQuery as pq
 
 from sportsipy import utils
@@ -56,38 +56,32 @@ class TestMLBBoxscore:
         self.boxscore = Boxscore(None)
 
     def test_away_team_wins(self):
-        fake_away_runs = PropertyMock(return_value=6)
-        fake_home_runs = PropertyMock(return_value=3)
-        type(self.boxscore)._away_runs = fake_away_runs
-        type(self.boxscore)._home_runs = fake_home_runs
+        self.boxscore._away_runs = 6
+        self.boxscore._home_runs = 3
 
         assert self.boxscore.winner == AWAY
 
     def test_home_team_wins(self):
-        fake_away_runs = PropertyMock(return_value=3)
-        fake_home_runs = PropertyMock(return_value=6)
-        type(self.boxscore)._away_runs = fake_away_runs
-        type(self.boxscore)._home_runs = fake_home_runs
+        self.boxscore._away_runs = 3
+        self.boxscore._home_runs = 6
 
         assert self.boxscore.winner == HOME
 
     def test_winning_name_is_home(self):
         expected_name = "Home Name"
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_home_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_name = fake_home_name
+        self.boxscore._away_runs = 3
+        self.boxscore._home_runs = 6
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.winning_name == expected_name
 
     def test_winning_name_is_away(self):
         expected_name = "Away Name"
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_away_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_name = fake_away_name
+        self.boxscore._away_runs = 6
+        self.boxscore._home_runs = 3
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.winning_name == expected_name
 
@@ -96,10 +90,9 @@ class TestMLBBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_abbr = fake_home_abbr
+        self.boxscore._away_runs = 3
+        self.boxscore._home_runs = 6
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.winning_abbr == expected_name
 
@@ -108,30 +101,27 @@ class TestMLBBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_abbr = fake_away_abbr
+        self.boxscore._away_runs = 6
+        self.boxscore._home_runs = 3
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.winning_abbr == expected_name
 
     def test_losing_name_is_home(self):
         expected_name = "Home Name"
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_home_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_name = fake_home_name
+        self.boxscore._away_runs = 6
+        self.boxscore._home_runs = 3
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.losing_name == expected_name
 
     def test_losing_name_is_away(self):
         expected_name = "Away Name"
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_away_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_name = fake_away_name
+        self.boxscore._away_runs = 3
+        self.boxscore._home_runs = 6
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.losing_name == expected_name
 
@@ -140,10 +130,9 @@ class TestMLBBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_abbr = fake_home_abbr
+        self.boxscore._away_runs = 6
+        self.boxscore._home_runs = 3
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.losing_abbr == expected_name
 
@@ -152,10 +141,9 @@ class TestMLBBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_abbr = fake_away_abbr
+        self.boxscore._away_runs = 3
+        self.boxscore._home_runs = 6
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.losing_abbr == expected_name
 
@@ -282,51 +270,43 @@ Day Game, on grass
             assert getattr(self.boxscore, field) == value
 
     def test_invalid_away_inherited_runners_returns_default(self):
-        mock_runners = PropertyMock(return_value="")
-        type(self.boxscore)._away_inherited_runners = mock_runners
+        self.boxscore._away_inherited_runners = ""
 
         assert self.boxscore.away_inherited_runners is None
 
     def test_invalid_away_inherited_score_returns_default(self):
-        mock_score = PropertyMock(return_value="")
-        type(self.boxscore)._away_inherited_score = mock_score
+        self.boxscore._away_inherited_score = ""
 
         assert self.boxscore.away_inherited_score is None
 
     def test_invalid_home_inherited_runners_returns_default(self):
-        mock_runners = PropertyMock(return_value="")
-        type(self.boxscore)._home_inherited_runners = mock_runners
+        self.boxscore._home_inherited_runners = ""
 
         assert self.boxscore.home_inherited_runners is None
 
     def test_invalid_home_inherited_score_returns_default(self):
-        mock_score = PropertyMock(return_value="")
-        type(self.boxscore)._home_inherited_score = mock_score
+        self.boxscore._home_inherited_score = ""
 
         assert self.boxscore.home_inherited_score is None
 
     def test_no_class_information_returns_dataframe_of_none(self):
-        mock_runs = PropertyMock(return_value=None)
-        type(self.boxscore)._away_runs = mock_runs
-        type(self.boxscore)._home_runs = mock_runs
+        self.boxscore._away_runs = None
+        self.boxscore._home_runs = None
 
         assert self.boxscore.dataframe is None
 
     def test_attendance_with_empty_string(self):
-        fake_attendance = PropertyMock(return_value="")
-        type(self.boxscore)._attendance = fake_attendance
+        self.boxscore._attendance = ""
 
         assert self.boxscore.attendance is None
 
     def test_night_game_returns_night(self):
-        fake_time_of_day = PropertyMock(return_value="night game on grass")
-        type(self.boxscore)._time_of_day = fake_time_of_day
+        self.boxscore._time_of_day = "night game on grass"
 
         assert self.boxscore.time_of_day == NIGHT
 
     def test_day_game_returns_night(self):
-        fake_time_of_day = PropertyMock(return_value="day game on grass")
-        type(self.boxscore)._time_of_day = fake_time_of_day
+        self.boxscore._time_of_day = "day game on grass"
 
         assert self.boxscore.time_of_day == DAY
 

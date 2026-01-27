@@ -1,5 +1,5 @@
 from flexmock import flexmock
-from mock import PropertyMock, patch
+from mock import patch
 from pyquery import PyQuery as pq
 
 from sportsipy import utils
@@ -52,38 +52,32 @@ class TestNHLBoxscore:
         self.boxscore = Boxscore(None)
 
     def test_away_team_wins(self):
-        fake_away_goals = PropertyMock(return_value=4)
-        fake_home_goals = PropertyMock(return_value=3)
-        type(self.boxscore)._away_goals = fake_away_goals
-        type(self.boxscore)._home_goals = fake_home_goals
+        self.boxscore._away_goals = 4
+        self.boxscore._home_goals = 3
 
         assert self.boxscore.winner == AWAY
 
     def test_home_team_wins(self):
-        fake_away_goals = PropertyMock(return_value=3)
-        fake_home_goals = PropertyMock(return_value=4)
-        type(self.boxscore)._away_goals = fake_away_goals
-        type(self.boxscore)._home_goals = fake_home_goals
+        self.boxscore._away_goals = 3
+        self.boxscore._home_goals = 4
 
         assert self.boxscore.winner == HOME
 
     def test_winning_name_is_home(self):
         expected_name = "Home Name"
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_home_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_name = fake_home_name
+        self.boxscore._away_goals = 3
+        self.boxscore._home_goals = 4
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.winning_name == expected_name
 
     def test_winning_name_is_away(self):
         expected_name = "Away Name"
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_away_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_name = fake_away_name
+        self.boxscore._away_goals = 4
+        self.boxscore._home_goals = 3
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.winning_name == expected_name
 
@@ -92,10 +86,9 @@ class TestNHLBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_abbr = fake_home_abbr
+        self.boxscore._away_goals = 3
+        self.boxscore._home_goals = 4
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.winning_abbr == expected_name
 
@@ -104,30 +97,27 @@ class TestNHLBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_abbr = fake_away_abbr
+        self.boxscore._away_goals = 4
+        self.boxscore._home_goals = 3
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.winning_abbr == expected_name
 
     def test_losing_name_is_home(self):
         expected_name = "Home Name"
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_home_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_name = fake_home_name
+        self.boxscore._away_goals = 4
+        self.boxscore._home_goals = 3
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.losing_name == expected_name
 
     def test_losing_name_is_away(self):
         expected_name = "Away Name"
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_away_name = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_name = fake_away_name
+        self.boxscore._away_goals = 3
+        self.boxscore._home_goals = 4
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.losing_name == expected_name
 
@@ -136,10 +126,9 @@ class TestNHLBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=AWAY)
-        fake_home_abbr = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._home_abbr = fake_home_abbr
+        self.boxscore._away_goals = 4
+        self.boxscore._home_goals = 3
+        self.boxscore._home_name = MockName(expected_name)
 
         assert self.boxscore.losing_abbr == expected_name
 
@@ -148,94 +137,72 @@ class TestNHLBoxscore:
 
         flexmock(utils).should_receive("parse_abbreviation").and_return(expected_name)
 
-        fake_winner = PropertyMock(return_value=HOME)
-        fake_away_abbr = PropertyMock(return_value=MockName(expected_name))
-        type(self.boxscore).winner = fake_winner
-        type(self.boxscore)._away_abbr = fake_away_abbr
+        self.boxscore._away_goals = 3
+        self.boxscore._home_goals = 4
+        self.boxscore._away_name = MockName(expected_name)
 
         assert self.boxscore.losing_abbr == expected_name
 
     def test_invalid_away_game_winning_goals_returns_default(self):
         goals = ["0", "1", "bad"]
 
-        fake_goals = PropertyMock(return_value=goals)
-        fake_num_skaters = PropertyMock(return_value=3)
-        fake_num_goalies = PropertyMock(return_value=0)
-        type(self.boxscore)._away_game_winning_goals = fake_goals
-        type(self.boxscore)._away_skaters = fake_num_skaters
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_game_winning_goals = goals
+        self.boxscore._away_skaters = 3
+        self.boxscore._away_goalies = 0
 
         assert self.boxscore.away_game_winning_goals == 1
 
     def test_invalid_away_even_strength_assists_returns_default(self):
         assists = ["0", "1", "bad"]
 
-        fake_assists = PropertyMock(return_value=assists)
-        fake_num_skaters = PropertyMock(return_value=3)
-        fake_num_goalies = PropertyMock(return_value=0)
-        type(self.boxscore)._away_even_strength_assists = fake_assists
-        type(self.boxscore)._away_skaters = fake_num_skaters
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_even_strength_assists = assists
+        self.boxscore._away_skaters = 3
+        self.boxscore._away_goalies = 0
 
         assert self.boxscore.away_even_strength_assists == 1
 
     def test_invalid_home_even_strength_assists_returns_default(self):
         assists = ["0", "1", "bad"]
 
-        fake_assists = PropertyMock(return_value=assists)
-        fake_num_skaters = PropertyMock(return_value=0)
-        fake_num_goalies = PropertyMock(return_value=0)
-        type(self.boxscore)._home_even_strength_assists = fake_assists
-        type(self.boxscore)._away_skaters = fake_num_skaters
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_even_strength_assists = assists
+        self.boxscore._away_skaters = 0
+        self.boxscore._away_goalies = 0
 
         assert self.boxscore.home_even_strength_assists == 1
 
     def test_invalid_away_power_play_assists_returns_default(self):
         assists = ["0", "1", "bad"]
 
-        fake_assists = PropertyMock(return_value=assists)
-        fake_num_skaters = PropertyMock(return_value=3)
-        fake_num_goalies = PropertyMock(return_value=0)
-        type(self.boxscore)._away_power_play_assists = fake_assists
-        type(self.boxscore)._away_skaters = fake_num_skaters
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_power_play_assists = assists
+        self.boxscore._away_skaters = 3
+        self.boxscore._away_goalies = 0
 
         assert self.boxscore.away_power_play_assists == 1
 
     def test_invalid_home_power_play_assits_returns_default(self):
         assists = ["0", "1", "bad"]
 
-        fake_assists = PropertyMock(return_value=assists)
-        fake_num_skaters = PropertyMock(return_value=0)
-        fake_num_goalies = PropertyMock(return_value=0)
-        type(self.boxscore)._home_power_play_assists = fake_assists
-        type(self.boxscore)._away_skaters = fake_num_skaters
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_power_play_assists = assists
+        self.boxscore._away_skaters = 0
+        self.boxscore._away_goalies = 0
 
         assert self.boxscore.home_power_play_assists == 1
 
     def test_invalid_away_short_handed_assists_returns_default(self):
         assists = ["0", "1", "bad"]
 
-        fake_assists = PropertyMock(return_value=assists)
-        fake_num_skaters = PropertyMock(return_value=3)
-        fake_num_goalies = PropertyMock(return_value=0)
-        type(self.boxscore)._away_short_handed_assists = fake_assists
-        type(self.boxscore)._away_skaters = fake_num_skaters
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_short_handed_assists = assists
+        self.boxscore._away_skaters = 3
+        self.boxscore._away_goalies = 0
 
         assert self.boxscore.away_short_handed_assists == 1
 
     def test_invalid_home_short_handed_assits_returns_default(self):
         assists = ["0", "1", "bad"]
 
-        fake_assists = PropertyMock(return_value=assists)
-        fake_num_skaters = PropertyMock(return_value=0)
-        fake_num_goalies = PropertyMock(return_value=0)
-        type(self.boxscore)._home_short_handed_assists = fake_assists
-        type(self.boxscore)._away_skaters = fake_num_skaters
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_short_handed_assists = assists
+        self.boxscore._away_skaters = 0
+        self.boxscore._away_goalies = 0
 
         assert self.boxscore.home_short_handed_assists == 1
 
@@ -335,159 +302,130 @@ Logos via Sports Logos.net / About logos
     def test_away_shutout_single_goalies(self):
         shutout = ["1", "0"]
 
-        fake_shutout = PropertyMock(return_value=shutout)
-        fake_num_goalies = PropertyMock(return_value=1)
-        type(self.boxscore)._away_shutout = fake_shutout
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_shutout = shutout
+        self.boxscore._away_goalies = 1
 
         assert self.boxscore.away_shutout == 1
 
     def test_away_shutout_multiple_goalies(self):
         shutout = ["0", "1", "0"]
 
-        fake_shutout = PropertyMock(return_value=shutout)
-        fake_num_goalies = PropertyMock(return_value=2)
-        type(self.boxscore)._away_shutout = fake_shutout
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_shutout = shutout
+        self.boxscore._away_goalies = 2
 
         assert self.boxscore.away_shutout == 1
 
     def test_away_shutout_multiple_goalies_empty_field(self):
         shutout = ["", "1", "0"]
 
-        fake_shutout = PropertyMock(return_value=shutout)
-        fake_num_goalies = PropertyMock(return_value=2)
-        type(self.boxscore)._away_shutout = fake_shutout
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_shutout = shutout
+        self.boxscore._away_goalies = 2
 
         assert self.boxscore.away_shutout == 1
 
     def test_home_shutout_single_goalies(self):
         shutout = ["0", "1"]
 
-        fake_shutout = PropertyMock(return_value=shutout)
-        fake_num_goalies = PropertyMock(return_value=1)
-        type(self.boxscore)._home_shutout = fake_shutout
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_shutout = shutout
+        self.boxscore._away_goalies = 1
 
         assert self.boxscore.home_shutout == 1
 
     def test_home_shutout_multiple_goalies(self):
         shutout = ["0", "0", "1"]
 
-        fake_shutout = PropertyMock(return_value=shutout)
-        fake_num_goalies = PropertyMock(return_value=1)
-        type(self.boxscore)._home_shutout = fake_shutout
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_shutout = shutout
+        self.boxscore._away_goalies = 1
 
         assert self.boxscore.home_shutout == 1
 
     def test_home_shutout_multiple_goalies_empty_field(self):
         shutout = ["0", "", "1"]
 
-        fake_shutout = PropertyMock(return_value=shutout)
-        fake_num_goalies = PropertyMock(return_value=1)
-        type(self.boxscore)._home_shutout = fake_shutout
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_shutout = shutout
+        self.boxscore._away_goalies = 1
 
         assert self.boxscore.home_shutout == 1
 
     def test_away_saves_single_goalies(self):
         saves = ["29", "30"]
 
-        fake_saves = PropertyMock(return_value=saves)
-        fake_num_goalies = PropertyMock(return_value=1)
-        type(self.boxscore)._away_saves = fake_saves
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_saves = saves
+        self.boxscore._away_goalies = 1
 
         assert self.boxscore.away_saves == 29
 
     def test_away_saves_multiple_goalies(self):
         saves = ["29", "3", "30"]
 
-        fake_saves = PropertyMock(return_value=saves)
-        fake_num_goalies = PropertyMock(return_value=2)
-        type(self.boxscore)._away_saves = fake_saves
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_saves = saves
+        self.boxscore._away_goalies = 2
 
         assert self.boxscore.away_saves == 32
 
     def test_away_saves_multiple_goalies_empty_field(self):
         saves = ["29", "", "30"]
 
-        fake_saves = PropertyMock(return_value=saves)
-        fake_num_goalies = PropertyMock(return_value=2)
-        type(self.boxscore)._away_saves = fake_saves
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._away_saves = saves
+        self.boxscore._away_goalies = 2
 
         assert self.boxscore.away_saves == 29
 
     def test_home_saves_single_goalies(self):
         saves = ["29", "30"]
 
-        fake_saves = PropertyMock(return_value=saves)
-        fake_num_goalies = PropertyMock(return_value=1)
-        type(self.boxscore)._home_saves = fake_saves
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_saves = saves
+        self.boxscore._away_goalies = 1
 
         assert self.boxscore.home_saves == 30
 
     def test_home_saves_multiple_goalies(self):
         saves = ["29", "3", "30"]
 
-        fake_saves = PropertyMock(return_value=saves)
-        fake_num_goalies = PropertyMock(return_value=1)
-        type(self.boxscore)._home_saves = fake_saves
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_saves = saves
+        self.boxscore._away_goalies = 1
 
         assert self.boxscore.home_saves == 33
 
     def test_home_saves_multiple_goalies_empty_field(self):
         saves = ["29", "30", ""]
 
-        fake_saves = PropertyMock(return_value=saves)
-        fake_num_goalies = PropertyMock(return_value=1)
-        type(self.boxscore)._home_saves = fake_saves
-        type(self.boxscore)._away_goalies = fake_num_goalies
+        self.boxscore._home_saves = saves
+        self.boxscore._away_goalies = 1
 
         assert self.boxscore.home_saves == 30
 
     def test_away_save_percentage(self):
-        fake_saves = PropertyMock(return_value=30)
-        fake_shots_on_goal = PropertyMock(return_value=33)
-        type(self.boxscore).away_saves = fake_saves
-        type(self.boxscore).home_shots_on_goal = fake_shots_on_goal
+        self.boxscore._away_saves = ["30", "0"]
+        self.boxscore._away_goalies = 1
+        self.boxscore._home_shots_on_goal = 33
 
         assert self.boxscore.away_save_percentage == 0.909
 
     def test_away_save_percentage_zero_shots(self):
-        fake_saves = PropertyMock(return_value=0)
-        fake_shots_on_goal = PropertyMock(return_value=0)
-        type(self.boxscore).away_saves = fake_saves
-        type(self.boxscore).home_shots_on_goal = fake_shots_on_goal
+        self.boxscore._away_saves = ["0", "0"]
+        self.boxscore._away_goalies = 1
+        self.boxscore._home_shots_on_goal = 0
 
         assert self.boxscore.away_save_percentage == 0.0
 
     def test_home_save_percentage(self):
-        fake_saves = PropertyMock(return_value=30)
-        fake_shots_on_goal = PropertyMock(return_value=33)
-        type(self.boxscore).home_saves = fake_saves
-        type(self.boxscore).away_shots_on_goal = fake_shots_on_goal
+        self.boxscore._home_saves = ["0", "30"]
+        self.boxscore._away_goalies = 1
+        self.boxscore._away_shots_on_goal = 33
 
         assert self.boxscore.home_save_percentage == 0.909
 
     def test_home_save_percentage_zero_shots(self):
-        fake_saves = PropertyMock(return_value=0)
-        fake_shots_on_goal = PropertyMock(return_value=0)
-        type(self.boxscore).home_saves = fake_saves
-        type(self.boxscore).away_shots_on_goal = fake_shots_on_goal
+        self.boxscore._home_saves = ["0", "0"]
+        self.boxscore._away_goalies = 1
+        self.boxscore._away_shots_on_goal = 0
 
         assert self.boxscore.home_save_percentage == 0.0
 
     def test_no_class_information_returns_dataframe_of_none(self):
-        mock_goals = PropertyMock(return_value=None)
-        type(self.boxscore)._away_goals = mock_goals
-        type(self.boxscore)._home_goals = mock_goals
+        self.boxscore._away_goals = None
+        self.boxscore._home_goals = None
 
         assert self.boxscore.dataframe is None
 
