@@ -1,5 +1,4 @@
 from flexmock import flexmock
-from mock import PropertyMock
 
 from sportsipy.mlb.schedule import Schedule
 from sportsipy.mlb.teams import Team
@@ -18,8 +17,7 @@ class TestMLBTeams:
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         team = Team(None, 1)
 
-        fake_record = PropertyMock(return_value=None)
-        type(team)._extra_inning_record = fake_record
+        team._extra_inning_record = None
 
         assert team.extra_inning_wins is None
 
@@ -27,7 +25,6 @@ class TestMLBTeams:
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         team = Team(None, 1)
 
-        fake_record = PropertyMock(return_value="Bad-Bad")
-        type(team)._extra_inning_record = fake_record
+        team._extra_inning_record = "Bad-Bad"
 
         assert team.extra_inning_wins is None

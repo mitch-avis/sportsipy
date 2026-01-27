@@ -1,5 +1,4 @@
 from flexmock import flexmock
-from mock import PropertyMock
 
 from sportsipy.ncaab.schedule import Schedule
 from sportsipy.ncaab.teams import Team
@@ -19,9 +18,10 @@ class TestNCAABTeams:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
         team = Team(None, 1)
-        mock_field_goals = PropertyMock(return_value=0)
-        type(team).two_point_field_goals = mock_field_goals
-        type(team).two_point_field_goal_attempts = mock_field_goals
+        team._field_goals = 0
+        team._three_point_field_goals = 0
+        team._field_goal_attempts = 0
+        team._three_point_field_goal_attempts = 0
 
         result = team.two_point_field_goal_percentage
 
@@ -32,9 +32,10 @@ class TestNCAABTeams:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
         team = Team(None, 1)
-        mock_field_goals = PropertyMock(return_value=0)
-        type(team).opp_two_point_field_goals = mock_field_goals
-        type(team).opp_two_point_field_goal_attempts = mock_field_goals
+        team._opp_field_goals = 0
+        team._opp_three_point_field_goals = 0
+        team._opp_field_goal_attempts = 0
+        team._opp_three_point_field_goal_attempts = 0
 
         result = team.opp_two_point_field_goal_percentage
 
@@ -45,8 +46,7 @@ class TestNCAABTeams:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
         team = Team(None, 1)
-        mock_offensive_rebounds = PropertyMock(return_value=None)
-        type(team).offensive_rebounds = mock_offensive_rebounds
+        team._offensive_rebounds = None
 
         result = team.defensive_rebounds
 
@@ -57,8 +57,7 @@ class TestNCAABTeams:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
         team = Team(None, 1)
-        mock_offensive_rebounds = PropertyMock(return_value=None)
-        type(team).opp_offensive_rebounds = mock_offensive_rebounds
+        team._opp_offensive_rebounds = None
 
         result = team.opp_defensive_rebounds
 
@@ -69,8 +68,7 @@ class TestNCAABTeams:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
         team = Team(None, 1)
-        mock_offensive_rating = PropertyMock(return_value=None)
-        type(team).offensive_rating = mock_offensive_rating
+        team._offensive_rating = None
 
         result = team.net_rating
 
