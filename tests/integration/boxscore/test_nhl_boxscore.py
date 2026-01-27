@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 
-import mock
 import pandas as pd
 from flexmock import flexmock
 
@@ -43,7 +42,6 @@ class MockDateTime:
 
 
 class TestNHLBoxscore:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "date": "March 4, 2020",
@@ -196,19 +194,16 @@ class TestNHLBoxscores:
             ]
         }
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 3, 4)).games
 
         assert result == self.expected
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 3, 4), datetime(2020, 3, 3)).games
 
         assert result == self.expected
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_multiple_days(self, *args, **kwargs):
         expected = {
             "3-4-2020": [
@@ -402,7 +397,6 @@ class TestNHLBoxscores:
 
         assert result == expected
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 3, 4))
 
