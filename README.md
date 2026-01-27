@@ -119,7 +119,7 @@ print(championship_game.away_interceptions)
 ```python
 from sportsipy.mlb.boxscore import Boxscore
 
-game = Boxscore('BOS201806070')
+game = Boxscore('BOS/BOS201806070')
 df = game.dataframe
 ```
 
