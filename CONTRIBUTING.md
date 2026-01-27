@@ -150,15 +150,16 @@ should be notified of this issue to ensure a resolution is found.
 ### Offline integration fixtures
 
 Integration tests run in offline mode and read from fixtures in
-`tests/fixtures/integration`, with URL routing defined in
-`tests/fixtures/url_map.json`. If a new live URL is needed, capture it
+`tests/integration`, with URL routing defined in
+`tests/integration/url_map.json`. If a new live URL is needed, capture it
 explicitly and update the map using the capture helper:
 
 ```bash
 SPORTSIPY_CAPTURE_FIXTURES=1 python scripts/capture_fixtures.py \
   --url "<live url>" \
-  --path "integration/<subdir>/<filename>.html"
+  --path "<subdir>/<filename>.html"
 ```
 
 If you see a failure indicating blocked network access, add or adjust the
-fixture map entry rather than enabling live HTTP in tests.
+fixture map entry, or set `SPORTSIPY_LIVE=1` to allow live HTTP during
+integration tests.
