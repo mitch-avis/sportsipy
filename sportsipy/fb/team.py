@@ -55,9 +55,9 @@ class Team:
         self._expected_goals = None
         self._expected_goals_against = None
         self._expected_goal_difference = None
-        self._home_record = None
+        self._home_record: str | None = None
         self._home_games = None
-        self._away_record = None
+        self._away_record: str | None = None
         self._away_games = None
         self._home_wins = None
         self._home_draws = None
@@ -271,7 +271,7 @@ class Team:
         """
         header = doc('div[data-template="Partials/Teams/Summary"]')
         for header_line in header("p"):
-            line = pq(header_line).text()
+            line = str(pq(header_line).text() or "")
             if "home record" in line.lower():
                 # Returns in the format (home_record, away_record, home_points,
                 # away_points).
@@ -505,10 +505,12 @@ class Team:
         Returns an ``int`` of the number of games the team has played at home
         during their primary competition (ie. Premier League).
         """
-        try:
-            return self.home_wins + self.home_draws + self.home_losses
-        except TypeError:
+        wins = self.home_wins
+        draws = self.home_draws
+        losses = self.home_losses
+        if wins is None or draws is None or losses is None:
             return None
+        return wins + draws + losses
 
     @property
     def away_record(self):
@@ -525,10 +527,12 @@ class Team:
         Returns an ``int`` of the number of games the team has played away
         during their primary competition (ie. Premier League).
         """
-        try:
-            return self.away_wins + self.away_draws + self.away_losses
-        except TypeError:
+        wins = self.away_wins
+        draws = self.away_draws
+        losses = self.away_losses
+        if wins is None or draws is None or losses is None:
             return None
+        return wins + draws + losses
 
     @int_property_decorator
     def home_wins(self):
@@ -537,13 +541,12 @@ class Team:
         during their primary competition (ie. Premier League) for the current
         season.
         """
+        if not self._home_record:
+            return None
         try:
             record = self._home_record.split("-")
-            wins = record[0]
-            wins = int(wins)
-        except ValueError:
-            return None
-        except AttributeError:
+            wins = int(record[0])
+        except (ValueError, IndexError):
             return None
         return wins
 
@@ -554,15 +557,12 @@ class Team:
         during their primary competition (ie. Premier League) for the current
         season.
         """
+        if not self._home_record:
+            return None
         try:
             record = self._home_record.split("-")
-            draws = record[1]
-            draws = int(draws)
-        except IndexError:
-            return None
-        except ValueError:
-            return None
-        except AttributeError:
+            draws = int(record[1])
+        except (ValueError, IndexError):
             return None
         return draws
 
@@ -573,15 +573,12 @@ class Team:
         during their primary competition (ie. Premier League) for the current
         season.
         """
+        if not self._home_record:
+            return None
         try:
             record = self._home_record.split("-")
-            losses = record[2]
-            losses = int(losses)
-        except IndexError:
-            return None
-        except ValueError:
-            return None
-        except AttributeError:
+            losses = int(record[2])
+        except (ValueError, IndexError):
             return None
         return losses
 
@@ -592,13 +589,12 @@ class Team:
         during their primary competition (ie. Premier League) for the current
         season.
         """
+        if not self._away_record:
+            return None
         try:
             record = self._away_record.split("-")
-            wins = record[0]
-            wins = int(wins)
-        except ValueError:
-            return None
-        except AttributeError:
+            wins = int(record[0])
+        except (ValueError, IndexError):
             return None
         return wins
 
@@ -609,15 +605,12 @@ class Team:
         during their primary competition (ie. Premier League) for the current
         season.
         """
+        if not self._away_record:
+            return None
         try:
             record = self._away_record.split("-")
-            draws = record[1]
-            draws = int(draws)
-        except IndexError:
-            return None
-        except ValueError:
-            return None
-        except AttributeError:
+            draws = int(record[1])
+        except (ValueError, IndexError):
             return None
         return draws
 
@@ -628,15 +621,12 @@ class Team:
         during their primary competition (ie. Premier League) for the current
         season.
         """
+        if not self._away_record:
+            return None
         try:
             record = self._away_record.split("-")
-            losses = record[2]
-            losses = int(losses)
-        except IndexError:
-            return None
-        except ValueError:
-            return None
-        except AttributeError:
+            losses = int(record[2])
+        except (ValueError, IndexError):
             return None
         return losses
 
