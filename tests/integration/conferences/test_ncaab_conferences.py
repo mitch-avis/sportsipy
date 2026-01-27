@@ -1,6 +1,5 @@
 from os.path import dirname, join
 
-import mock
 import pytest
 from flexmock import flexmock
 
@@ -111,7 +110,6 @@ class TestNCAABConferences:
         self.team_conference = team_conference
         self.conferences_result = conferences_result
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conferences_integration(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
@@ -120,17 +118,14 @@ class TestNCAABConferences:
         assert conferences.team_conference == self.team_conference
         assert conferences.conferences == self.conferences_result
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conferences_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
             _ = Conferences("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conference_integration_bad_url(self, *args, **kwargs):
         with pytest.raises(ValueError):
             _ = Conference("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conference_with_no_names_is_empty(self, *args, **kwargs):
         flexmock(Conference).should_receive("_get_team_abbreviation").and_return("")
 
@@ -138,8 +133,6 @@ class TestNCAABConferences:
 
         assert len(conference._teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
@@ -148,8 +141,6 @@ class TestNCAABConferences:
         assert conferences.team_conference == self.team_conference
         assert conferences.conferences == self.conferences_result
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_conference_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
@@ -157,13 +148,11 @@ class TestNCAABConferences:
 
         assert len(conference._teams) == 10
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conferences_string_representation(self, *args, **kwargs):
         conferences = Conferences()
 
         assert repr(conferences) == "NCAAB Conferences"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conference_string_representation(self, *args, **kwargs):
         conference = Conference("big-12")
 
