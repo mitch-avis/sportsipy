@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import html
 import json
 import os
 import re
@@ -185,29 +186,42 @@ def _fixture_for_url(url: str) -> Optional[str]:
     if not _env_flag("SPORTSIPY_OFFLINE"):
         return None
     mapping = _fixture_map()
+    url_sport_hint = _sport_hint_from_url(url)
     rel_path: Optional[str] = None
     if isinstance(mapping, dict):
         rel_path = mapping.get(url)
     elif isinstance(mapping, list):
+        matches: list[tuple[int, str]] = []
         for entry in mapping:
             if not isinstance(entry, dict):
                 continue
+            path = entry.get("path")
+            if not path or not isinstance(path, str):
+                continue
+            path_lower = path.lower()
+            if "__pycache__" in path_lower:
+                continue
+            entry_sport_hint = _sport_hint_from_path(path_lower)
+            if url_sport_hint and entry_sport_hint and url_sport_hint != entry_sport_hint:
+                continue
             entry_url = entry.get("url")
             if entry_url and entry_url == url:
-                rel_path = entry.get("path")
+                rel_path = path
                 break
             contains = entry.get("contains")
             if contains and contains in url:
-                rel_path = entry.get("path")
-                break
+                matches.append((len(contains), path))
+                continue
             pattern = entry.get("regex")
             if pattern:
                 try:
                     if re.search(pattern, url):
-                        rel_path = entry.get("path")
-                        break
+                        matches.append((len(pattern) + 1, path))
                 except re.error:
                     continue
+        if rel_path is None and matches:
+            matches.sort(key=lambda item: item[0], reverse=True)
+            rel_path = matches[0][1]
     if not rel_path:
         rel_path = _heuristic_fixture_path(url)
     if not rel_path:
@@ -222,9 +236,18 @@ def _fixture_for_url(url: str) -> Optional[str]:
         if not path.exists():
             return None
     try:
-        return path.read_text(encoding="utf-8")
+        content = path.read_text(encoding="utf-8")
     except OSError:
         return None
+    slug = _slug_from_url(url)
+    if slug and not _slug_matches_content(content, slug):
+        return None
+    year = _year_from_url(url)
+    if year:
+        title = _extract_title(content)
+        if title and not _title_matches_year(title, year):
+            return None
+    return content
 
 
 def _heuristic_fixture_path(url: str) -> Optional[str]:
@@ -240,8 +263,24 @@ def _heuristic_fixture_path(url: str) -> Optional[str]:
     query = parse_qs(parsed.query or "")
 
     candidates: list[str] = []
+    conference_specific = False
+    if "/conferences/" in path:
+        segments = [segment for segment in path.strip("/").split("/") if segment]
+        try:
+            index = segments.index("conferences")
+            conf = segments[index + 1]
+            year_match = (
+                re.search(r"\d{4}", segments[index + 2]) if len(segments) > index + 2 else None
+            )
+            if year_match:
+                year = year_match.group(0)
+                for ext in (".html", ".htm", ".shtml"):
+                    candidates.append(f"{year}-{conf}{ext}")
+                conference_specific = True
+        except (ValueError, IndexError):
+            pass
     base = path.rstrip("/").split("/")[-1] if path else ""
-    if base:
+    if base and not conference_specific:
         candidates.append(base)
         base_name, base_ext = os.path.splitext(base)
         if base_ext in {".html", ".htm", ".shtml"}:
@@ -277,44 +316,26 @@ def _heuristic_fixture_path(url: str) -> Optional[str]:
         matches = list(root.rglob(candidate))
         if not matches:
             continue
-        if len(matches) == 1:
-            return matches[0].relative_to(root).as_posix()
         filtered = _filter_fixture_candidates(matches, url)
+        if not filtered:
+            continue
         if len(filtered) == 1:
             return filtered[0].relative_to(root).as_posix()
-        if filtered:
-            return filtered[0].relative_to(root).as_posix()
-        return matches[0].relative_to(root).as_posix()
-    fallback = _fallback_fixture_by_context(root, url)
-    if fallback is None:
-        return None
-    return fallback.relative_to(root).as_posix()
+        return filtered[0].relative_to(root).as_posix()
+    return None
 
 
 def _filter_fixture_candidates(paths: list[Path], url: str) -> list[Path]:
     url_lower = url.lower()
     candidates = paths
 
-    sport_hint = None
-    if "basketball-reference.com" in url_lower:
-        sport_hint = "nba"
-    elif "/cbb/" in url_lower:
-        sport_hint = "ncaab"
-    elif "/cfb/" in url_lower:
-        sport_hint = "ncaaf"
-    elif "pro-football-reference.com" in url_lower:
-        sport_hint = "nfl"
-    elif "baseball-reference.com" in url_lower:
-        sport_hint = "mlb"
-    elif "hockey-reference.com" in url_lower:
-        sport_hint = "nhl"
-    elif "fbref.com" in url_lower:
-        sport_hint = "fb"
+    sport_hint = _sport_hint_from_url(url)
 
     if sport_hint:
         filtered = [p for p in candidates if sport_hint in p.as_posix().lower()]
-        if filtered:
-            candidates = filtered
+        if not filtered:
+            return []
+        candidates = filtered
 
     if "boxscores" in url_lower or "/boxes/" in url_lower:
         filtered = [p for p in candidates if "boxscore" in p.as_posix().lower()]
@@ -347,6 +368,164 @@ def _filter_fixture_candidates(paths: list[Path], url: str) -> list[Path]:
             candidates = filtered
 
     return candidates
+
+
+def _clean_slug(slug: str) -> str | None:
+    slug = slug.strip("/")
+    if not slug:
+        return None
+    slug = re.sub(r"\.(?:html|htm|shtml)$", "", slug, flags=re.IGNORECASE)
+    if not slug:
+        return None
+    if re.fullmatch(r"\d{4}", slug):
+        return None
+    if len(slug) < 3:
+        return None
+    return slug
+
+
+def _extract_canonical_url(content: str) -> str | None:
+    match = re.search(
+        r'<link[^>]+rel=["\']canonical["\'][^>]+href=["\']([^"\']+)["\']',
+        content,
+        flags=re.IGNORECASE,
+    )
+    if match:
+        return match.group(1)
+    match = re.search(
+        r'<meta[^>]+property=["\']og:url["\'][^>]+content=["\']([^"\']+)["\']',
+        content,
+        flags=re.IGNORECASE,
+    )
+    if match:
+        return match.group(1)
+    return None
+
+
+def _url_path_has_slug(url: str, slug: str) -> bool:
+    parsed = urlparse(url)
+    segments = [segment for segment in parsed.path.split("/") if segment]
+    for segment in segments:
+        cleaned = re.sub(r"\.(?:html|htm|shtml)$", "", segment, flags=re.IGNORECASE)
+        if cleaned.lower() == slug.lower():
+            return True
+    return False
+
+
+def _slug_matches_content(content: str, slug: str) -> bool:
+    canonical = _extract_canonical_url(content)
+    if canonical:
+        return _url_path_has_slug(canonical, slug)
+    content_lower = content.lower()
+    slug_lower = slug.lower()
+    for pattern in (
+        rf"/{re.escape(slug_lower)}/",
+        rf"/{re.escape(slug_lower)}\.(?:html|htm|shtml)",
+        rf"/{re.escape(slug_lower)}-",
+    ):
+        if re.search(pattern, content_lower):
+            return True
+    return False
+
+
+def _slug_from_url(url: str) -> str | None:
+    parsed = urlparse(url)
+    path = parsed.path or ""
+    for pattern in (
+        r"/schools/([^/]+)/",
+        r"/teams/([^/]+)/",
+        r"/squads/([^/]+)/",
+        r"/conferences/([^/]+)/",
+    ):
+        match = re.search(pattern, path, flags=re.IGNORECASE)
+        if match:
+            slug = _clean_slug(match.group(1))
+            if slug:
+                return slug
+    match = re.search(r"/players/(?:[a-z]/)?([^/]+)", path, flags=re.IGNORECASE)
+    if match:
+        return _clean_slug(match.group(1))
+    return None
+
+
+def _year_from_url(url: str) -> str | None:
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query or "")
+    for key in ("year", "season"):
+        if key in query and query[key]:
+            value = query[key][0]
+            if re.fullmatch(r"\d{4}", value):
+                return value
+    path = parsed.path or ""
+    match = re.search(r"(?<!\d)(\d{4})(?!\d)", path)
+    if match:
+        return match.group(1)
+    return None
+
+
+def _extract_title(content: str) -> str | None:
+    title_match = re.search(r"<title[^>]*>(.*?)</title>", content, flags=re.IGNORECASE | re.DOTALL)
+    if not title_match:
+        title_match = re.search(r"<h1[^>]*>(.*?)</h1>", content, flags=re.IGNORECASE | re.DOTALL)
+    if not title_match:
+        return None
+    title = re.sub(r"<[^>]+>", "", title_match.group(1))
+    title = html.unescape(title)
+    return " ".join(title.split())
+
+
+def _title_matches_year(title: str, year: str) -> bool:
+    normalized = title.replace("\u2013", "-").replace("\u2014", "-")
+    if year in normalized:
+        return True
+    try:
+        year_int = int(year)
+    except (TypeError, ValueError):
+        return False
+    prev = year_int - 1
+    short = str(year_int)[-2:]
+    for pattern in (f"{prev}-{short}", f"{prev}-{year}"):
+        if pattern in normalized:
+            return True
+    return False
+
+
+def _sport_hint_from_url(url: str) -> str | None:
+    url_lower = url.lower()
+    if "basketball-reference.com" in url_lower:
+        return "nba"
+    if "/cbb/" in url_lower:
+        return "ncaab"
+    if "/cfb/" in url_lower:
+        return "ncaaf"
+    if "pro-football-reference.com" in url_lower:
+        return "nfl"
+    if "baseball-reference.com" in url_lower:
+        return "mlb"
+    if "hockey-reference.com" in url_lower:
+        return "nhl"
+    if "fbref.com" in url_lower:
+        return "fb"
+    return None
+
+
+def _sport_hint_from_path(path: str) -> str | None:
+    path_lower = path.lower()
+    if "ncaab" in path_lower:
+        return "ncaab"
+    if "ncaaf" in path_lower:
+        return "ncaaf"
+    if "nba" in path_lower:
+        return "nba"
+    if "nfl" in path_lower:
+        return "nfl"
+    if "mlb" in path_lower:
+        return "mlb"
+    if "nhl" in path_lower:
+        return "nhl"
+    if "/fb/" in path_lower:
+        return "fb"
+    return None
 
 
 def _fallback_fixture_by_context(root: Path, url: str) -> Optional[Path]:
@@ -676,9 +855,15 @@ def parse_field(
             txt = item.text()
             if txt is None:
                 txt = ""
-            if strip and isinstance(txt, str) and not txt:
+            if isinstance(txt, int):
+                normalized: str | int = txt
+            elif isinstance(txt, str):
+                normalized = txt
+            else:
+                normalized = str(txt)
+            if strip and isinstance(normalized, str) and not normalized:
                 continue
-            items.append(txt)
+            items.append(normalized)
     except (ParserError, XMLSyntaxError, TypeError, AttributeError):
         items = []
 
@@ -851,7 +1036,11 @@ def get_page_source(url: str) -> Optional[str]:
         pass
 
     # Optional dynamic fallback (rarely needed for test fixtures)
-    if _PLAYWRIGHT_AVAILABLE and _env_flag("SPORTSIPY_ENABLE_PLAYWRIGHT"):
+    if (
+        _PLAYWRIGHT_AVAILABLE
+        and sync_playwright is not None
+        and _env_flag("SPORTSIPY_ENABLE_PLAYWRIGHT")
+    ):
         try:
             with sync_playwright() as playwright_session:
                 browser = playwright_session.chromium.launch(headless=True)
