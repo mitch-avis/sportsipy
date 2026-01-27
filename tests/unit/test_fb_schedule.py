@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any, cast
 from urllib.error import HTTPError
 
 import mock
@@ -32,7 +33,7 @@ class TestFBSchedule:
 
         output = self.game._parse_opponent_id(pq(html))
 
-        assert not output
+        assert output is None
 
     def test_invalid_date_returns_none_datetime(self):
         self.game._date = None
@@ -140,7 +141,7 @@ class TestFBSchedule:
 
         output = self.game.dataframe
 
-        assert not output
+        assert output is None
 
     def test_goals_for_with_shootout(self):
         self.game._goals_for = "3 (5)"
@@ -173,7 +174,7 @@ class TestFBSchedule:
     @mock.patch("requests.get", side_effect=mock_httperror)
     def test_invalid_http_page_error(self, *args, **kwargs):
         flexmock(Schedule).should_receive("__init__").and_return(None)
-        schedule = Schedule(None)
+        schedule = cast(Any, Schedule(None))
         schedule._squad_id = ""
 
         assert not schedule._pull_schedule("Tottenham Hotspur", None)

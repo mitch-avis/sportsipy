@@ -1,3 +1,5 @@
+from typing import Any
+
 from flexmock import flexmock
 
 from sportsipy.constants import AWAY, HOME, LOSS, WIN
@@ -11,7 +13,7 @@ class TestNHLSchedule:
     def setup_method(self, *args, **kwargs):
         flexmock(Game).should_receive("_parse_game_data").and_return(None)
 
-        self.game = Game(None)
+        self.game: Any = Game(None)
 
     def test_away_game_returns_away_location(self):
         self.game._location = "@"

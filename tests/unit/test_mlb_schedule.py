@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from flexmock import flexmock
 
@@ -11,7 +12,7 @@ class TestMLBSchedule:
     def setup_method(self, *args, **kwargs):
         flexmock(Game).should_receive("_parse_game_data").and_return(None)
 
-        self.game = Game(None, None)
+        self.game: Any = Game(None, None)
 
     def test_double_header_returns_second_game(self):
         self.game._date = "Sunday, May 14 (2)"
