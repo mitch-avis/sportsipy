@@ -14,15 +14,17 @@ This installs the latest official release from the original project. The
 active fork for this repository is not published to PyPI.
 
 If the bleeding-edge version of this fork is desired, clone this repository
-using git and install all of the package requirements with PIP::
+using git and install it from source using the ``pyproject.toml`` metadata::
 
     git clone https://github.com/mitch-avis/sportsipy
     cd sportsipy
-    pip install -r requirements.txt
+    python -m pip install -e .
 
-Once complete, create a Python wheel for your default version of Python by
-running the following command::
+This repository targets Python 3.12+.
 
+To build a wheel locally, install the build frontend and run::
+
+    python -m pip install build
     python -m build
 
 This will create a `.whl` file in the `dist` directory which can be installed
