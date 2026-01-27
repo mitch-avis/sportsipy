@@ -1,3 +1,5 @@
+from typing import Any
+
 from flexmock import flexmock
 from mock import patch
 
@@ -26,7 +28,7 @@ class TestNCAABPlayer:
         flexmock(Player).should_receive("find_initial_index").and_return(None)
 
     def test_no_int_return_default_value_abstract_class(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._field_goals = [""]
         player._index = 0
 
@@ -35,7 +37,7 @@ class TestNCAABPlayer:
         assert result is None
 
     def test_no_float_returns_default_value_abstract_class(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._field_goal_percentage = [""]
         player._index = 0
 
@@ -44,7 +46,7 @@ class TestNCAABPlayer:
         assert result is None
 
     def test_no_int_return_default_value_player_class(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._games_played = [""]
         player._index = 0
 
@@ -53,7 +55,7 @@ class TestNCAABPlayer:
         assert result is None
 
     def test_no_float_returns_default_value_player_class(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._player_efficiency_rating = [""]
         player._index = 0
 
@@ -63,7 +65,7 @@ class TestNCAABPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
-        player = Player(None)
+        player: Any = Player(None)
         player._player_id = "BAD"
 
         result = player._retrieve_html_page()
@@ -81,13 +83,13 @@ class TestNCAABPlayer:
         assert result == ""
 
     def test_player_with_no_stats(self):
-        player = Player(None)
+        player: Any = Player(None)
         result = player._combine_season_stats(None, None, {})
 
         assert not result
 
     def test_player_with_no_weight_returns_none(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._weight = None
 
         result = player.weight

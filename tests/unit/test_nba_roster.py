@@ -1,3 +1,5 @@
+from typing import Any
+
 from flexmock import flexmock
 from mock import patch
 
@@ -38,7 +40,7 @@ class TestNBAPlayer:
         flexmock(Player).should_receive("__init__").and_return(None)
 
     def test_no_float_returns_default_value_abstract_class(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._field_goal_percentage = [""]
         player._index = 0
 
@@ -47,7 +49,7 @@ class TestNBAPlayer:
         assert result is None
 
     def test_no_float_returns_default_value_player_class(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._player_efficiency_rating = [""]
         player._index = 0
 
@@ -57,7 +59,7 @@ class TestNBAPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
-        player = Player(None)
+        player: Any = Player(None)
         player._player_id = "BAD"
 
         result = player._retrieve_html_page()
@@ -83,7 +85,7 @@ class TestNBAPlayer:
 
         flexmock(Player).should_receive("_combine_contract").and_return({})
 
-        player = Player(None)
+        player: Any = Player(None)
 
         player._parse_contract(player_info)
 
@@ -91,7 +93,7 @@ class TestNBAPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_missing_weight_returns_none(self, *args, **kwargs):
-        player = Player(None)
+        player: Any = Player(None)
         player._weight = None
 
         assert not player.weight

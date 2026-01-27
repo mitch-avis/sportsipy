@@ -1,3 +1,5 @@
+from typing import Any
+
 from flexmock import flexmock
 from mock import patch
 
@@ -26,7 +28,7 @@ class TestMLBPlayer:
         flexmock(Player).should_receive("find_initial_index").and_return(None)
 
     def test_no_int_returns_default_value(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._runs = [[""]]
         player._index = 0
 
@@ -35,7 +37,7 @@ class TestMLBPlayer:
         assert result is None
 
     def test_no_float_returns_default_value(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._batting_average = [[""]]
         player._index = 0
 
@@ -44,7 +46,7 @@ class TestMLBPlayer:
         assert result is None
 
     def test_no_recent_returns_default_value(self):
-        player = Player(None)
+        player: Any = Player(None)
         player._position = [[""]]
         player._season = ["2018"]
         player._most_recent_season = "2018"
@@ -55,7 +57,7 @@ class TestMLBPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_return_none(self, *args, **kwargs):
-        player = Player(None)
+        player: Any = Player(None)
         player._player_id = "BAD"
 
         result = player._retrieve_html_page()
@@ -74,7 +76,7 @@ class TestMLBPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_missing_weight_returns_none(self, *args, **kwargs):
-        player = Player(None)
+        player: Any = Player(None)
         player._weight = None
 
         assert not player.weight
