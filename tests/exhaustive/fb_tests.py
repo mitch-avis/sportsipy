@@ -7,8 +7,10 @@ from sportsipy.fb.team import Team
 
 for team in list(set(SQUAD_IDS.values())):
     squad = Team(team)
-    print(squad.name.encode("utf-8"))
+    if squad.name:
+        print(squad.name.encode("utf-8"))
     for game in squad.schedule:
         print(game.date)
     for player in squad.roster:
-        print(player.name.encode("utf-8"))
+        if player.name:
+            print(player.name.encode("utf-8"))
