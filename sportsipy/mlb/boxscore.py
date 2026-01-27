@@ -348,10 +348,10 @@ class Boxscore:
         self._time = None
         self._attendance = None
         self._venue = None
-        self._time_of_day = None
+        self._time_of_day: str | None = None
         self._duration = None
-        self._away_name = None
-        self._home_name = None
+        self._away_name: pq | None = None
+        self._home_name: pq | None = None
         self._summary = None
         self._winner = None
         self._winning_name = None
@@ -360,7 +360,7 @@ class Boxscore:
         self._losing_abbr = None
         self._losing_abbr = None
         self._away_at_bats = None
-        self._away_runs = None
+        self._away_runs: int | None = None
         self._away_hits = None
         self._away_rbi = None
         self._away_earned_runs = None
@@ -394,8 +394,9 @@ class Boxscore:
         self._away_inherited_score = None
         self._away_win_probability_by_pitcher = None
         self._away_base_out_runs_saved = None
+        self._away_players = None
         self._home_at_bats = None
-        self._home_runs = None
+        self._home_runs: int | None = None
         self._home_hits = None
         self._home_rbi = None
         self._home_earned_runs = None
@@ -429,6 +430,7 @@ class Boxscore:
         self._home_inherited_score = None
         self._home_win_probability_by_pitcher = None
         self._home_base_out_runs_saved = None
+        self._home_players = None
 
         self._parse_game_data(uri)
 
@@ -436,7 +438,9 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self.date})"
+        away_name = self._away_name.text() if self._away_name is not None else ""
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        return f"Boxscore for {away_name} at {home_name} ({self.date})"
 
     def __repr__(self):
         """
@@ -558,7 +562,11 @@ class Boxscore:
                 if inning("div"):
                     continue
                 try:
-                    summary[team[ind]].append(int(inning.text()))
+                    inning_text = inning.text()
+                    if inning_text == "":
+                        summary[team[ind]].append(None)
+                    else:
+                        summary[team[ind]].append(int(inning_text))
                 except ValueError:
                     summary[team[ind]].append(None)
         return summary
@@ -988,7 +996,8 @@ class Boxscore:
         Returns a ``string`` constant indicated whether the game was played
         during the day or at night.
         """
-        if "night" in self._time_of_day.lower():
+        time_of_day = (self._time_of_day or "").lower()
+        if "night" in time_of_day:
             return NIGHT
         return DAY
 
@@ -1013,7 +1022,11 @@ class Boxscore:
         Returns a ``string`` constant indicating whether the home or away team
         won.
         """
-        if self.home_runs > self.away_runs:
+        home_runs = self.home_runs
+        away_runs = self.away_runs
+        if home_runs is None or away_runs is None:
+            return None
+        if home_runs > away_runs:
             return HOME
         return AWAY
 
@@ -1023,9 +1036,13 @@ class Boxscore:
         Returns a ``string`` of the winning team's name, such as 'Houston
         Astros'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._home_name.text()
-        return self._away_name.text()
+            return home_name
+        if self.winner == AWAY:
+            return away_name
+        return ""
 
     @property
     def winning_abbr(self):
@@ -1034,8 +1051,10 @@ class Boxscore:
         for the Houston Astros.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._home_name)
-        return utils.parse_abbreviation(self._away_name)
+            return utils.parse_abbreviation(self._home_name) if self._home_name is not None else ""
+        if self.winner == AWAY:
+            return utils.parse_abbreviation(self._away_name) if self._away_name is not None else ""
+        return ""
 
     @property
     def losing_name(self):
@@ -1043,9 +1062,13 @@ class Boxscore:
         Returns a ``string`` of the losing team's name, such as 'Los Angeles
         Dodgers'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._away_name.text()
-        return self._home_name.text()
+            return away_name
+        if self.winner == AWAY:
+            return home_name
+        return ""
 
     @property
     def losing_abbr(self):
@@ -1054,8 +1077,10 @@ class Boxscore:
         for the Los Angeles Dodgers.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._away_name)
-        return utils.parse_abbreviation(self._home_name)
+            return utils.parse_abbreviation(self._away_name) if self._away_name is not None else ""
+        if self.winner == AWAY:
+            return utils.parse_abbreviation(self._home_name) if self._home_name is not None else ""
+        return ""
 
     @int_property_decorator
     def away_at_bats(self):
@@ -1977,6 +2002,9 @@ class Boxscores:
         while date_step <= end_date:
             url = self._create_url(date_step)
             page = self._get_requested_page(url)
+            if not page:
+                date_step += timedelta(days=1)
+                continue
             games = page('table[class="teams"]').items()
             boxscores = self._extract_game_info(games)
             timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"

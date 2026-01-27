@@ -233,8 +233,8 @@ class Boxscore:
         self._stadium = None
         self._attendance = None
         self._duration = None
-        self._away_name = None
-        self._home_name = None
+        self._away_name: pq | None = None
+        self._home_name: pq | None = None
         self._winner = None
         self._winning_name = None
         self._winning_abbr = None
@@ -247,7 +247,7 @@ class Boxscore:
         self._weather = None
         self._vegas_line = None
         self._over_under = None
-        self._away_points = None
+        self._away_points: int | None = None
         self._away_first_downs = None
         self._away_rush_attempts = None
         self._away_rush_yards = None
@@ -271,7 +271,7 @@ class Boxscore:
         self._away_fourth_down_conversions = None
         self._away_fourth_down_attempts = None
         self._away_time_of_possession = None
-        self._home_points = None
+        self._home_points: int | None = None
         self._home_first_downs = None
         self._home_rush_attempts = None
         self._home_rush_yards = None
@@ -306,7 +306,9 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self.date})"
+        away_name = self._away_name.text() if self._away_name is not None else ""
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        return f"Boxscore for {away_name} at {home_name} ({self.date})"
 
     def __repr__(self):
         """
@@ -1044,7 +1046,11 @@ class Boxscore:
         Returns a ``string`` constant indicating whether the home or away team
         won.
         """
-        if self.home_points > self.away_points:
+        home_points = self.home_points
+        away_points = self.away_points
+        if home_points is None or away_points is None:
+            return None
+        if home_points > away_points:
             return HOME
         return AWAY
 
@@ -1054,9 +1060,13 @@ class Boxscore:
         Returns a ``string`` of the winning team's name, such as 'New England
         Patriots'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._home_name.text()
-        return self._away_name.text()
+            return home_name
+        if self.winner == AWAY:
+            return away_name
+        return ""
 
     @property
     def winning_abbr(self):
@@ -1065,8 +1075,10 @@ class Boxscore:
         for the New England Patriots.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._home_name)
-        return utils.parse_abbreviation(self._away_name)
+            return utils.parse_abbreviation(self._home_name) if self._home_name is not None else ""
+        if self.winner == AWAY:
+            return utils.parse_abbreviation(self._away_name) if self._away_name is not None else ""
+        return ""
 
     @property
     def losing_name(self):
@@ -1074,9 +1086,13 @@ class Boxscore:
         Returns a ``string`` of the losing team's name, such as 'Kansas City
         Chiefs'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._away_name.text()
-        return self._home_name.text()
+            return away_name
+        if self.winner == AWAY:
+            return home_name
+        return ""
 
     @property
     def losing_abbr(self):
@@ -1085,8 +1101,10 @@ class Boxscore:
         for the Kansas City Chiefs.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._away_name)
-        return utils.parse_abbreviation(self._home_name)
+            return utils.parse_abbreviation(self._away_name) if self._away_name is not None else ""
+        if self.winner == AWAY:
+            return utils.parse_abbreviation(self._home_name) if self._home_name is not None else ""
+        return ""
 
     @int_property_decorator
     def away_points(self):
@@ -1741,7 +1759,7 @@ class Boxscores:
                 if parent.attr("id") == "header_scores":
                     return False
                 current = parent
-        except Exception:  # pylint: disable=broad-exception-caught
+        except Exception:
             return False
         return True
 

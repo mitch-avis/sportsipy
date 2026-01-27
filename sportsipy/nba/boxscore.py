@@ -114,11 +114,20 @@ class BoxscorePlayer(AbstractPlayer):
         Returns a ``float`` of the number of game minutes the player was on the
         court for.
         """
-        if self._minutes_played is not None:
-            if self._minutes_played[self._index]:
-                minutes, seconds = self._minutes_played[self._index].split(":")
-                minutes = float(minutes) + float(seconds) / 60
-                return float(minutes)
+        if not self._minutes_played or self._index is None:
+            return None
+        value = self._minutes_played[self._index]
+        if not value:
+            return None
+        parts = value.split(":")
+        if len(parts) != 2:
+            return None
+        minutes, seconds = parts
+        try:
+            minutes_value = float(minutes) + float(seconds) / 60
+        except ValueError:
+            return None
+        return float(minutes_value)
         return None
 
     @property
@@ -211,8 +220,8 @@ class Boxscore:
         self._uri = uri
         self._date = None
         self._location = None
-        self._home_name = None
-        self._away_name = None
+        self._home_name: str | None = None
+        self._away_name: str | None = None
         self._winner = None
         self._winning_name = None
         self._winning_abbr = None
@@ -220,13 +229,13 @@ class Boxscore:
         self._losing_abbr = None
         self._pace = None
         self._summary = None
-        self._away_record = None
+        self._away_record: str | None = None
         self._away_minutes_played = None
-        self._away_field_goals = None
-        self._away_field_goal_attempts = None
+        self._away_field_goals: int | None = None
+        self._away_field_goal_attempts: int | None = None
         self._away_field_goal_percentage = None
-        self._away_three_point_field_goals = None
-        self._away_three_point_field_goal_attempts = None
+        self._away_three_point_field_goals: int | None = None
+        self._away_three_point_field_goal_attempts: int | None = None
         self._away_three_point_field_goal_percentage = None
         self._away_free_throws = None
         self._away_free_throw_attempts = None
@@ -239,7 +248,7 @@ class Boxscore:
         self._away_blocks = None
         self._away_turnovers = None
         self._away_personal_fouls = None
-        self._away_points = None
+        self._away_points: int | None = None
         self._away_true_shooting_percentage = None
         self._away_effective_field_goal_percentage = None
         self._away_three_point_attempt_rate = None
@@ -253,13 +262,13 @@ class Boxscore:
         self._away_turnover_percentage = None
         self._away_offensive_rating = None
         self._away_defensive_rating = None
-        self._home_record = None
+        self._home_record: str | None = None
         self._home_minutes_played = None
-        self._home_field_goals = None
-        self._home_field_goal_attempts = None
+        self._home_field_goals: int | None = None
+        self._home_field_goal_attempts: int | None = None
         self._home_field_goal_percentage = None
-        self._home_three_point_field_goals = None
-        self._home_three_point_field_goal_attempts = None
+        self._home_three_point_field_goals: int | None = None
+        self._home_three_point_field_goal_attempts: int | None = None
         self._home_three_point_field_goal_percentage = None
         self._home_free_throws = None
         self._home_free_throw_attempts = None
@@ -272,7 +281,7 @@ class Boxscore:
         self._home_blocks = None
         self._home_turnovers = None
         self._home_personal_fouls = None
-        self._home_points = None
+        self._home_points: int | None = None
         self._home_true_shooting_percentage = None
         self._home_effective_field_goal_percentage = None
         self._home_three_point_attempt_rate = None
@@ -293,7 +302,9 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self.date})"
+        away_name = self._away_name.text() if self._away_name is not None else ""
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        return f"Boxscore for {away_name} at {home_name} ({self.date})"
 
     def __repr__(self):
         """
@@ -825,7 +836,11 @@ class Boxscore:
         Returns a ``string`` constant indicating whether the home or away team
         won.
         """
-        if self.home_points > self.away_points:
+        home_points = self.home_points
+        away_points = self.away_points
+        if home_points is None or away_points is None:
+            return None
+        if home_points > away_points:
             return HOME
         return AWAY
 
@@ -835,9 +850,13 @@ class Boxscore:
         Returns a ``string`` of the winning team's name, such as 'Detroit
         Pistons'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._home_name.text()
-        return self._away_name.text()
+            return home_name
+        if self.winner == AWAY:
+            return away_name
+        return ""
 
     @property
     def winning_abbr(self):
@@ -846,17 +865,23 @@ class Boxscore:
         for the Detroit Pistons.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._home_name)
-        return utils.parse_abbreviation(self._away_name)
+            return utils.parse_abbreviation(self._home_name) if self._home_name is not None else ""
+        if self.winner == AWAY:
+            return utils.parse_abbreviation(self._away_name) if self._away_name is not None else ""
+        return ""
 
     @property
     def losing_name(self):
         """
         Returns a ``string`` of the losing team's name, such as 'Phoenix Suns'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._away_name.text()
-        return self._home_name.text()
+            return away_name
+        if self.winner == AWAY:
+            return home_name
+        return ""
 
     @property
     def losing_abbr(self):
@@ -865,8 +890,10 @@ class Boxscore:
         for the Phoenix Suns.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._away_name)
-        return utils.parse_abbreviation(self._home_name)
+            return utils.parse_abbreviation(self._away_name) if self._away_name is not None else ""
+        if self.winner == AWAY:
+            return utils.parse_abbreviation(self._home_name) if self._home_name is not None else ""
+        return ""
 
     @float_property_decorator
     def pace(self):
@@ -882,11 +909,12 @@ class Boxscore:
         Returns an ``int`` of the number of games the team has won after the
         conclusion of the game.
         """
-        try:
-            wins, _ = re.findall(r"\d+", self._away_record)
-            return wins
-        except ValueError:
+        if not self._away_record:
             return 0
+        wins_losses = re.findall(r"\d+", self._away_record)
+        if len(wins_losses) < 2:
+            return 0
+        return wins_losses[0]
 
     @int_property_decorator
     def away_losses(self):
@@ -894,11 +922,12 @@ class Boxscore:
         Returns an ``int`` of the number of games the team has lost after the
         conclusion of the game.
         """
-        try:
-            _, losses = re.findall(r"\d+", self._away_record)
-            return losses
-        except ValueError:
+        if not self._away_record:
             return 0
+        wins_losses = re.findall(r"\d+", self._away_record)
+        if len(wins_losses) < 2:
+            return 0
+        return wins_losses[1]
 
     @int_property_decorator
     def away_minutes_played(self):
@@ -964,11 +993,11 @@ class Boxscore:
         Returns an ``int`` of the total number of two point field goals made
         by the away team.
         """
-        try:
-            result = self.away_field_goals - self.away_three_point_field_goals
-        except TypeError:
-            result = None
-        return result
+        field_goals = self.away_field_goals
+        three_point_field_goals = self.away_three_point_field_goals
+        if field_goals is None or three_point_field_goals is None:
+            return None
+        return field_goals - three_point_field_goals
 
     @int_property_decorator
     def away_two_point_field_goal_attempts(self):
@@ -976,11 +1005,11 @@ class Boxscore:
         Returns an ``int`` of the total number of two point field goal attempts
         by the away team.
         """
-        try:
-            result = self.away_field_goal_attempts - self.away_three_point_field_goal_attempts
-        except TypeError:
-            result = None
-        return result
+        attempts = self.away_field_goal_attempts
+        three_point_attempts = self.away_three_point_field_goal_attempts
+        if attempts is None or three_point_attempts is None:
+            return None
+        return attempts - three_point_attempts
 
     @float_property_decorator
     def away_two_point_field_goal_percentage(self):
@@ -989,15 +1018,11 @@ class Boxscore:
         by the number of two point field goal attempts by the away team.
         Percentage ranges from 0-1.
         """
-        try:
-            result = float(self.away_two_point_field_goals) / float(
-                self.away_two_point_field_goal_attempts
-            )
-        except TypeError:
-            result = None
-        else:
-            result = round(float(result), 3)
-        return result
+        field_goals = self.away_two_point_field_goals
+        attempts = self.away_two_point_field_goal_attempts
+        if field_goals is None or attempts in (None, 0):
+            return None
+        return round(field_goals / attempts, 3)
 
     @int_property_decorator
     def away_free_throws(self):
@@ -1200,11 +1225,12 @@ class Boxscore:
         Returns an ``int`` of the number of games the home team won after the
         conclusion of the game.
         """
-        try:
-            wins, _ = re.findall(r"\d+", self._home_record)
-            return wins
-        except ValueError:
+        if not self._home_record:
             return 0
+        wins_losses = re.findall(r"\d+", self._home_record)
+        if len(wins_losses) < 2:
+            return 0
+        return wins_losses[0]
 
     @int_property_decorator
     def home_losses(self):
@@ -1212,11 +1238,12 @@ class Boxscore:
         Returns an ``int`` of the number of games the home team lost after the
         conclusion of the game.
         """
-        try:
-            _, losses = re.findall(r"\d+", self._home_record)
-            return losses
-        except ValueError:
+        if not self._home_record:
             return 0
+        wins_losses = re.findall(r"\d+", self._home_record)
+        if len(wins_losses) < 2:
+            return 0
+        return wins_losses[1]
 
     @int_property_decorator
     def home_minutes_played(self):
@@ -1282,11 +1309,11 @@ class Boxscore:
         Returns an ``int`` of the total number of two point field goals made
         by the home team.
         """
-        try:
-            result = self.home_field_goals - self.home_three_point_field_goals
-        except TypeError:
-            result = None
-        return result
+        field_goals = self.home_field_goals
+        three_point_field_goals = self.home_three_point_field_goals
+        if field_goals is None or three_point_field_goals is None:
+            return None
+        return field_goals - three_point_field_goals
 
     @int_property_decorator
     def home_two_point_field_goal_attempts(self):
@@ -1294,11 +1321,11 @@ class Boxscore:
         Returns an ``int`` of the total number of two point field goal attempts
         by the home team.
         """
-        try:
-            result = self.home_field_goal_attempts - self.home_three_point_field_goal_attempts
-        except TypeError:
-            result = None
-        return result
+        attempts = self.home_field_goal_attempts
+        three_point_attempts = self.home_three_point_field_goal_attempts
+        if attempts is None or three_point_attempts is None:
+            return None
+        return attempts - three_point_attempts
 
     @float_property_decorator
     def home_two_point_field_goal_percentage(self):
@@ -1307,15 +1334,11 @@ class Boxscore:
         by the number of two point field goal attempts by the home team.
         Percentage ranges from 0-1.
         """
-        try:
-            result = float(self.home_two_point_field_goals) / float(
-                self.home_two_point_field_goal_attempts
-            )
-        except TypeError:
-            result = None
-        else:
-            result = round(float(result), 3)
-        return result
+        field_goals = self.home_two_point_field_goals
+        attempts = self.home_two_point_field_goal_attempts
+        if field_goals is None or attempts in (None, 0):
+            return None
+        return round(field_goals / attempts, 3)
 
     @int_property_decorator
     def home_free_throws(self):
@@ -1883,6 +1906,9 @@ class Boxscores:
         while date_step <= end_date:
             url = self._create_url(date_step)
             page = self._get_requested_page(url)
+            if not page:
+                date_step += timedelta(days=1)
+                continue
             games = page('table[class="teams"]').items()
             boxscores = self._extract_game_info(games)
             timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"

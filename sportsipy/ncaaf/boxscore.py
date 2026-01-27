@@ -301,15 +301,15 @@ class Boxscore:
         self._date = None
         self._time = None
         self._stadium = None
-        self._away_name = None
-        self._home_name = None
+        self._away_name: pq | None = None
+        self._home_name: pq | None = None
         self._winner = None
         self._winning_name = None
         self._winning_abbr = None
         self._losing_name = None
         self._losing_abbr = None
         self._summary = None
-        self._away_points = None
+        self._away_points: int | None = None
         self._away_first_downs = None
         self._away_rush_attempts = None
         self._away_rush_yards = None
@@ -325,7 +325,7 @@ class Boxscore:
         self._away_turnovers = None
         self._away_penalties = None
         self._away_yards_from_penalties = None
-        self._home_points = None
+        self._home_points: int | None = None
         self._home_first_downs = None
         self._home_rush_attempts = None
         self._home_rush_yards = None
@@ -348,7 +348,9 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self.date})"
+        away_name = self._away_name.text() if self._away_name is not None else ""
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        return f"Boxscore for {away_name} at {home_name} ({self.date})"
 
     def __repr__(self):
         """
@@ -843,6 +845,8 @@ class Boxscore:
         """
         Returns a ``string`` of the time the game started.
         """
+        if self._time is None:
+            return None
         return self._time.replace("Start Time: ", "")
 
     @property
@@ -851,6 +855,8 @@ class Boxscore:
         Returns a ``string`` of the name of the stadium where the game was
         played.
         """
+        if self._stadium is None:
+            return None
         return self._stadium.replace("Stadium: ", "")
 
     @property
@@ -874,7 +880,11 @@ class Boxscore:
         Returns a ``string`` constant indicating whether the home or away team
         won.
         """
-        if self.home_points > self.away_points:
+        home_points = self.home_points
+        away_points = self.away_points
+        if home_points is None or away_points is None:
+            return None
+        if home_points > away_points:
             return HOME
         return AWAY
 
@@ -883,9 +893,13 @@ class Boxscore:
         """
         Returns a ``string`` of the winning team's name, such as 'Alabama'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._home_name.text()
-        return self._away_name.text()
+            return home_name
+        if self.winner == AWAY:
+            return away_name
+        return ""
 
     @property
     def winning_abbr(self):
@@ -894,22 +908,34 @@ class Boxscore:
         'ALABAMA'
         for the Alabama Crimson Tide.
         """
+        home_name = self._home_name
+        away_name = self._away_name
         if self.winner == HOME:
-            if "cfb/schools" not in str(self._home_name):
-                return self._home_name.text()
-            return utils.parse_abbreviation(self._home_name)
-        if "cfb/schools" not in str(self._away_name):
-            return self._away_name.text()
-        return utils.parse_abbreviation(self._away_name)
+            if not home_name:
+                return ""
+            if "cfb/schools" not in str(home_name):
+                return home_name.text()
+            return utils.parse_abbreviation(home_name)
+        if self.winner == AWAY:
+            if not away_name:
+                return ""
+            if "cfb/schools" not in str(away_name):
+                return away_name.text()
+            return utils.parse_abbreviation(away_name)
+        return ""
 
     @property
     def losing_name(self):
         """
         Returns a ``string`` of the losing team's name, such as 'Georgia'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._away_name.text()
-        return self._home_name.text()
+            return away_name
+        if self.winner == AWAY:
+            return home_name
+        return ""
 
     @property
     def losing_abbr(self):
@@ -917,13 +943,21 @@ class Boxscore:
         Returns a ``string`` of the losing team's abbreviation, such as
         'GEORGIA' for the Georgia Bulldogs.
         """
+        home_name = self._home_name
+        away_name = self._away_name
         if self.winner == HOME:
-            if "cfb/schools" not in str(self._away_name):
-                return self._away_name.text()
-            return utils.parse_abbreviation(self._away_name)
-        if "cfb/schools" not in str(self._home_name):
-            return self._home_name.text()
-        return utils.parse_abbreviation(self._home_name)
+            if not away_name:
+                return ""
+            if "cfb/schools" not in str(away_name):
+                return away_name.text()
+            return utils.parse_abbreviation(away_name)
+        if self.winner == AWAY:
+            if not home_name:
+                return ""
+            if "cfb/schools" not in str(home_name):
+                return home_name.text()
+            return utils.parse_abbreviation(home_name)
+        return ""
 
     @int_property_decorator
     def away_points(self):
@@ -1624,6 +1658,9 @@ class Boxscores:
         while date_step <= end_date:
             url = self._create_url(date_step)
             page = self._get_requested_page(url)
+            if not page:
+                date_step += timedelta(days=1)
+                continue
             games = page('table[class="teams"]').items()
             boxscores = self._extract_game_info(games)
             timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"

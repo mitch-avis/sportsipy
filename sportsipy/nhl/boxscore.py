@@ -22,7 +22,6 @@ def nhl_int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         value = func(*args)
         num_skaters = args[0]._away_skaters
         num_goalies = args[0]._away_goalies
@@ -243,14 +242,14 @@ class Boxscore:
         self._arena = None
         self._attendance = None
         self._duration = None
-        self._away_name = None
-        self._home_name = None
+        self._away_name: pq | None = None
+        self._home_name: pq | None = None
         self._winner = None
         self._winning_name = None
         self._winning_abbr = None
         self._losing_name = None
         self._losing_abbr = None
-        self._away_goals = None
+        self._away_goals: int | None = None
         self._away_assists = None
         self._away_points = None
         self._away_penalties_in_minutes = None
@@ -263,10 +262,10 @@ class Boxscore:
         self._away_short_handed_assists = None
         self._away_shots_on_goal = None
         self._away_shooting_percentage = None
-        self._away_saves = None
+        self._away_saves: list[str] | None = None
         self._away_save_percentage = None
         self._away_shutout = None
-        self._home_goals = None
+        self._home_goals: int | None = None
         self._home_assists = None
         self._home_points = None
         self._home_penalties_in_minutes = None
@@ -279,9 +278,11 @@ class Boxscore:
         self._home_short_handed_assists = None
         self._home_shots_on_goal = None
         self._home_shooting_percentage = None
-        self._home_saves = None
+        self._home_saves: list[str] | None = None
         self._home_save_percentage = None
         self._home_shutout = None
+        self._away_skaters = 0
+        self._away_goalies = 0
 
         self._parse_game_data(uri)
 
@@ -289,7 +290,9 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self.date})"
+        away_name = self._away_name.text() if self._away_name is not None else ""
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        return f"Boxscore for {away_name} at {home_name} ({self.date})"
 
     def __repr__(self):
         """
@@ -796,7 +799,7 @@ class Boxscore:
         part of, such as 'Western First Round', or None if the game was played
         during the regular season.
         """
-        return self._playoff_round  # pylint: disable=no-member
+        return self._playoff_round
 
     @property
     def winner(self):
@@ -804,7 +807,11 @@ class Boxscore:
         Returns a ``string`` constant indicating whether the home or away team
         won.
         """
-        if self.home_goals > self.away_goals:
+        home_goals = self.home_goals
+        away_goals = self.away_goals
+        if home_goals is None or away_goals is None:
+            return None
+        if home_goals > away_goals:
             return HOME
         return AWAY
 
@@ -814,9 +821,13 @@ class Boxscore:
         Returns a ``string`` of the winning team's name, such as 'Vegas Golden
         Knights'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._home_name.text()
-        return self._away_name.text()
+            return home_name
+        if self.winner == AWAY:
+            return away_name
+        return ""
 
     @property
     def winning_abbr(self):
@@ -825,8 +836,10 @@ class Boxscore:
         for the Vegas Golden Knights.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._home_name)
-        return utils.parse_abbreviation(self._away_name)
+            return utils.parse_abbreviation(self._home_name) if self._home_name is not None else ""
+        if self.winner == AWAY:
+            return utils.parse_abbreviation(self._away_name) if self._away_name is not None else ""
+        return ""
 
     @property
     def losing_name(self):
@@ -834,9 +847,13 @@ class Boxscore:
         Returns a ``string`` of the losing team's name, such as 'Washington
         Capitals'.
         """
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        away_name = self._away_name.text() if self._away_name is not None else ""
         if self.winner == HOME:
-            return self._away_name.text()
-        return self._home_name.text()
+            return away_name
+        if self.winner == AWAY:
+            return home_name
+        return ""
 
     @property
     def losing_abbr(self):
@@ -845,8 +862,10 @@ class Boxscore:
         for the Washington Capitals.
         """
         if self.winner == HOME:
-            return utils.parse_abbreviation(self._away_name)
-        return utils.parse_abbreviation(self._home_name)
+            return utils.parse_abbreviation(self._away_name) if self._away_name is not None else ""
+        if self.winner == AWAY:
+            return utils.parse_abbreviation(self._home_name) if self._home_name is not None else ""
+        return ""
 
     @int_property_decorator
     def away_goals(self):
@@ -962,11 +981,13 @@ class Boxscore:
         Returns a ``float`` of the percentage of shots the away team saved.
         Percentage ranges from 0-1.
         """
-        try:
-            save_pct = float(self.away_saves) / float(self.home_shots_on_goal)
-            return round(save_pct, 3)
-        except ZeroDivisionError:
+        saves = self.away_saves
+        shots = self.home_shots_on_goal
+        if saves is None or shots is None:
+            return None
+        if shots == 0:
             return 0.0
+        return round(saves / shots, 3)
 
     @nhl_int_property_decorator
     def away_shutout(self):
@@ -1090,11 +1111,13 @@ class Boxscore:
         Returns a ``float`` of the percentage of shots the home team saved.
         Percentage ranges from 0-1.
         """
-        try:
-            save_pct = float(self.home_saves) / float(self.away_shots_on_goal)
-            return round(save_pct, 3)
-        except ZeroDivisionError:
+        saves = self.home_saves
+        shots = self.away_shots_on_goal
+        if saves is None or shots is None:
+            return None
+        if shots == 0:
             return 0.0
+        return round(saves / shots, 3)
 
     @nhl_int_property_decorator
     def home_shutout(self):
@@ -1475,6 +1498,9 @@ class Boxscores:
         while date_step <= end_date:
             url = self._create_url(date_step)
             page = self._get_requested_page(url)
+            if not page:
+                date_step += timedelta(days=1)
+                continue
             games = page('table[class="teams"]').items()
             boxscores = self._extract_game_info(games)
             timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"
