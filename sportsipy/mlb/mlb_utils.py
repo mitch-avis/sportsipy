@@ -28,6 +28,8 @@ def _add_stats_data(teams_list, team_data_dict):
     """
     # Teams are listed in terms of rank with the first team being #1
     rank = 1
+    if teams_list is None:
+        return team_data_dict
     for team_data in teams_list:
         # Skip the league average row
         if 'class="league_average_table"' in str(team_data):
