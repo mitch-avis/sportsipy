@@ -114,24 +114,24 @@ class Rankings:
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(RANKINGS_URL % year) and utils.url_exists(
-                RANKINGS_URL % str(int(year) - 1)
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: RANKINGS_URL % y)
         page = self._pull_rankings_page(year)
         if not page:
             output = f"Can't pull rankings page. Ensure the following URL exists: {RANKINGS_URL}"
             raise ValueError(output)
+
+        def _safe_int(value, default=0):
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return default
+
         rankings = page("table#ap tbody tr").items()
         weekly_rankings = []
-        week = 0
+        week_value = 0
         for team in rankings:
             if 'class="thead"' in str(team):
-                self._rankings[int(week)] = weekly_rankings
+                self._rankings[week_value] = weekly_rankings
                 weekly_rankings = []
                 continue
             abbreviation, name = self._get_team(team)
@@ -140,28 +140,28 @@ class Rankings:
             date = utils.parse_field(RANKINGS_SCHEME, team, "date")
             previous = utils.parse_field(RANKINGS_SCHEME, team, "previous")
             change = utils.parse_field(RANKINGS_SCHEME, team, "change")
+            week_value = _safe_int(week)
+            rank_value = _safe_int(rank)
+            change_value = _safe_int(change)
             if "decrease" in str(team(RANKINGS_SCHEME["change"])):
-                change = int(change) * -1
+                change_value = change_value * -1
             elif "increase" in str(team(RANKINGS_SCHEME["change"])):
-                try:
-                    change = int(change)
-                except ValueError:
-                    change = 0
+                change_value = change_value
             else:
-                change = 0
+                change_value = 0
             rank_details = {
                 "abbreviation": abbreviation,
                 "name": name,
-                "rank": int(rank),
-                "week": int(week),
+                "rank": rank_value,
+                "week": week_value,
                 "date": date,
                 "previous": previous,
-                "change": change,
+                "change": change_value,
             }
             weekly_rankings.append(rank_details)
         # Add the final rankings which is not terminated with another header
         # row and hence will not hit the first if statement in the loop above.
-        self._rankings[int(week)] = weekly_rankings
+        self._rankings[week_value] = weekly_rankings
 
     @property
     def current_extended(self):
@@ -333,26 +333,26 @@ class CFPRankings:
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(CFP_RANKINGS_URL % year) and utils.url_exists(
-                CFP_RANKINGS_URL % str(int(year) - 1)
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: CFP_RANKINGS_URL % y)
         page = self._pull_rankings_page(year)
         if not page:
             output = (
                 f"Can't pull rankings page. Ensure the following URL exists: {CFP_RANKINGS_URL}"
             )
             raise ValueError(output)
+
+        def _safe_int(value, default=0):
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return default
+
         rankings = page("table#cfbplayoff tbody tr").items()
         weekly_rankings = []
-        week = 0
+        week_value = 0
         for team in rankings:
             if 'class="thead"' in str(team):
-                self._rankings[int(week)] = weekly_rankings
+                self._rankings[week_value] = weekly_rankings
                 weekly_rankings = []
                 continue
             abbreviation, name = self._get_team(team)
@@ -361,28 +361,28 @@ class CFPRankings:
             date = utils.parse_field(RANKINGS_SCHEME, team, "date")
             previous = utils.parse_field(RANKINGS_SCHEME, team, "previous")
             change = utils.parse_field(RANKINGS_SCHEME, team, "change")
+            week_value = _safe_int(week)
+            rank_value = _safe_int(rank)
+            change_value = _safe_int(change)
             if "decrease" in str(team(RANKINGS_SCHEME["change"])):
-                change = int(change) * -1
+                change_value = change_value * -1
             elif "increase" in str(team(RANKINGS_SCHEME["change"])):
-                try:
-                    change = int(change)
-                except ValueError:
-                    change = 0
+                change_value = change_value
             else:
-                change = 0
+                change_value = 0
             rank_details = {
                 "abbreviation": abbreviation,
                 "name": name,
-                "rank": int(rank),
-                "week": int(week),
+                "rank": rank_value,
+                "week": week_value,
                 "date": date,
                 "previous": previous,
-                "change": change,
+                "change": change_value,
             }
             weekly_rankings.append(rank_details)
         # Add the final rankings which is not terminated with another header
         # row and hence will not hit the first if statement in the loop above.
-        self._rankings[int(week)] = weekly_rankings
+        self._rankings[week_value] = weekly_rankings
 
     @property
     def current_extended(self):
@@ -552,26 +552,26 @@ class CoachesRankings:
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(COACHES_RANKINGS_URL % year) and utils.url_exists(
-                COACHES_RANKINGS_URL % str(int(year) - 1)
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: COACHES_RANKINGS_URL % y)
         page = self._pull_rankings_page(year)
         if not page:
             output = (
                 f"Can't pull rankings page. Ensure the following URL exists: {COACHES_RANKINGS_URL}"
             )
             raise ValueError(output)
+
+        def _safe_int(value, default=0):
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return default
+
         rankings = page("table#usatoday tbody tr").items()
         weekly_rankings = []
-        week = 0
+        week_value = 0
         for team in rankings:
             if 'class="thead"' in str(team):
-                self._rankings[int(week)] = weekly_rankings
+                self._rankings[week_value] = weekly_rankings
                 weekly_rankings = []
                 continue
             abbreviation, name = self._get_team(team)
@@ -580,28 +580,28 @@ class CoachesRankings:
             date = utils.parse_field(RANKINGS_SCHEME, team, "date")
             previous = utils.parse_field(RANKINGS_SCHEME, team, "previous")
             change = utils.parse_field(RANKINGS_SCHEME, team, "change")
+            week_value = _safe_int(week)
+            rank_value = _safe_int(rank)
+            change_value = _safe_int(change)
             if "decrease" in str(team(RANKINGS_SCHEME["change"])):
-                change = int(change) * -1
+                change_value = change_value * -1
             elif "increase" in str(team(RANKINGS_SCHEME["change"])):
-                try:
-                    change = int(change)
-                except ValueError:
-                    change = 0
+                change_value = change_value
             else:
-                change = 0
+                change_value = 0
             rank_details = {
                 "abbreviation": abbreviation,
                 "name": name,
-                "rank": int(rank),
-                "week": int(week),
+                "rank": rank_value,
+                "week": week_value,
                 "date": date,
                 "previous": previous,
-                "change": change,
+                "change": change_value,
             }
             weekly_rankings.append(rank_details)
         # Add the final rankings which is not terminated with another header
         # row and hence will not hit the first if statement in the loop above.
-        self._rankings[int(week)] = weekly_rankings
+        self._rankings[week_value] = weekly_rankings
 
     @property
     def current_extended(self):
