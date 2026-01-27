@@ -8,7 +8,8 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Callable, Generator, Optional
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from lxml.etree import ParserError, XMLSyntaxError
@@ -18,11 +19,11 @@ from .constants import RATE_LIMIT_INTERVAL
 
 _RATE_LIMIT_LOCK = threading.Lock()
 _LAST_REQUEST_TIME = 0.0
-_FIXTURE_MAP = None
+_FIXTURE_MAP: dict | list | None = None
 
 
 # Backward-compatible callable matching prior usage: utils.pq(...)
-def pq(*args, **kwargs):  # pylint: disable=invalid-name
+def pq(*args: object, **kwargs: object) -> PyQuery:
     if len(args) == 1 and args[0] is None:
         return PyQuery("")
     return PyQuery(*args, **kwargs)
@@ -31,10 +32,10 @@ def pq(*args, **kwargs):  # pylint: disable=invalid-name
 # Try optional Playwright (only used if explicitly falling back for dynamic pages)
 try:
     from playwright.sync_api import sync_playwright  # type: ignore
-
-    _PLAYWRIGHT_AVAILABLE = True
 except ImportError:
-    _PLAYWRIGHT_AVAILABLE = False
+    sync_playwright = None
+
+_PLAYWRIGHT_AVAILABLE = sync_playwright is not None
 
 # {
 #   league name: {
@@ -97,7 +98,7 @@ def _rate_limit_wait() -> None:
     if not _rate_limit_enabled():
         return
     interval = _rate_limit_seconds()
-    global _LAST_REQUEST_TIME  # pylint: disable=global-statement
+    global _LAST_REQUEST_TIME
     with _RATE_LIMIT_LOCK:
         now = time.monotonic()
         wait = _LAST_REQUEST_TIME + interval - now
@@ -159,8 +160,8 @@ def _cache_write(url: str, text: str) -> None:
         return
 
 
-def _fixture_map() -> dict:
-    global _FIXTURE_MAP  # pylint: disable=global-statement
+def _fixture_map() -> dict | list:
+    global _FIXTURE_MAP
     if _FIXTURE_MAP is not None:
         return _FIXTURE_MAP
     fixture_map = os.environ.get("SPORTSIPY_FIXTURE_MAP")
@@ -175,6 +176,8 @@ def _fixture_map() -> dict:
             _FIXTURE_MAP = {}
     else:
         _FIXTURE_MAP = {}
+    if _FIXTURE_MAP is None:
+        _FIXTURE_MAP = {}
     return _FIXTURE_MAP
 
 
@@ -182,17 +185,233 @@ def _fixture_for_url(url: str) -> Optional[str]:
     if not _env_flag("SPORTSIPY_OFFLINE"):
         return None
     mapping = _fixture_map()
-    rel_path = mapping.get(url)
+    rel_path: Optional[str] = None
+    if isinstance(mapping, dict):
+        rel_path = mapping.get(url)
+    elif isinstance(mapping, list):
+        for entry in mapping:
+            if not isinstance(entry, dict):
+                continue
+            entry_url = entry.get("url")
+            if entry_url and entry_url == url:
+                rel_path = entry.get("path")
+                break
+            contains = entry.get("contains")
+            if contains and contains in url:
+                rel_path = entry.get("path")
+                break
+            pattern = entry.get("regex")
+            if pattern:
+                try:
+                    if re.search(pattern, url):
+                        rel_path = entry.get("path")
+                        break
+                except re.error:
+                    continue
+    if not rel_path:
+        rel_path = _heuristic_fixture_path(url)
     if not rel_path:
         return None
     fixture_dir = os.environ.get("SPORTSIPY_FIXTURE_DIR", "")
     path = Path(fixture_dir) / rel_path
     if not path.exists():
-        return None
+        rel_path = _heuristic_fixture_path(url)
+        if not rel_path:
+            return None
+        path = Path(fixture_dir) / rel_path
+        if not path.exists():
+            return None
     try:
         return path.read_text(encoding="utf-8")
     except OSError:
         return None
+
+
+def _heuristic_fixture_path(url: str) -> Optional[str]:
+    fixture_dir = os.environ.get("SPORTSIPY_FIXTURE_DIR", "")
+    if not fixture_dir:
+        return None
+    root = Path(fixture_dir)
+    if not root.exists():
+        return None
+
+    parsed = urlparse(url)
+    path = parsed.path or ""
+    query = parse_qs(parsed.query or "")
+
+    candidates: list[str] = []
+    base = path.rstrip("/").split("/")[-1] if path else ""
+    if base:
+        candidates.append(base)
+        base_name, base_ext = os.path.splitext(base)
+        if base_ext in {".html", ".htm", ".shtml"}:
+            for ext in {".html", ".htm", ".shtml", ""}:
+                candidate = f"{base_name}{ext}"
+                if candidate not in candidates:
+                    candidates.append(candidate)
+        elif base_ext == "":
+            for ext in (".html", ".htm", ".shtml"):
+                candidates.append(f"{base}{ext}")
+
+    # Handle boxscore index pages (query-string URLs)
+    if "boxscores" in path and query:
+        month = query.get("month", [None])[0]
+        day = query.get("day", [None])[0]
+        year = query.get("year", [None])[0]
+        if month and day and year:
+            candidates.append(f"boxscores-{month}-{day}-{year}.html")
+    if "/boxes/" in path and query:
+        month = query.get("month", [None])[0]
+        day = query.get("day", [None])[0]
+        year = query.get("year", [None])[0]
+        if month and day and year:
+            candidates.append(f"boxscore-{month}-{day}-{year}.html")
+
+    if path.rstrip("/").endswith("gamelog"):
+        candidates.append("gamelog")
+
+    if not candidates:
+        return None
+
+    for candidate in candidates:
+        matches = list(root.rglob(candidate))
+        if not matches:
+            continue
+        if len(matches) == 1:
+            return matches[0].relative_to(root).as_posix()
+        filtered = _filter_fixture_candidates(matches, url)
+        if len(filtered) == 1:
+            return filtered[0].relative_to(root).as_posix()
+        if filtered:
+            return filtered[0].relative_to(root).as_posix()
+        return matches[0].relative_to(root).as_posix()
+    fallback = _fallback_fixture_by_context(root, url)
+    if fallback is None:
+        return None
+    return fallback.relative_to(root).as_posix()
+
+
+def _filter_fixture_candidates(paths: list[Path], url: str) -> list[Path]:
+    url_lower = url.lower()
+    candidates = paths
+
+    sport_hint = None
+    if "basketball-reference.com" in url_lower:
+        sport_hint = "nba"
+    elif "/cbb/" in url_lower:
+        sport_hint = "ncaab"
+    elif "/cfb/" in url_lower:
+        sport_hint = "ncaaf"
+    elif "pro-football-reference.com" in url_lower:
+        sport_hint = "nfl"
+    elif "baseball-reference.com" in url_lower:
+        sport_hint = "mlb"
+    elif "hockey-reference.com" in url_lower:
+        sport_hint = "nhl"
+    elif "fbref.com" in url_lower:
+        sport_hint = "fb"
+
+    if sport_hint:
+        filtered = [p for p in candidates if sport_hint in p.as_posix().lower()]
+        if filtered:
+            candidates = filtered
+
+    if "boxscores" in url_lower or "/boxes/" in url_lower:
+        filtered = [p for p in candidates if "boxscore" in p.as_posix().lower()]
+        if filtered:
+            candidates = filtered
+
+    if "polls" in url_lower:
+        filtered = [p for p in candidates if "rankings" in p.as_posix().lower()]
+        if filtered:
+            candidates = filtered
+
+    if "/conferences/" in url_lower or "/seasons/" in url_lower:
+        filtered = [p for p in candidates if "conferences" in p.as_posix().lower()]
+        if filtered:
+            candidates = filtered
+
+    if "/players/" in url_lower:
+        filtered = [p for p in candidates if "roster" in p.as_posix().lower()]
+        if filtered:
+            candidates = filtered
+
+    if "gamelog" in url_lower or "_games" in url_lower or "schedule" in url_lower:
+        filtered = [p for p in candidates if "schedule" in p.as_posix().lower()]
+        if filtered:
+            candidates = filtered
+
+    if "/leagues/" in url_lower or "/years/" in url_lower:
+        filtered = [p for p in candidates if "teams" in p.as_posix().lower()]
+        if filtered:
+            candidates = filtered
+
+    return candidates
+
+
+def _fallback_fixture_by_context(root: Path, url: str) -> Optional[Path]:
+    url_lower = url.lower()
+
+    def _pick_first(paths: list[Path]) -> Optional[Path]:
+        return sorted(paths)[0] if paths else None
+
+    sport_hint = None
+    if "basketball-reference.com" in url_lower:
+        sport_hint = "nba"
+    elif "/cbb/" in url_lower:
+        sport_hint = "ncaab"
+    elif "/cfb/" in url_lower:
+        sport_hint = "ncaaf"
+    elif "pro-football-reference.com" in url_lower:
+        sport_hint = "nfl"
+    elif "baseball-reference.com" in url_lower:
+        sport_hint = "mlb"
+    elif "hockey-reference.com" in url_lower:
+        sport_hint = "nhl"
+    elif "fbref.com" in url_lower:
+        sport_hint = "fb"
+
+    if sport_hint == "fb" and "squads" in url_lower:
+        return _pick_first(list(root.rglob("integration/roster/fb/*")))
+
+    if "polls" in url_lower and sport_hint:
+        return _pick_first(list(root.rglob(f"integration/rankings/{sport_hint}/*")))
+
+    if ("/conferences/" in url_lower or "/seasons/" in url_lower) and sport_hint in {
+        "ncaab",
+        "ncaaf",
+    }:
+        season_pages = [
+            p
+            for p in root.rglob(f"integration/conferences/{sport_hint}/*")
+            if re.fullmatch(r"\d{4}\.html", p.name)
+        ]
+        return _pick_first(season_pages)
+
+    if ("boxscores" in url_lower or "/boxes/" in url_lower) and sport_hint:
+        return _pick_first(list(root.rglob(f"integration/boxscore/{sport_hint}/*")))
+
+    if "gamelog" in url_lower or "_games" in url_lower or "schedule" in url_lower:
+        if sport_hint:
+            return _pick_first(list(root.rglob(f"integration/schedule/{sport_hint}/*")))
+
+    if "/players/" in url_lower and sport_hint:
+        return _pick_first(list(root.rglob(f"integration/roster/{sport_hint}/*")))
+
+    if "/teams/" in url_lower and sport_hint in {"nba", "nhl", "mlb"}:
+        team_pages = [
+            p
+            for p in root.rglob(f"integration/roster/{sport_hint}/*")
+            if re.search(r"\d{4}", p.name)
+        ]
+        return _pick_first(team_pages)
+
+    if (
+        "/leagues/" in url_lower or (sport_hint == "nfl" and "/years/" in url_lower)
+    ) and sport_hint:
+        return _pick_first(list(root.rglob(f"integration/teams/{sport_hint}_stats/*")))
+
+    return None
 
 
 def _request_with_retries(method: str, url: str, **kwargs):
@@ -266,6 +485,30 @@ def url_exists(url: str) -> bool:
         return False
 
 
+def resolve_year_for_url(
+    year: int | str | None,
+    url_builder: Callable[[str], str],
+    max_lookback: int = 10,
+) -> str | None:
+    """
+    Find the most recent year that has data for the supplied URL builder.
+
+    When data is missing for the current season (common early in a season),
+    step backward until a valid year is found or the lookback limit is hit.
+    """
+    if not year:
+        return None
+    try:
+        year_int = int(year)
+    except (TypeError, ValueError):
+        return str(year)
+
+    for candidate in range(year_int, year_int - max_lookback - 1, -1):
+        if url_exists(url_builder(str(candidate))):
+            return str(candidate)
+    return str(year)
+
+
 def find_year_for_season(league: str) -> int:
     """
     Return the necessary seaons's year based on the current date.
@@ -321,7 +564,7 @@ def find_year_for_season(league: str) -> int:
     return today.year
 
 
-def parse_abbreviation(uri_link) -> str:
+def parse_abbreviation(uri_link: PyQuery | str) -> str:
     """
     Returns a team's abbreviation. Accepts either a PyQuery object or raw HTML
     string for a single <tr> row.
@@ -349,7 +592,7 @@ def parse_abbreviation(uri_link) -> str:
     try:
         anchor = uri_link("a")
         href = anchor.attr("href") if anchor else None
-        if not href:
+        if not isinstance(href, str) or not href:
             return ""
         abbr = re.sub(r"/[0-9]+\..*htm.*", "", href)
         abbr = re.sub(r"/.*/schools/", "", abbr)
@@ -361,12 +604,12 @@ def parse_abbreviation(uri_link) -> str:
 
 def parse_field(
     parsing_scheme: dict,
-    html_data,
+    html_data: str | PyQuery,
     field: str,
     index: int = 0,
     strip: bool = False,
     secondary_index: Optional[int] = None,
-) -> Optional[str]:
+) -> Optional[str | int]:
     """
     Parse an HTML table to find the requested field's value.
 
@@ -422,11 +665,18 @@ def parse_field(
         return None
 
     try:
-        selection = html_data(scheme) if callable(html_data) else pq(html_data)(scheme)
-        items: list[str] = []
+        if isinstance(html_data, PyQuery):
+            selection = html_data(scheme)
+        elif callable(html_data):
+            selection = html_data(scheme)
+        else:
+            selection = pq(html_data)(scheme)
+        items: list[str | int] = []
         for item in selection.items():
             txt = item.text()
-            if strip and not txt:
+            if txt is None:
+                txt = ""
+            if strip and isinstance(txt, str) and not txt:
                 continue
             items.append(txt)
     except (ParserError, XMLSyntaxError, TypeError, AttributeError):
@@ -445,7 +695,7 @@ def parse_field(
     return result
 
 
-def remove_html_comment_tags(html: str) -> str:
+def remove_html_comment_tags(html: str | PyQuery) -> str:
     """
     Returns the passed HTML contents with all comment tags removed while
     keeping the contents within the tags.
@@ -610,7 +860,7 @@ def get_page_source(url: str) -> Optional[str]:
                 html = page.content()
                 browser.close()
                 return html
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception as exc:
             print(f"Playwright fetch failed: {exc}")
             return None
     return None
