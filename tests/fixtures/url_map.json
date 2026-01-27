@@ -1,0 +1,550 @@
+[
+  {
+    "contains": "361ca564",
+    "path": "integration/roster/fb/tottenham-hotspur-2019-2020.html"
+  },
+  {
+    "contains": "tottenham-hotspur-2019-2020",
+    "path": "integration/roster/fb/tottenham-hotspur-2019-2020.html"
+  },
+  {
+    "contains": "/teams/HOU/2018.html",
+    "path": "integration/roster/nba/2018.html"
+  },
+  {
+    "contains": "/cbb/schools/purdue/2018.html",
+    "path": "integration/roster/ncaab/2018.html"
+  },
+  {
+    "contains": "/teams/DET/2018.html",
+    "path": "integration/roster/nhl/2018.html"
+  },
+  {
+    "contains": "/cfb/conferences/2018.html",
+    "path": "integration/conferences/ncaaf/2018.html"
+  },
+  {
+    "contains": "/cbb/conferences/2018.html",
+    "path": "integration/conferences/ncaab/2018.html"
+  },
+  {
+    "contains": "/teams/kan/2017/gamelog",
+    "path": "integration/teams/nfl_stats/2017_gamelog.html"
+  },
+  {
+    "contains": "/teams/NYR/2017_gamelog.html",
+    "path": "integration/schedule/nhl/2017_gamelog.html"
+  },
+  {
+    "contains": "/teams/HOU/2017.shtml",
+    "path": "integration/roster/mlb/2017.shtml"
+  },
+  {
+    "regex": "pro-football-reference\\.com/years/2017/?$",
+    "path": "integration/teams/nfl_stats/2017.html"
+  },
+  {
+    "contains": "/leagues/MLB/2021.shtml",
+    "path": "integration/teams/mlb_stats/2021.html"
+  },
+  {
+    "contains": "boxscores/?month=2&day=22&year=2020",
+    "path": "integration/boxscore/nba/boxscores-2-22-2020.html"
+  },
+  {
+    "contains": "boxscores/?month=2&day=23&year=2020",
+    "path": "integration/boxscore/nba/boxscores-2-23-2020.html"
+  },
+  {
+    "contains": "cbb/boxscores/index.cgi?month=1&day=5&year=2020",
+    "path": "integration/boxscore/ncaab/boxscores-1-5-2020.html"
+  },
+  {
+    "contains": "cbb/boxscores/index.cgi?month=1&day=6&year=2020",
+    "path": "integration/boxscore/ncaab/boxscores-1-6-2020.html"
+  },
+  {
+    "contains": "cfb/boxscores/index.cgi?month=9&day=12&year=2020",
+    "path": "integration/boxscore/ncaaf/boxscores-9-12-2020.html"
+  },
+  {
+    "contains": "cfb/boxscores/index.cgi?month=9&day=13&year=2020",
+    "path": "integration/boxscore/ncaaf/boxscores-9-13-2020.html"
+  },
+  {
+    "contains": "/years/2020/week_1",
+    "path": "integration/boxscore/nfl/boxscores-1-2020.html"
+  },
+  {
+    "contains": "/years/2020/week_2",
+    "path": "integration/boxscore/nfl/boxscores-2-2020.html"
+  },
+  {
+    "contains": "hockey-reference.com/boxscores/index.fcgi?month=3&day=4&year=2020",
+    "path": "integration/boxscore/nhl/boxscores-3-4-2020.html"
+  },
+  {
+    "contains": "hockey-reference.com/boxscores/index.fcgi?month=3&day=5&year=2020",
+    "path": "integration/boxscore/nhl/boxscores-3-5-2020.html"
+  },
+  {
+    "contains": "boxes/?year=2020&month=8&day=17",
+    "path": "integration/boxscore/mlb/boxscore-8-17-2020.html"
+  },
+  {
+    "contains": "boxes/?year=2020&month=8&day=18",
+    "path": "integration/boxscore/mlb/boxscore-8-18-2020.html"
+  },
+  {
+    "contains": "test_ncaab_conferences.cpython-312-pytest-9.0.2",
+    "path": "integration/conferences/__pycache__/test_ncaab_conferences.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaaf_conferences.cpython-312-pytest-9.0.2",
+    "path": "integration/conferences/__pycache__/test_ncaaf_conferences.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaab_integration.cpython-312-pytest-9.0.2",
+    "path": "integration/teams/__pycache__/test_ncaab_integration.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaaf_integration.cpython-312-pytest-9.0.2",
+    "path": "integration/teams/__pycache__/test_ncaaf_integration.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_mlb_integration.cpython-312-pytest-9.0.2",
+    "path": "integration/teams/__pycache__/test_mlb_integration.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nba_integration.cpython-312-pytest-9.0.2",
+    "path": "integration/teams/__pycache__/test_nba_integration.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nfl_integration.cpython-312-pytest-9.0.2",
+    "path": "integration/teams/__pycache__/test_nfl_integration.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nhl_integration.cpython-312-pytest-9.0.2",
+    "path": "integration/teams/__pycache__/test_nhl_integration.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaab_boxscore.cpython-312-pytest-9.0.2",
+    "path": "integration/boxscore/__pycache__/test_ncaab_boxscore.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaaf_boxscore.cpython-312-pytest-9.0.2",
+    "path": "integration/boxscore/__pycache__/test_ncaaf_boxscore.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaab_rankings.cpython-312-pytest-9.0.2",
+    "path": "integration/rankings/__pycache__/test_ncaab_rankings.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaaf_rankings.cpython-312-pytest-9.0.2",
+    "path": "integration/rankings/__pycache__/test_ncaaf_rankings.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaab_schedule.cpython-312-pytest-9.0.2",
+    "path": "integration/schedule/__pycache__/test_ncaab_schedule.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaaf_schedule.cpython-312-pytest-9.0.2",
+    "path": "integration/schedule/__pycache__/test_ncaaf_schedule.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_mlb_boxscore.cpython-312-pytest-9.0.2",
+    "path": "integration/boxscore/__pycache__/test_mlb_boxscore.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nba_boxscore.cpython-312-pytest-9.0.2",
+    "path": "integration/boxscore/__pycache__/test_nba_boxscore.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nfl_boxscore.cpython-312-pytest-9.0.2",
+    "path": "integration/boxscore/__pycache__/test_nfl_boxscore.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nhl_boxscore.cpython-312-pytest-9.0.2",
+    "path": "integration/boxscore/__pycache__/test_nhl_boxscore.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaab_roster.cpython-312-pytest-9.0.2",
+    "path": "integration/roster/__pycache__/test_ncaab_roster.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_ncaaf_roster.cpython-312-pytest-9.0.2",
+    "path": "integration/roster/__pycache__/test_ncaaf_roster.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_mlb_schedule.cpython-312-pytest-9.0.2",
+    "path": "integration/schedule/__pycache__/test_mlb_schedule.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nba_schedule.cpython-312-pytest-9.0.2",
+    "path": "integration/schedule/__pycache__/test_nba_schedule.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nfl_schedule.cpython-312-pytest-9.0.2",
+    "path": "integration/schedule/__pycache__/test_nfl_schedule.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nhl_schedule.cpython-312-pytest-9.0.2",
+    "path": "integration/schedule/__pycache__/test_nhl_schedule.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_fb_schedule.cpython-312-pytest-9.0.2",
+    "path": "integration/schedule/__pycache__/test_fb_schedule.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_mlb_roster.cpython-312-pytest-9.0.2",
+    "path": "integration/roster/__pycache__/test_mlb_roster.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nba_roster.cpython-312-pytest-9.0.2",
+    "path": "integration/roster/__pycache__/test_nba_roster.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nfl_roster.cpython-312-pytest-9.0.2",
+    "path": "integration/roster/__pycache__/test_nfl_roster.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_nhl_roster.cpython-312-pytest-9.0.2",
+    "path": "integration/roster/__pycache__/test_nhl_roster.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_fb_roster.cpython-312-pytest-9.0.2",
+    "path": "integration/roster/__pycache__/test_fb_roster.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "test_fb_team.cpython-312-pytest-9.0.2",
+    "path": "integration/team/__pycache__/test_fb_team.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "2018-advanced-opponent-stats-table",
+    "path": "integration/teams/ncaab_stats/2018-advanced-opponent-stats-table.html"
+  },
+  {
+    "contains": "conftest.cpython-312-pytest-9.0.2",
+    "path": "integration/__pycache__/conftest.cpython-312-pytest-9.0.2.pyc"
+  },
+  {
+    "contains": "2018-advanced-school-stats-table",
+    "path": "integration/teams/ncaab_stats/2018-advanced-school-stats-table.html"
+  },
+  {
+    "contains": "2018-advanced-opponent-stats",
+    "path": "integration/teams/ncaab_stats/2018-advanced-opponent-stats.html"
+  },
+  {
+    "contains": "2018-advanced-school-stats",
+    "path": "integration/teams/ncaab_stats/2018-advanced-school-stats.html"
+  },
+  {
+    "contains": "2018-opponent-stats-table",
+    "path": "integration/teams/ncaab_stats/2018-opponent-stats-table.html"
+  },
+  {
+    "contains": "2017-team-defense_defense",
+    "path": "integration/teams/ncaaf_stats/2017-team-defense_defense.html"
+  },
+  {
+    "contains": "2017-team-offense_offense",
+    "path": "integration/teams/ncaaf_stats/2017-team-offense_offense.html"
+  },
+  {
+    "contains": "2020-01-22-19-louisville",
+    "path": "integration/boxscore/ncaab/2020-01-22-19-louisville.html"
+  },
+  {
+    "contains": "2017-standings_standings",
+    "path": "integration/teams/ncaaf_stats/2017-standings_standings.html"
+  },
+  {
+    "contains": "2018-school-stats-table",
+    "path": "integration/teams/ncaab_stats/2018-school-stats-table.html"
+  },
+  {
+    "contains": "2020-09-12-wake-forest",
+    "path": "integration/boxscore/ncaaf/2020-09-12-wake-forest.html"
+  },
+  {
+    "contains": "2017-schedule-scores",
+    "path": "integration/schedule/mlb/2017-schedule-scores.html"
+  },
+  {
+    "contains": "boxscores-2-22-2020",
+    "path": "integration/boxscore/nba/boxscores-2-22-2020.html"
+  },
+  {
+    "contains": "boxscores-2-23-2020",
+    "path": "integration/boxscore/nba/boxscores-2-23-2020.html"
+  },
+  {
+    "contains": "boxscores-9-12-2020",
+    "path": "integration/boxscore/ncaaf/boxscores-9-12-2020.html"
+  },
+  {
+    "contains": "boxscores-9-13-2020",
+    "path": "integration/boxscore/ncaaf/boxscores-9-13-2020.html"
+  },
+  {
+    "contains": "2018-opponent-stats",
+    "path": "integration/teams/ncaab_stats/2018-opponent-stats.html"
+  },
+  {
+    "contains": "2017_all_team_stats",
+    "path": "integration/teams/nfl_stats/2017_all_team_stats.html"
+  },
+  {
+    "contains": "boxscore-8-17-2020",
+    "path": "integration/boxscore/mlb/boxscore-8-17-2020.html"
+  },
+  {
+    "contains": "boxscore-8-18-2020",
+    "path": "integration/boxscore/mlb/boxscore-8-18-2020.html"
+  },
+  {
+    "contains": "boxscores-1-5-2020",
+    "path": "integration/boxscore/ncaab/boxscores-1-5-2020.html"
+  },
+  {
+    "contains": "boxscores-1-6-2020",
+    "path": "integration/boxscore/ncaab/boxscores-1-6-2020.html"
+  },
+  {
+    "contains": "boxscores-3-4-2020",
+    "path": "integration/boxscore/nhl/boxscores-3-4-2020.html"
+  },
+  {
+    "contains": "boxscores-3-5-2020",
+    "path": "integration/boxscore/nhl/boxscores-3-5-2020.html"
+  },
+  {
+    "contains": "NHL_2017_all_stats",
+    "path": "integration/teams/nhl_stats/NHL_2017_all_stats.html"
+  },
+  {
+    "contains": "2018-school-stats",
+    "path": "integration/teams/ncaab_stats/2018-school-stats.html"
+  },
+  {
+    "contains": "2017-team-defense",
+    "path": "integration/teams/ncaaf_stats/2017-team-defense.html"
+  },
+  {
+    "contains": "2017-team-offense",
+    "path": "integration/teams/ncaaf_stats/2017-team-offense.html"
+  },
+  {
+    "contains": "boxscores-1-2020",
+    "path": "integration/boxscore/nfl/boxscores-1-2020.html"
+  },
+  {
+    "contains": "boxscores-2-2020",
+    "path": "integration/boxscore/nfl/boxscores-2-2020.html"
+  },
+  {
+    "contains": "carsen-edwards-1",
+    "path": "integration/roster/ncaab/carsen-edwards-1.html"
+  },
+  {
+    "contains": "brycen-hopkins-1",
+    "path": "integration/roster/ncaaf/brycen-hopkins-1.html"
+  },
+  {
+    "contains": "vince-edwards-2",
+    "path": "integration/roster/ncaab/vince-edwards-2.html"
+  },
+  {
+    "contains": "david-blough-1",
+    "path": "integration/roster/ncaaf/david-blough-1.html"
+  },
+  {
+    "contains": "jd-dillinger-1",
+    "path": "integration/roster/ncaaf/jd-dillinger-1.html"
+  },
+  {
+    "contains": "2021-standings",
+    "path": "integration/teams/mlb_stats/2021-standings.html"
+  },
+  {
+    "contains": "2017-standings",
+    "path": "integration/teams/ncaaf_stats/2017-standings.html"
+  },
+  {
+    "contains": "2018-big-east",
+    "path": "integration/conferences/ncaab/2018-big-east.html"
+  },
+  {
+    "contains": "2018-schedule",
+    "path": "integration/schedule/ncaab/2018-schedule.html"
+  },
+  {
+    "contains": "2017-schedule",
+    "path": "integration/schedule/ncaaf/2017-schedule.html"
+  },
+  {
+    "contains": "playoff_table",
+    "path": "integration/schedule/nfl/playoff_table.html"
+  },
+  {
+    "contains": "2017_pitching",
+    "path": "integration/teams/mlb_stats/2017_pitching.html"
+  },
+  {
+    "contains": "2017_opponent",
+    "path": "integration/teams/nba_stats/2017_opponent.html"
+  },
+  {
+    "contains": "ANA202008170",
+    "path": "integration/boxscore/mlb/ANA202008170.shtml"
+  },
+  {
+    "contains": "202002220UTA",
+    "path": "integration/boxscore/nba/202002220UTA.html"
+  },
+  {
+    "contains": "202009100kan",
+    "path": "integration/boxscore/nfl/202009100kan.html"
+  },
+  {
+    "contains": "202003040VAN",
+    "path": "integration/boxscore/nhl/202003040VAN.html"
+  },
+  {
+    "contains": "isaac-haas-1",
+    "path": "integration/roster/ncaab/isaac-haas-1.html"
+  },
+  {
+    "contains": "2017_batting",
+    "path": "integration/teams/mlb_stats/2017_batting.html"
+  },
+  {
+    "contains": "2017_overall",
+    "path": "integration/teams/mlb_stats/2017_overall.html"
+  },
+  {
+    "contains": "2018-big-12",
+    "path": "integration/conferences/ncaab/2018-big-12.html"
+  },
+  {
+    "contains": "2018-roster",
+    "path": "integration/roster/ncaaf/2018-roster.html"
+  },
+  {
+    "contains": "2018_roster",
+    "path": "integration/roster/nfl/2018_roster.htm"
+  },
+  {
+    "contains": "2018-polls",
+    "path": "integration/rankings/ncaab/2018-polls.html"
+  },
+  {
+    "contains": "2017-polls",
+    "path": "integration/rankings/ncaaf/2017-polls.html"
+  },
+  {
+    "contains": "2017_games",
+    "path": "integration/schedule/nba/2017_games.html"
+  },
+  {
+    "contains": "altuvjo01",
+    "path": "integration/roster/mlb/altuvjo01.shtml"
+  },
+  {
+    "contains": "verlaju01",
+    "path": "integration/roster/mlb/verlaju01.shtml"
+  },
+  {
+    "contains": "anderry01",
+    "path": "integration/roster/nba/anderry01.html"
+  },
+  {
+    "contains": "arizatr01",
+    "path": "integration/roster/nba/arizatr01.html"
+  },
+  {
+    "contains": "blackta01",
+    "path": "integration/roster/nba/blackta01.html"
+  },
+  {
+    "contains": "hardeja01",
+    "path": "integration/roster/nba/hardeja01.html"
+  },
+  {
+    "contains": "youngtr01",
+    "path": "integration/roster/nba/youngtr01.html"
+  },
+  {
+    "contains": "howarja02",
+    "path": "integration/roster/nhl/howarja02.html"
+  },
+  {
+    "contains": "zettehe01",
+    "path": "integration/roster/nhl/zettehe01.html"
+  },
+  {
+    "contains": "2017_team",
+    "path": "integration/teams/nba_stats/2017_team.html"
+  },
+  {
+    "contains": "2018-acc",
+    "path": "integration/conferences/ncaaf/2018-acc.html"
+  },
+  {
+    "contains": "2018-sec",
+    "path": "integration/conferences/ncaaf/2018-sec.html"
+  },
+  {
+    "contains": "BreeDr00",
+    "path": "integration/roster/nfl/BreeDr00.htm"
+  },
+  {
+    "contains": "DaviDe00",
+    "path": "integration/roster/nfl/DaviDe00.htm"
+  },
+  {
+    "contains": "HatfDo00",
+    "path": "integration/roster/nfl/HatfDo00.htm"
+  },
+  {
+    "contains": "LewiTo00",
+    "path": "integration/roster/nfl/LewiTo00.htm"
+  },
+  {
+    "contains": "LutzWi00",
+    "path": "integration/roster/nfl/LutzWi00.htm"
+  },
+  {
+    "contains": "MorsTh00",
+    "path": "integration/roster/nfl/MorsTh00.htm"
+  },
+  {
+    "contains": "NBA_2017",
+    "path": "integration/teams/nba_stats/NBA_2017.html"
+  },
+  {
+    "contains": "NBA_2021",
+    "path": "integration/teams/nba_stats/NBA_2021.html"
+  },
+  {
+    "contains": "2017_afc",
+    "path": "integration/teams/nfl_stats/2017_afc.html"
+  },
+  {
+    "contains": "2017_nfc",
+    "path": "integration/teams/nfl_stats/2017_nfc.html"
+  },
+  {
+    "contains": "NHL_2017",
+    "path": "integration/teams/nhl_stats/NHL_2017.html"
+  },
+  {
+    "contains": "playoff",
+    "path": "integration/schedule/nba/playoff.html"
+  },
+  {
+    "contains": "gamelog",
+    "path": "integration/schedule/nfl/gamelog"
+  }
+]
