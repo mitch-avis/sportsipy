@@ -293,9 +293,7 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return (
-            f"Boxscore for {self._away_name.text()} at " f"{self._home_name.text()} ({self.date})"
-        )
+        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self.date})"
 
     def __repr__(self):
         """
@@ -325,7 +323,10 @@ class Boxscore:
         """
         url = BOXSCORE_URL % uri
         try:
-            url_data = utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
         except (HTTPError, AttributeError):
             return None
         return pq(utils.remove_html_comment_tags(url_data))
@@ -1628,7 +1629,10 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return utils.pq(utils.get_page_source(url=url))
+        page_source = utils.get_page_source(url=url)
+        if not page_source:
+            return None
+        return utils.pq(page_source)
 
     def _get_boxscore_uri(self, url):
         """
