@@ -9,7 +9,7 @@ from sportsipy.ncaaf.rankings import CFPRankings, CoachesRankings, Rankings
 YEAR = 2017
 
 
-def read_file(filename=None):
+def read_file(filename):
     filepath = join(dirname(__file__), "ncaaf", filename)
     return open(filepath, "r", encoding="utf8").read()
 
@@ -25,7 +25,7 @@ def mock_pyquery(url, timeout=None):
             self.text = html_contents
 
         def __call__(self, div):
-            return read_file()
+            return read_file(f"{YEAR}-polls.html")
 
     if "BAD" in url:
         return MockPQ("", 404)
