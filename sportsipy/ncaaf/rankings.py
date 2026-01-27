@@ -62,7 +62,10 @@ class Rankings:
             Returns a PyQuery object of the rankings HTML page.
         """
         try:
-            url_data = utils.pq(utils.get_page_source(url=RANKINGS_URL % year))
+            page_source = utils.get_page_source(url=RANKINGS_URL % year)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
             return pq(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None
@@ -278,7 +281,10 @@ class CFPRankings:
             Returns a PyQuery object of the rankings HTML page.
         """
         try:
-            url_data = utils.pq(utils.get_page_source(url=CFP_RANKINGS_URL % year))
+            page_source = utils.get_page_source(url=CFP_RANKINGS_URL % year)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
             return pq(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None
@@ -494,7 +500,10 @@ class CoachesRankings:
             Returns a PyQuery object of the rankings HTML page.
         """
         try:
-            url_data = utils.pq(utils.get_page_source(url=COACHES_RANKINGS_URL % year))
+            page_source = utils.get_page_source(url=COACHES_RANKINGS_URL % year)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
             return pq(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None
