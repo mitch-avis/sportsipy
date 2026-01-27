@@ -1,10 +1,10 @@
 import logging
+import re
 import time
 from datetime import datetime
 from functools import wraps
 
 import pandas as pd
-import regex as re
 from playwright.sync_api import sync_playwright
 from pyquery import PyQuery as pq
 
@@ -308,7 +308,9 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self._date})"
+        away_name = self._away_name.text() if self._away_name is not None else ""
+        home_name = self._home_name.text() if self._home_name is not None else ""
+        return f"Boxscore for {away_name} at {home_name} ({self._date})"
 
     def __repr__(self):
         """
@@ -938,6 +940,8 @@ class Boxscore:
         Returns a ``string`` constant indicating whether the home or away team
         won.
         """
+        if self.home_points is None or self.away_points is None:
+            return None
         if self.home_points > self.away_points:
             return HOME
         return AWAY
@@ -949,8 +953,8 @@ class Boxscore:
         Patriots'.
         """
         if self.winner == HOME:
-            return self._home_name.text()
-        return self._away_name.text()
+            return self._home_name.text() if self._home_name is not None else ""
+        return self._away_name.text() if self._away_name is not None else ""
 
     @property
     def winning_abbr(self):
@@ -969,8 +973,8 @@ class Boxscore:
         Chiefs'.
         """
         if self.winner == HOME:
-            return self._away_name.text()
-        return self._home_name.text()
+            return self._away_name.text() if self._away_name is not None else ""
+        return self._home_name.text() if self._home_name is not None else ""
 
     @property
     def losing_abbr(self):
@@ -1417,4 +1421,6 @@ class Boxscore:
 
 if __name__ == "__main__":
     boxscore = Boxscore("202502090phi")
-    boxscore.dataframe.to_csv("test_boxscores.csv", index=False)
+    dataframe = boxscore.dataframe
+    if dataframe is not None:
+        dataframe.to_csv("test_boxscores.csv", index=False)
