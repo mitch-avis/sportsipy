@@ -1,5 +1,5 @@
 from flexmock import flexmock
-from mock import PropertyMock, patch
+from mock import patch
 
 from sportsipy.nba.player import AbstractPlayer
 from sportsipy.nba.player import _cleanup as _cleanup_player
@@ -38,22 +38,18 @@ class TestNBAPlayer:
         flexmock(Player).should_receive("__init__").and_return(None)
 
     def test_no_float_returns_default_value_abstract_class(self):
-        mock_percentage = PropertyMock(return_value=[""])
-        mock_index = PropertyMock(return_value=0)
         player = Player(None)
-        type(player)._field_goal_percentage = mock_percentage
-        type(player)._index = mock_index
+        player._field_goal_percentage = [""]
+        player._index = 0
 
         result = player.field_goal_percentage
 
         assert result is None
 
     def test_no_float_returns_default_value_player_class(self):
-        mock_rating = PropertyMock(return_value=[""])
-        mock_index = PropertyMock(return_value=0)
         player = Player(None)
-        type(player)._player_efficiency_rating = mock_rating
-        type(player)._index = mock_index
+        player._player_efficiency_rating = [""]
+        player._index = 0
 
         result = player.player_efficiency_rating
 
@@ -61,9 +57,8 @@ class TestNBAPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
-        mock_id = PropertyMock(return_value="BAD")
         player = Player(None)
-        type(player)._player_id = mock_id
+        player._player_id = "BAD"
 
         result = player._retrieve_html_page()
 
@@ -96,9 +91,8 @@ class TestNBAPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_missing_weight_returns_none(self, *args, **kwargs):
-        mock_weight = PropertyMock(return_value=None)
         player = Player(None)
-        type(player)._weight = mock_weight
+        player._weight = None
 
         assert not player.weight
 

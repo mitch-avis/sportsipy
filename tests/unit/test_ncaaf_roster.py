@@ -1,5 +1,5 @@
 from flexmock import flexmock
-from mock import PropertyMock, patch
+from mock import patch
 
 from sportsipy.ncaaf.player import AbstractPlayer
 from sportsipy.ncaaf.roster import Player
@@ -26,9 +26,8 @@ class TestNCAAFPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
-        mock_id = PropertyMock(return_value="BAD")
         player = Player(None)
-        type(player)._player_id = mock_id
+        player._player_id = "BAD"
 
         result = player._retrieve_html_page()
 
@@ -36,9 +35,8 @@ class TestNCAAFPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_missing_weight_returns_none(self, *args, **kwargs):
-        mock_weight = PropertyMock(return_value=None)
         player = Player(None)
-        type(player)._player_id = mock_weight
+        player._weight = None
 
         result = player.weight
 

@@ -1,5 +1,5 @@
 from flexmock import flexmock
-from mock import PropertyMock, patch
+from mock import patch
 
 from sportsipy.ncaab.player import AbstractPlayer
 from sportsipy.ncaab.player import _cleanup as _cleanup_player
@@ -26,44 +26,36 @@ class TestNCAABPlayer:
         flexmock(Player).should_receive("find_initial_index").and_return(None)
 
     def test_no_int_return_default_value_abstract_class(self):
-        mock_field_goals = PropertyMock(return_value=[""])
-        mock_index = PropertyMock(return_value=0)
         player = Player(None)
-        type(player)._field_goals = mock_field_goals
-        type(player)._index = mock_index
+        player._field_goals = [""]
+        player._index = 0
 
         result = player.field_goals
 
         assert result is None
 
     def test_no_float_returns_default_value_abstract_class(self):
-        mock_percentage = PropertyMock(return_value=[""])
-        mock_index = PropertyMock(return_value=0)
         player = Player(None)
-        type(player)._field_goal_percentage = mock_percentage
-        type(player)._index = mock_index
+        player._field_goal_percentage = [""]
+        player._index = 0
 
         result = player.field_goal_percentage
 
         assert result is None
 
     def test_no_int_return_default_value_player_class(self):
-        mock_games = PropertyMock(return_value=[""])
-        mock_index = PropertyMock(return_value=0)
         player = Player(None)
-        type(player)._games_played = mock_games
-        type(player)._index = mock_index
+        player._games_played = [""]
+        player._index = 0
 
         result = player.games_played
 
         assert result is None
 
     def test_no_float_returns_default_value_player_class(self):
-        mock_player_efficiency_rating = PropertyMock(return_value=[""])
-        mock_index = PropertyMock(return_value=0)
         player = Player(None)
-        type(player)._player_efficiency_rating = mock_player_efficiency_rating
-        type(player)._index = mock_index
+        player._player_efficiency_rating = [""]
+        player._index = 0
 
         result = player.player_efficiency_rating
 
@@ -71,9 +63,8 @@ class TestNCAABPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
-        mock_id = PropertyMock(return_value="BAD")
         player = Player(None)
-        type(player)._player_id = mock_id
+        player._player_id = "BAD"
 
         result = player._retrieve_html_page()
 
@@ -96,9 +87,8 @@ class TestNCAABPlayer:
         assert not result
 
     def test_player_with_no_weight_returns_none(self):
-        mock_weight = PropertyMock(return_value=None)
         player = Player(None)
-        type(player)._weight = mock_weight
+        player._weight = None
 
         result = player.weight
 

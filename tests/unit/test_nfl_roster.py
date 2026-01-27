@@ -1,5 +1,5 @@
 from flexmock import flexmock
-from mock import PropertyMock, patch
+from mock import patch
 
 from sportsipy.nfl.player import AbstractPlayer
 from sportsipy.nfl.roster import Player
@@ -26,9 +26,8 @@ class TestNFLPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
-        mock_id = PropertyMock(return_value="BAD")
         player = Player(None)
-        type(player)._player_id = mock_id
+        player._player_id = "BAD"
 
         result = player._retrieve_html_page()
 
@@ -36,19 +35,16 @@ class TestNFLPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_missing_weight_returns_none(self, *args, **kwargs):
-        mock_weight = PropertyMock(return_value=None)
         player = Player(None)
-        type(player)._weight = mock_weight
+        player._weight = None
 
         assert not player.weight
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_requesting_detailed_season_returns_proper_index(self, *args, **kwargs):
-        mock_detailed_seasons = PropertyMock(return_value=["2017", "2018", "Career"])
-        mock_seasons = PropertyMock(return_value=["2015", "2016", "2017", "2018", "Career"])
         player = Player(None)
-        type(player)._detailed_stats_seasons = mock_detailed_seasons
-        type(player)._season = mock_seasons
+        player._detailed_stats_seasons = ["2017", "2018", "Career"]
+        player._season = ["2015", "2016", "2017", "2018", "Career"]
         player = player("2018")
 
         assert player._detailed_stats_index == 1
