@@ -114,14 +114,7 @@ class Conference:
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(CONFERENCES_URL % year) and utils.url_exists(
-                CONFERENCES_URL % str(int(year) - 1)
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: CONFERENCES_URL % y)
         page = self._pull_conference_page(conference_abbreviation, year)
         if not page:
             url = CONFERENCE_URL % (conference_abbreviation, year)
@@ -253,14 +246,7 @@ class Conferences:
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(CONFERENCES_URL % year) and utils.url_exists(
-                CONFERENCES_URL % str(int(year) - 1)
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: CONFERENCES_URL % y)
         page = self._pull_conference_page(year)
         if not page:
             output = (
