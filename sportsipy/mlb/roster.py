@@ -257,7 +257,10 @@ class Player(AbstractPlayer):
         """
         url = self._build_url()
         try:
-            url_data = utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
         except HTTPError:
             return None
         return pq(utils.remove_html_comment_tags(url_data))
@@ -387,7 +390,7 @@ class Player(AbstractPlayer):
             if 'class="f-i' in str(span):
                 nationality = span.text()
                 nationality = NATIONALITY[nationality]
-                setattr(self, "_nationality", nationality)
+                self._nationality = nationality
                 break
 
     def _parse_player_information(self, player_info):
@@ -421,7 +424,7 @@ class Player(AbstractPlayer):
             A PyQuery object containing the HTML from the player's stats page.
         """
         date = player_info('span[itemprop="birthDate"]').attr("data-birth")
-        setattr(self, "_birth_date", date)
+        self._birth_date = date
 
     def _parse_team_name(self, team):
         """
@@ -471,7 +474,7 @@ class Player(AbstractPlayer):
             team = self._parse_team_name(str(row('td[data-stat="team_name"]')))
             salary = row('td[data-stat="Salary"]').text()
             contract[year] = {"age": age, "team": team, "salary": salary}
-        setattr(self, "_contract", contract)
+        self._contract = contract
 
     def _parse_value(self, html_data, field):
         # pylint: disable=arguments-renamed
@@ -530,7 +533,7 @@ class Player(AbstractPlayer):
         self._parse_birth_date(player_info)
         self._parse_contract(player_info)
         all_stats = self._combine_all_stats(player_info)
-        setattr(self, "_season", list(all_stats.keys()))
+        self._season = list(all_stats.keys())
         return all_stats
 
     def find_initial_index(self):
@@ -1491,7 +1494,10 @@ class Roster:
             Returns a PyQuery object of the team's HTML page.
         """
         try:
-            return utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            return utils.pq(page_source)
         except HTTPError:
             return None
 
