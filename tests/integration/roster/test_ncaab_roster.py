@@ -1,4 +1,5 @@
 import os
+from typing import Any, cast
 
 import mock
 import pandas as pd
@@ -183,7 +184,7 @@ class TestNCAABPlayer:
     def test_correct_initial_index_found(self):
         seasons = ["2017-18", "Career", "2016-17"]
         mock_season = mock.PropertyMock(return_value=seasons)
-        type(self.player)._season = mock_season
+        cast(Any, type(self.player))._season = mock_season
 
         self.player.find_initial_index()
 

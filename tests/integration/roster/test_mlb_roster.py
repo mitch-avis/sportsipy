@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+from typing import Any, cast
 
 import mock
 import pandas as pd
@@ -1067,7 +1068,7 @@ class TestMLBPitcher:
     def test_correct_initial_index_found(self):
         seasons = ["2017", None, "2018"]
         mock_season = mock.PropertyMock(return_value=seasons)
-        type(self.player)._season = mock_season
+        cast(Any, type(self.player))._season = mock_season
 
         self.player.find_initial_index()
 
@@ -1123,7 +1124,7 @@ class TestMLBRoster:
     def test_roster_class_string_representation(self, *args, **kwargs):
         expected = """José Altuve (altuvjo01)
 Justin Verlander (verlaju01)
-José Altuve (mortoch02)"""
+Charlie Morton (mortoch02)"""
 
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")

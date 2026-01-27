@@ -1321,6 +1321,7 @@ class TestNBARoster:
 
         assert len(roster.players) == 4
 
+        assert isinstance(roster.players, list)
         for player in roster.players:
             assert player.name in [
                 "James Harden",

@@ -560,7 +560,7 @@ class TestNCAAFRoster:
 
     def test_roster_class_string_representation(self, *args, **kwargs):
         expected = """David Blough (david-blough-1)
-David Blough (rondale-moore-1)"""
+Rondale Moore (rondale-moore-1)"""
 
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("PURDUE")
