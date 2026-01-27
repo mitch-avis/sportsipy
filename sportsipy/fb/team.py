@@ -325,6 +325,8 @@ class Team:
             doc = utils.pull_page(SQUAD_URL % self.squad_id, squad_page)
         except HTTPError:
             return
+        if not doc:
+            return None
         self._doc = doc
         self._parse_name(doc)
         self._parse_header(doc)
