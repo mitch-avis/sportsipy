@@ -301,7 +301,11 @@ class TestUtils:
         expected = 31
 
         result = utils.parse_field(
-            parsing_scheme, MockHtml(html_string, items), "batters_used", index=3, secondary_index=1
+            parsing_scheme,
+            MockHtml(html_string, items),
+            "batters_used",
+            index=3,
+            secondary_index=1,
         )
         assert result == expected
 
@@ -315,6 +319,10 @@ class TestUtils:
         items = [32, 31, 34]
 
         result = utils.parse_field(
-            parsing_scheme, MockHtml(html_string, items), "batters_used", index=3, secondary_index=4
+            parsing_scheme,
+            MockHtml(html_string, items),
+            "batters_used",
+            index=3,
+            secondary_index=4,
         )
         assert not result
