@@ -1,7 +1,5 @@
 from os import path
 
-from mock import patch
-
 from sportsipy.fb.team import Team
 
 
@@ -54,14 +52,12 @@ class TestFBTeam:
             "gender": "Male",
         }
 
-    @patch("requests.get", side_effect=mock_pyquery)
     def test_fb_team_returns_correct_attributes(self, *args, **kwargs):
         tottenham = Team("Tottenham Hotspur")
 
         for attribute, value in self.results.items():
             assert getattr(tottenham, attribute) == value
 
-    @patch("requests.get", side_effect=mock_pyquery)
     def test_team_name(self, *args, **kwargs):
         team = Team("Tottenham Hotspur")
 
