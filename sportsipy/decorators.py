@@ -9,17 +9,17 @@ def int_property_decorator(func: Callable[..., Any]) -> property: ...
 
 
 @overload
+def int_property_decorator() -> Callable[[Callable[..., Any]], property]: ...
+
+
 def int_property_decorator(
-    func: None = None,
-) -> Callable[[Callable[..., Any]], property]: ...
-
-
-def int_property_decorator(func: Callable[..., Any] | None = None):
+    func: Callable[..., Any] | None = None,
+) -> property | Callable[[Callable[..., Any]], property]:
     def decorator(inner: Callable[..., Any]) -> property:
         @property
         @wraps(inner)
-        def wrapper(*args) -> Optional[int]:
-            value = inner(*args)
+        def wrapper(*args, **kwargs) -> Optional[int]:
+            value = inner(*args, **kwargs)
             try:
                 return int(value)
             except (TypeError, ValueError):
@@ -45,17 +45,17 @@ def float_property_decorator(func: Callable[..., Any]) -> property: ...
 
 
 @overload
+def float_property_decorator() -> Callable[[Callable[..., Any]], property]: ...
+
+
 def float_property_decorator(
-    func: None = None,
-) -> Callable[[Callable[..., Any]], property]: ...
-
-
-def float_property_decorator(func: Callable[..., Any] | None = None):
+    func: Callable[..., Any] | None = None,
+) -> property | Callable[[Callable[..., Any]], property]:
     def decorator(inner: Callable[..., Any]) -> property:
         @property
         @wraps(inner)
-        def wrapper(*args) -> Optional[float]:
-            value = inner(*args)
+        def wrapper(*args, **kwargs) -> Optional[float]:
+            value = inner(*args, **kwargs)
             try:
                 return float(value)
             except (TypeError, ValueError):
