@@ -96,7 +96,8 @@ def get_page_source(url: str):
     with sync_playwright() as p:
         # Launch browser in headfull mode for debugging (can switch to headless later)
         browser = p.chromium.launch(
-            headless=True, args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"]
+            headless=True,
+            args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
         )
         page = browser.new_page()
         try:
@@ -307,9 +308,7 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return (
-            f"Boxscore for {self._away_name.text()} at " f"{self._home_name.text()} ({self._date})"
-        )
+        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self._date})"
 
     def __repr__(self):
         """
@@ -354,12 +353,12 @@ class Boxscore:
                 vegas_line = line("td").text()
             elif "over/under" in str(line).lower():
                 over_under = line("td").text()
-        setattr(self, "_won_toss", won_toss)
-        setattr(self, "_roof", roof)
-        setattr(self, "_surface", surface)
-        setattr(self, "_weather", weather)
-        setattr(self, "_vegas_line", vegas_line)
-        setattr(self, "_over_under", over_under)
+        self._won_toss = won_toss
+        self._roof = roof
+        self._surface = surface
+        self._weather = weather
+        self._vegas_line = vegas_line
+        self._over_under = over_under
 
     def _parse_game_date_and_location(self, boxscore):
         """
@@ -395,11 +394,11 @@ class Boxscore:
                 stadium = line.replace("Stadium: ", "")
             if "Start Time" in line:
                 time = line.replace("Start Time: ", "")
-        setattr(self, "_attendance", attendance)
-        setattr(self, "_date", date)
-        setattr(self, "_duration", duration)
-        setattr(self, "_stadium", stadium)
-        setattr(self, "_time", time)
+        self._attendance = attendance
+        self._date = date
+        self._duration = duration
+        self._stadium = stadium
+        self._time = time
 
     def _parse_name(self, field, boxscore):
         """
