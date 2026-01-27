@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from flexmock import flexmock
-from mock import PropertyMock
 from pyquery import PyQuery as pq
 
 from sportsipy.constants import (
@@ -30,138 +29,113 @@ class TestNCAABSchedule:
         self.game = Game(None)
 
     def test_away_game_returns_away_location(self):
-        fake_location = PropertyMock(return_value="@")
-        type(self.game)._location = fake_location
+        self.game._location = "@"
 
         assert self.game.location == AWAY
 
     def test_home_game_returns_home_location(self):
-        fake_location = PropertyMock(return_value="")
-        type(self.game)._location = fake_location
+        self.game._location = ""
 
         assert self.game.location == HOME
 
     def test_neutral_game_returns_neutral_location(self):
-        fake_location = PropertyMock(return_value="N")
-        type(self.game)._location = fake_location
+        self.game._location = "N"
 
         assert self.game.location == NEUTRAL
 
     def test_winning_result_returns_win(self):
-        fake_result = PropertyMock(return_value="W")
-        type(self.game)._result = fake_result
+        self.game._result = "W"
 
         assert self.game.result == WIN
 
     def test_losing_result_returns_loss(self):
-        fake_result = PropertyMock(return_value="L")
-        type(self.game)._result = fake_result
+        self.game._result = "L"
 
         assert self.game.result == LOSS
 
     def test_regular_season_game_type(self):
-        fake_type = PropertyMock(return_value="REG")
-        type(self.game)._type = fake_type
+        self.game._type = "REG"
 
         assert self.game.type == REGULAR_SEASON
 
     def test_conference_tournament_game_type(self):
-        fake_type = PropertyMock(return_value="CTOURN")
-        type(self.game)._type = fake_type
+        self.game._type = "CTOURN"
 
         assert self.game.type == CONFERENCE_TOURNAMENT
 
     def test_ncaa_tournament_game_type(self):
-        fake_type = PropertyMock(return_value="NCAA")
-        type(self.game)._type = fake_type
+        self.game._type = "NCAA"
 
         assert self.game.type == NCAA_TOURNAMENT
 
     def test_nit_tournament_game_type(self):
-        fake_type = PropertyMock(return_value="NIT")
-        type(self.game)._type = fake_type
+        self.game._type = "NIT"
 
         assert self.game.type == NIT_TOURNAMENT
 
     def test_cbi_tournament_game_type(self):
-        fake_type = PropertyMock(return_value="CBI")
-        type(self.game)._type = fake_type
+        self.game._type = "CBI"
 
         assert self.game.type == CBI_TOURNAMENT
 
     def test_cit_tournament_game_type(self):
-        fake_type = PropertyMock(return_value="CIT")
-        type(self.game)._type = fake_type
+        self.game._type = "CIT"
 
         assert self.game.type == CIT_TOURNAMENT
 
     def test_team_with_rank_returns_rank(self):
-        fake_name = PropertyMock(return_value="Purdue (3)")
-        type(self.game)._opponent_name = fake_name
+        self.game._opponent_name = "Purdue (3)"
 
         assert self.game.opponent_rank == 3
 
     def test_team_with_no_rank_returns_none(self):
-        fake_name = PropertyMock(return_value="Kansas State")
-        type(self.game)._opponent_name = fake_name
+        self.game._opponent_name = "Kansas State"
 
         assert self.game.opponent_rank is None
 
     def test_overtimes_returns_number_of_overtimes(self):
-        fake_overtime = PropertyMock(return_value="OT")
-        type(self.game)._overtimes = fake_overtime
+        self.game._overtimes = "OT"
 
         assert self.game.overtimes == 1
 
     def test_multiple_overtimes_returns_number_of_overtimes(self):
-        fake_overtime = PropertyMock(return_value="2OT")
-        type(self.game)._overtimes = fake_overtime
+        self.game._overtimes = "2OT"
 
         assert self.game.overtimes == 2
 
     def test_no_overtime_returns_zero(self):
-        fake_overtime = PropertyMock(return_value="")
-        type(self.game)._overtimes = fake_overtime
+        self.game._overtimes = ""
 
         assert self.game.overtimes == 0
 
     def test_bad_overtime_defaults_to_zero(self):
-        fake_overtime = PropertyMock(return_value="BAD")
-        type(self.game)._overtimes = fake_overtime
+        self.game._overtimes = "BAD"
 
         assert self.game.overtimes == 0
 
     def test_none_time_defaults_to_set_time_in_datetime(self):
-        fake_date = PropertyMock(return_value="Thu, Dec 13, 2018")
-        fake_time = PropertyMock(return_value=None)
-        type(self.game)._date = fake_date
-        type(self.game)._time = fake_time
+        self.game._date = "Thu, Dec 13, 2018"
+        self.game._time = None
 
         assert self.game.datetime == datetime(2018, 12, 13, 0, 0)
 
     def test_blank_time_defaults_to_set_time_in_datetime(self):
-        fake_date = PropertyMock(return_value="Thu, Dec 13, 2018")
-        fake_time = PropertyMock(return_value="")
-        type(self.game)._date = fake_date
-        type(self.game)._time = fake_time
+        self.game._date = "Thu, Dec 13, 2018"
+        self.game._time = ""
 
         assert self.game.datetime == datetime(2018, 12, 13, 0, 0)
 
     def test_empty_schedule_class_returns_dataframe_of_none(self):
-        # pylint: disable=no-member
-        fake_points = PropertyMock(return_value=None)
-        type(self.game)._home_points = fake_points
-        type(self.game)._away_points = fake_points
+        self.game._home_points = None
+        self.game._away_points = None
 
         assert self.game._home_points is None
         assert self.game._away_points is None
         assert self.game.dataframe is None
 
     def test_empty_schedule_class_returns_dataframe_extended_of_none(self):
-        # pylint: disable=no-member
-        fake_points = PropertyMock(return_value=None)
-        type(self.game)._home_points = fake_points
-        type(self.game)._away_points = fake_points
+        self.game._home_points = None
+        self.game._away_points = None
 
         assert self.game._home_points is None
         assert self.game._away_points is None
@@ -172,8 +146,7 @@ class TestNCAABSchedule:
         schedule = Schedule("PURDUE")
 
         fake_game = flexmock(dataframe=None)
-        fake_games = PropertyMock(return_value=fake_game)
-        type(schedule).__iter__ = fake_games
+        schedule.__iter__ = lambda: iter([fake_game])
 
         assert schedule.dataframe is None
 
@@ -182,8 +155,7 @@ class TestNCAABSchedule:
         schedule = Schedule("PURDUE")
 
         fake_game = flexmock(dataframe_extended=None)
-        fake_games = PropertyMock(return_value=fake_game)
-        type(schedule).__iter__ = fake_games
+        schedule.__iter__ = lambda: iter([fake_game])
 
         assert schedule.dataframe_extended is None
 
