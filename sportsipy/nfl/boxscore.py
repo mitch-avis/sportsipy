@@ -306,9 +306,7 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return (
-            f"Boxscore for {self._away_name.text()} at " f"{self._home_name.text()} ({self.date})"
-        )
+        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self.date})"
 
     def __repr__(self):
         """
@@ -343,7 +341,14 @@ class Boxscore:
             url_data = pq(utils.get_page_source(url))
             if not url_data:
                 return None
-        except (HTTPError, ParserError, XMLSyntaxError, AttributeError, TypeError, ValueError):
+        except (
+            HTTPError,
+            ParserError,
+            XMLSyntaxError,
+            AttributeError,
+            TypeError,
+            ValueError,
+        ):
             return None
         # For NFL, a 404 page doesn't actually raise a 404 error, so it needs
         # to be manually checked.
@@ -388,12 +393,12 @@ class Boxscore:
                 vegas_line = line("td").text()
             elif "over/under" in str(line).lower():
                 over_under = line("td").text()
-        setattr(self, "_won_toss", won_toss)
-        setattr(self, "_roof", roof)
-        setattr(self, "_surface", surface)
-        setattr(self, "_weather", weather)
-        setattr(self, "_vegas_line", vegas_line)
-        setattr(self, "_over_under", over_under)
+        self._won_toss = won_toss
+        self._roof = roof
+        self._surface = surface
+        self._weather = weather
+        self._vegas_line = vegas_line
+        self._over_under = over_under
 
     def _parse_game_date_and_location(self, boxscore):
         """
@@ -429,11 +434,11 @@ class Boxscore:
                 stadium = line.replace("Stadium: ", "")
             elif "Start Time" in line:
                 time = line.replace("Start Time: ", "")
-        setattr(self, "_attendance", attendance)
-        setattr(self, "_date", date)
-        setattr(self, "_duration", duration)
-        setattr(self, "_stadium", stadium)
-        setattr(self, "_time", time)
+        self._attendance = attendance
+        self._date = date
+        self._duration = duration
+        self._stadium = stadium
+        self._time = time
 
     def _parse_name(self, field, boxscore):
         """

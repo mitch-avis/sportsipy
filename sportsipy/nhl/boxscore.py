@@ -30,7 +30,12 @@ def nhl_int_property_decorator(func):
         # If the field is specific to goalie stats, use the number of goalies
         # as an index instead of the number of skaters.
         index = num_skaters
-        if func.__name__ in ["away_saves", "away_shutout", "home_saves", "home_shutout"]:
+        if func.__name__ in [
+            "away_saves",
+            "away_shutout",
+            "home_saves",
+            "home_shutout",
+        ]:
             index = num_goalies
         # For properties dedicated to the away team, reference the first chunk
         # of skaters. Otherwise, reference the second chunk for home team
@@ -284,9 +289,7 @@ class Boxscore:
         """
         Return the string representation of the class.
         """
-        return (
-            f"Boxscore for {self._away_name.text()} at " f"{self._home_name.text()} ({self.date})"
-        )
+        return f"Boxscore for {self._away_name.text()} at {self._home_name.text()} ({self.date})"
 
     def __repr__(self):
         """
@@ -316,7 +319,10 @@ class Boxscore:
         """
         url = BOXSCORE_URL % uri
         try:
-            url_data = utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
         except (HTTPError, AttributeError):
             return None
         return pq(utils.remove_html_comment_tags(url_data))
@@ -368,12 +374,12 @@ class Boxscore:
                 or "stanley cup final" in line.lower()
             ):
                 playoff_round = line
-        setattr(self, "_arena", arena)
-        setattr(self, "_attendance", attendance)
-        setattr(self, "_date", date)
-        setattr(self, "_duration", duration)
-        setattr(self, "_playoff_round", playoff_round)
-        setattr(self, "_time", time)
+        self._arena = arena
+        self._attendance = attendance
+        self._date = date
+        self._duration = duration
+        self._playoff_round = playoff_round
+        self._time = time
 
     def _parse_name(self, field, boxscore):
         """
@@ -1215,7 +1221,10 @@ class Boxscores:
             A PyQuery object containing the HTML contents of the requested
             page.
         """
-        return utils.pq(utils.get_page_source(url=url))
+        page_source = utils.get_page_source(url=url)
+        if not page_source:
+            return None
+        return utils.pq(page_source)
 
     def _get_boxscore_uri(self, url):
         """
