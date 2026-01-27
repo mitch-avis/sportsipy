@@ -71,7 +71,7 @@ class Game:
         boxscore = game_data('td[data-stat="box_score_text"]:first')
         boxscore = re.sub(r".*/boxscores/", "", str(boxscore))
         boxscore = re.sub(r"\.html.*", "", boxscore)
-        setattr(self, "_boxscore", boxscore)
+        self._boxscore = boxscore
 
     def _parse_opponent_abbr(self, game_data):
         """
@@ -88,7 +88,7 @@ class Game:
         opponent = game_data('td[data-stat="opp_name"]:first')
         opponent = re.sub(r".*/teams/", "", str(opponent))
         opponent = re.sub(r"\/.*.html.*", "", opponent)
-        setattr(self, "_opponent_abbr", opponent)
+        self._opponent_abbr = opponent
 
     def _parse_game_data(self, game_data):
         """
@@ -432,9 +432,11 @@ class Schedule:
             # be pulled instead.
             if year == 2021:
                 try:
-                    doc = utils.pq(
-                        utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year))
+                    page_source = utils.get_page_source(
+                        url=SCHEDULE_URL % (abbreviation.lower(), year)
                     )
+                    if not page_source:
+                        year = str(int(year) - 1)
                 except HTTPError:
                     year = str(int(year) - 1)
             # If stats for the requested season do not exist yet (as is the
@@ -445,7 +447,11 @@ class Schedule:
                 SCHEDULE_URL % (abbreviation.lower(), year)
             ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
                 year = str(int(year) - 1)
-        doc = utils.pq(utils.get_page_source(url=SCHEDULE_URL % (abbreviation, year)))
+        page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation, year))
+        if not page_source:
+            utils.no_data_found()
+            return
+        doc = utils.pq(page_source)
         schedule = utils.get_stats_table(doc, "table#games")
         if not schedule:
             utils.no_data_found()

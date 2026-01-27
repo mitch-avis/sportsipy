@@ -4,7 +4,16 @@ from datetime import datetime
 import pandas as pd
 
 from sportsipy import utils
-from sportsipy.constants import AWAY, HOME, LOSS, NEUTRAL, POST_SEASON, REGULAR_SEASON, TIE, WIN
+from sportsipy.constants import (
+    AWAY,
+    HOME,
+    LOSS,
+    NEUTRAL,
+    POST_SEASON,
+    REGULAR_SEASON,
+    TIE,
+    WIN,
+)
 from sportsipy.nfl.boxscore import Boxscore
 from sportsipy.nfl.constants import CONF_CHAMPIONSHIP, DIVISION, SUPER_BOWL, WILD_CARD
 
@@ -103,7 +112,7 @@ class Game:
         name = game_data('td[data-stat="opp"]:first')
         name = re.sub(r".*/teams/", "", str(name))
         name = re.sub("/.*", "", name).upper()
-        setattr(self, "_opponent_abbr", name)
+        self._opponent_abbr = name
 
     def _parse_boxscore(self, game_data):
         """
@@ -120,7 +129,7 @@ class Game:
         boxscore = game_data('td[data-stat="boxscore_word"]:first')
         boxscore = re.sub(r".*/boxscores/", "", str(boxscore))
         boxscore = re.sub(r"\.htm.*", "", str(boxscore))
-        setattr(self, "_boxscore", boxscore)
+        self._boxscore = boxscore
 
     def _parse_game_data(self, game_data):
         """
@@ -697,7 +706,11 @@ class Schedule:
                 SCHEDULE_URL % (abbreviation.lower(), year)
             ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
                 year = str(int(year) - 1)
-        doc = utils.pq(utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year)))
+        page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year))
+        if not page_source:
+            utils.no_data_found()
+            return
+        doc = utils.pq(page_source)
         schedule = utils.get_stats_table(doc, f"table#gamelog{year}")
         if not schedule:
             utils.no_data_found()

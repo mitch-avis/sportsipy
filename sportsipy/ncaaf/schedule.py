@@ -74,11 +74,11 @@ class Game:
         # Non-DI schools do not have abbreviations and should be handled
         # differently by just using the team's name as the abbreviation.
         if "cfb/schools" not in str(name):
-            setattr(self, "_opponent_abbr", name.text())
+            self._opponent_abbr = name.text()
             return
         name = re.sub(r".*/cfb/schools/", "", str(name))
         name = re.sub("/.*", "", name)
-        setattr(self, "_opponent_abbr", name)
+        self._opponent_abbr = name
 
     def _parse_boxscore(self, game_data):
         """
@@ -95,7 +95,7 @@ class Game:
         boxscore = game_data('td[data-stat="date_game"]:first')
         boxscore = re.sub(r".*/boxscores/", "", str(boxscore))
         boxscore = re.sub(r"\.html.*", "", str(boxscore))
-        setattr(self, "_boxscore", boxscore)
+        self._boxscore = boxscore
 
     def _parse_game_data(self, game_data):
         """
@@ -469,7 +469,11 @@ class Schedule:
                 SCHEDULE_URL % (abbreviation.lower(), year)
             ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
                 year = str(int(year) - 1)
-        doc = utils.pq(utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year)))
+        page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year))
+        if not page_source:
+            utils.no_data_found()
+            return
+        doc = utils.pq(page_source)
         schedule = utils.get_stats_table(doc, "table#schedule")
         if not schedule:
             utils.no_data_found()
