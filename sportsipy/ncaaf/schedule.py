@@ -25,18 +25,18 @@ class Game:
     """
 
     def __init__(self, game_data):
-        self._game = None
-        self._date = None
-        self._time = None
-        self._day_of_week = None
-        self._boxscore = None
-        self._location = None
-        self._rank = None
-        self._opponent_rank = None
-        self._opponent_name = None
-        self._opponent_abbr = None
-        self._opponent_conference = None
-        self._result = None
+        self._game: str | None = None
+        self._date: str | None = None
+        self._time: str | None = None
+        self._day_of_week: str | None = None
+        self._boxscore: str | None = None
+        self._location: str | None = None
+        self._rank: str | None = None
+        self._opponent_rank: str | None = None
+        self._opponent_name: str | None = None
+        self._opponent_abbr: str | None = None
+        self._opponent_conference: str | None = None
+        self._result: str | None = None
         self._points_for = None
         self._points_against = None
         self._wins = None
@@ -173,7 +173,12 @@ class Game:
         Returns an ``int`` to indicate which game in the season was requested.
         The first game of the season returns 1.
         """
-        return int(self._game)
+        if self._game is None:
+            return None
+        try:
+            return int(self._game)
+        except ValueError:
+            return None
 
     @property
     def date(self):
@@ -197,7 +202,9 @@ class Game:
         was played. If the game doesn't include a time, the default value of
         '00:00' will be used.
         """
-        if self._time == "" or not self._time:
+        if not self._date:
+            return None
+        if not self._time:
             return datetime.strptime(self._date, "%b %d, %Y")
         date_string = f"{self._date} {self._time}"
         return datetime.strptime(date_string, "%b %d, %Y %I:%M %p")
@@ -232,6 +239,8 @@ class Game:
         Returns a ``string`` constant to indicate whether the game was played
         at home, away, or in a neutral location.
         """
+        if self._location is None:
+            return None
         match self._location.upper():
             case "":
                 location_string = HOME
@@ -248,6 +257,8 @@ class Game:
         """
         Returns an ``int`` of the team's rank at the time the game was played.
         """
+        if not self._rank:
+            return None
         rank = re.findall(r"\d+", self._rank)
         if len(rank) == 0:
             return None
@@ -259,6 +270,8 @@ class Game:
         Returns an ``int`` of the opponent's rank at the time the game was
         played.
         """
+        if not self._opponent_name:
+            return None
         rank = re.findall(r"\d+", self._opponent_name)
         if len(rank) == 0:
             return None
@@ -288,6 +301,8 @@ class Game:
         Division-I, a string constant for the non-major school will be
         returned.
         """
+        if not self._opponent_conference:
+            return None
         if self._opponent_conference.lower() == "non-major":
             return NON_DI
         return self._opponent_conference
@@ -298,6 +313,8 @@ class Game:
         Returns a ``string`` constant to indicate whether the team won or lost
         the game.
         """
+        if not self._result:
+            return None
         if self._result.lower() == "l":
             return LOSS
         return WIN
@@ -461,14 +478,9 @@ class Schedule:
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(
-                SCHEDULE_URL % (abbreviation.lower(), year)
-            ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(
+                year, lambda y: SCHEDULE_URL % (abbreviation.lower(), y)
+            )
         page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year))
         if not page_source:
             utils.no_data_found()

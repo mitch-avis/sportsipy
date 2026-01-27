@@ -44,17 +44,17 @@ class Game:
 
     def __init__(self, game_data, game_type, year):
         self._year = year
-        self._week = None
-        self._day = None
-        self._date = None
-        self._boxscore = None
+        self._week: str | None = None
+        self._day: str | None = None
+        self._date: str | None = None
+        self._boxscore: str | None = None
         self._type = game_type
         self._datetime = None
-        self._result = None
-        self._overtime = None
-        self._location = None
-        self._opponent_abbr = None
-        self._opponent_name = None
+        self._result: str | None = None
+        self._overtime: str | None = None
+        self._location: str | None = None
+        self._opponent_abbr: str | None = None
+        self._opponent_name: str | None = None
         self._points_scored = None
         self._points_allowed = None
         self._pass_completions = None
@@ -229,6 +229,8 @@ class Game:
         Returns an ``int`` of the week number in the season, such as 1 for the
         first week of the regular season.
         """
+        if not self._week:
+            return None
         match self._week.upper():
             case "WILD CARD":
                 week_int = WILD_CARD
@@ -287,6 +289,8 @@ class Game:
         """
         Returns a datetime object representing the date the game was played.
         """
+        if not self._date or not self._day:
+            return None
         year = self._year
         # Check if the first word of the date (the month) is either january or
         # february, and increase the year by 1.
@@ -321,9 +325,7 @@ class Game:
         Returns a ``boolean`` value that evaluates to True if the game when to
         overtime and False if it ended in regulation.
         """
-        if self._overtime != "":
-            return True
-        return False
+        return bool(self._overtime)
 
     @property
     def location(self):
@@ -331,6 +333,8 @@ class Game:
         Returns a ``string`` constant indicating whether the game was played at
         home, away, or a neutral site, such as the Super Bowl.
         """
+        if self._location is None:
+            return None
         if self._location.lower() == "@":
             return AWAY
         if self._location.lower() == "n":
@@ -698,14 +702,9 @@ class Schedule:
         """
         if not year:
             year = utils.find_year_for_season("nfl")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(
-                SCHEDULE_URL % (abbreviation.lower(), year)
-            ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(
+                year, lambda y: SCHEDULE_URL % (abbreviation.lower(), y)
+            )
         page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year))
         if not page_source:
             utils.no_data_found()

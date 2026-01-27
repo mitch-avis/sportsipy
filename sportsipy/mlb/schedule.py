@@ -28,26 +28,26 @@ class Game:
 
     def __init__(self, game_data, year):
         self._game = None
-        self._date = None
+        self._date: str | None = None
         self._datetime = None
         self._boxscore = None
-        self._location = None
-        self._opponent_abbr = None
-        self._result = None
+        self._location: str | None = None
+        self._opponent_abbr: str | None = None
+        self._result: str | None = None
         self._runs_scored = None
         self._runs_allowed = None
         self._innings = None
-        self._record = None
+        self._record: str | None = None
         self._rank = None
-        self._games_behind = None
-        self._winner = None
-        self._loser = None
-        self._save = None
-        self._game_duration = None
-        self._day_or_night = None
-        self._attendance = None
-        self._streak = None
-        self._year = year
+        self._games_behind: str | None = None
+        self._winner: str | None = None
+        self._loser: str | None = None
+        self._save: str | None = None
+        self._game_duration: str | None = None
+        self._day_or_night: str | None = None
+        self._attendance: str | None = None
+        self._streak: str | None = None
+        self._year: str | None = year
 
         self._parse_game_data(game_data)
 
@@ -179,6 +179,8 @@ class Game:
         Returns a datetime object of the month, day, year, and time the game
         was played.
         """
+        if not self._date or not self._year:
+            return None
         date_string = f"{self._date} {self._year}"
         date_string = re.sub(r" \(\d+\)", "", date_string)
         return datetime.strptime(date_string, "%A, %b %d %Y")
@@ -192,6 +194,8 @@ class Game:
         if a team has a double header one day, the first game of the day will
         return 1 while the second game will return 2.
         """
+        if not self._date:
+            return 1
         game_number = re.findall(r"\(\d+\)", self._date)
         if len(game_number) == 0:
             return 1
@@ -237,6 +241,8 @@ class Game:
         """
         Returns a ``string`` constant to indicate whether the team won or lost.
         """
+        if not self._result:
+            return None
         if self._result.lower() == "w":
             return WIN
         return LOSS
@@ -287,13 +293,16 @@ class Game:
         is. 0.0 indicates the team is tied for first. Negative numbers indicate
         the number of games a team is ahead of the second place team.
         """
-        if "up" in self._games_behind.lower():
-            games_behind = re.sub("up *", "", self._games_behind.lower())
+        if not self._games_behind:
+            return None
+        games_behind_value = self._games_behind.lower()
+        if "up" in games_behind_value:
+            games_behind = re.sub("up *", "", games_behind_value)
             try:
                 return float(games_behind) * -1.0
             except ValueError:
                 return None
-        if "tied" in self._games_behind.lower():
+        if "tied" in games_behind_value:
             return 0.0
         try:
             return float(self._games_behind)
@@ -320,7 +329,7 @@ class Game:
         Returns a ``string`` of the name of the pitcher credited with the save
         if applicable. If no saves, returns None.
         """
-        if self._save == "":
+        if not self._save:
             return None
         return self._save
 
@@ -337,6 +346,8 @@ class Game:
         Returns a ``string`` constant to indicate whether the game was played
         during the day or night.
         """
+        if not self._day_or_night:
+            return None
         if self._day_or_night.lower() == "n":
             return NIGHT
         return DAY
@@ -346,6 +357,8 @@ class Game:
         """
         Returns an ``int`` of the total listed attendance for the game.
         """
+        if not self._attendance:
+            return None
         return self._attendance.replace(",", "")
 
     @property
@@ -478,14 +491,7 @@ class Schedule:
         """
         if not year:
             year = utils.find_year_for_season("mlb")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(SCHEDULE_URL % (abbreviation, year)) and utils.url_exists(
-                SCHEDULE_URL % (abbreviation, str(int(year) - 1))
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: SCHEDULE_URL % (abbreviation, y))
         page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation, year))
         if not page_source:
             utils.no_data_found()

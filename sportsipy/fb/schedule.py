@@ -26,27 +26,27 @@ class Game:
     """
 
     def __init__(self, game_data):
-        self._competition = None
-        self._matchweek = None
-        self._day = None
-        self._date = None
-        self._time = None
+        self._competition: str | None = None
+        self._matchweek: str | None = None
+        self._day: str | None = None
+        self._date: str | None = None
+        self._time: str | None = None
         self._datetime = None
-        self._venue = None
-        self._result = None
-        self._goals_for = None
-        self._goals_against = None
-        self._opponent = None
-        self._opponent_id = None
+        self._venue: str | None = None
+        self._result: str | None = None
+        self._goals_for: str | None = None
+        self._goals_against: str | None = None
+        self._opponent: str | None = None
+        self._opponent_id: str | None = None
         self._expected_goals = None
         self._expected_goals_against = None
-        self._attendance = None
-        self._captain = None
-        self._captain_id = None
-        self._formation = None
-        self._referee = None
-        self._match_report = None
-        self._notes = None
+        self._attendance: str | None = None
+        self._captain: str | None = None
+        self._captain_id: str | None = None
+        self._formation: str | None = None
+        self._referee: str | None = None
+        self._match_report: str | None = None
+        self._notes: str | None = None
 
         self._parse_game_data(game_data)
 
@@ -217,7 +217,10 @@ class Game:
             "match_report": self.match_report,
             "notes": self.notes,
         }
-        return pd.DataFrame([fields_to_include], index=[self.match_report])
+        # Pandas stubs can trip Pyright/Pylance here; runtime is correct.
+        return pd.DataFrame(
+            [fields_to_include], index=[self.match_report]
+        )  # pyright: ignore[reportGeneralTypeIssues]
 
     @property
     def competition(self):
@@ -265,14 +268,15 @@ class Game:
         started. If the time is not present, the default time of midnight on
         the given day will be used instead.
         """
-        try:
-            date = self.date.split("-")
-        except AttributeError:
+        date_value = self.date
+        if date_value is None:
             return None
-        try:
-            time = re.sub(" .*", "", self.time)
+        date = date_value.split("-")
+        time_value = self.time
+        if time_value is not None:
+            time = re.sub(" .*", "", time_value)
             time = time.split(":")
-        except TypeError:
+        else:
             time = None
         if len(date) != 3:
             return None
@@ -307,7 +311,7 @@ class Game:
         home ('Home'), on the road ('Away'), or at a neutral site
         ('Neutral').
         """
-        if not self._venue:
+        if self._venue is None:
             return None
         match self._venue.upper():
             case "HOME":
@@ -326,7 +330,7 @@ class Game:
         Returns a ``string`` constant representing if the team won ('Win'),
         drew ('Draw'), or lost ('Loss').
         """
-        if not self._result:
+        if self._result is None:
             return None
         match self._result.upper():
             case "W":
@@ -345,9 +349,10 @@ class Game:
         Returns an ``int`` of the number of goals the team scored.
         """
         # If the game went to a shootout, remove the penalties.
-        if "(" in str(self._goals_for) and ")" in str(self._goals_for):
-            return re.sub(" .*", "", self._goals_for)
-        return self._goals_for
+        goals_for_value = self._goals_for
+        if goals_for_value and "(" in str(goals_for_value) and ")" in str(goals_for_value):
+            return re.sub(" .*", "", goals_for_value)
+        return goals_for_value
 
     @int_property_decorator
     def goals_against(self):
@@ -355,9 +360,14 @@ class Game:
         Returns an ``int`` of the number of goals the team conceded.
         """
         # If the game went to a shootout, remove the penalties.
-        if "(" in str(self._goals_against) and ")" in str(self._goals_against):
-            return re.sub(" .*", "", self._goals_against)
-        return self._goals_against
+        goals_against_value = self._goals_against
+        if (
+            goals_against_value
+            and "(" in str(goals_against_value)
+            and ")" in str(goals_against_value)
+        ):
+            return re.sub(" .*", "", goals_against_value)
+        return goals_against_value
 
     @int_property_decorator
     def shootout_scored(self):
@@ -365,7 +375,8 @@ class Game:
         Returns an ``int`` of the number of penalties the team scored if the
         game went to a shootout after normal play.
         """
-        penalties = re.findall(r"\(\d+\)", self._goals_for)
+        goals_for_value = self._goals_for or ""
+        penalties = re.findall(r"\(\d+\)", goals_for_value)
         if penalties:
             penalties = re.sub(r"\(|\)", "", penalties[0])
         return penalties
@@ -376,7 +387,8 @@ class Game:
         Returns an ``int`` of the number of penalties the team conceded if the
         game went to a shootout after normal play.
         """
-        penalties = re.findall(r"\(\d+\)", self._goals_against)
+        goals_against_value = self._goals_against or ""
+        penalties = re.findall(r"\(\d+\)", goals_against_value)
         if penalties:
             penalties = re.sub(r"\(|\)", "", penalties[0])
         return penalties
@@ -417,10 +429,9 @@ class Game:
         """
         Returns an ``int`` of the recorded attendance at the game.
         """
-        try:
-            return self._attendance.replace(",", "")
-        except AttributeError:
+        if not self._attendance:
             return None
+        return self._attendance.replace(",", "")
 
     @property
     def captain(self):

@@ -27,14 +27,14 @@ class Game:
 
     def __init__(self, game_data, playoffs=False):
         self._game = None
-        self._date = None
-        self._time = None
+        self._date: str | None = None
+        self._time: str | None = None
         self._datetime = None
         self._boxscore = None
-        self._location = None
-        self._opponent_abbr = None
-        self._opponent_name = None
-        self._result = None
+        self._location: str | None = None
+        self._opponent_abbr: str | None = None
+        self._opponent_name: str | None = None
+        self._result: str | None = None
         self._points_scored = None
         self._points_allowed = None
         self._wins = None
@@ -189,6 +189,8 @@ class Game:
         Returns a datetime object to indicate the month, day, and year the game
         took place.
         """
+        if not self._date:
+            return None
         return datetime.strptime(self._date, "%a, %b %d, %Y")
 
     @property
@@ -213,6 +215,8 @@ class Game:
         Returns a ``string`` constant to indicate whether the game was played
         in the team's home arena or on the road.
         """
+        if self._location is None:
+            return None
         if self._location.lower() == "@":
             return AWAY
         return HOME
@@ -238,6 +242,8 @@ class Game:
         Returns a ``string`` constant to indicate whether the team won or lost
         the game.
         """
+        if not self._result:
+            return None
         if self._result.lower() == "l":
             return LOSS
         return WIN
@@ -439,14 +445,9 @@ class Schedule:
                         year = str(int(year) - 1)
                 except HTTPError:
                     year = str(int(year) - 1)
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(
-                SCHEDULE_URL % (abbreviation.lower(), year)
-            ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(
+                year, lambda y: SCHEDULE_URL % (abbreviation.lower(), y)
+            )
         page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation, year))
         if not page_source:
             utils.no_data_found()

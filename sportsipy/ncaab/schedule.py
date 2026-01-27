@@ -42,17 +42,17 @@ class Game:
 
     def __init__(self, game_data):
         self._game = None
-        self._date = None
+        self._date: str | None = None
         self._datetime = None
-        self._time = None
-        self._boxscore = None
-        self._type = None
-        self._location = None
-        self._opponent_abbr = None
-        self._opponent_name = None
+        self._time: str | None = None
+        self._boxscore: str | None = None
+        self._type: str | None = None
+        self._location: str | None = None
+        self._opponent_abbr: str | None = None
+        self._opponent_name: str | None = None
         self._opponent_rank = None
-        self._opponent_conference = None
-        self._result = None
+        self._opponent_conference: str | None = None
+        self._result: str | None = None
         self._points_for = None
         self._points_against = None
         self._overtimes = None
@@ -290,6 +290,8 @@ class Game:
         Returns a ``string`` constant to indicate whether the game was played
         at the team's home venue, the opponent's venue, or at a neutral site.
         """
+        if self._location is None:
+            return None
         match self._location.upper():
             case "":
                 location_string = HOME
@@ -315,6 +317,8 @@ class Game:
         Returns a ``string`` of the opponent's name, such as the 'Purdue
         Boilermakers'.
         """
+        if not self._opponent_name:
+            return None
         name = re.sub(r"\(\d+\)", "", self._opponent_name)
         name = name.replace("\xa0", "")
         return name
@@ -325,6 +329,8 @@ class Game:
         Returns a ``string`` of the opponent's rank when the game was played
         and None if the team was unranked.
         """
+        if not self._opponent_name:
+            return None
         rank = re.findall(r"\d+", self._opponent_name)
         if len(rank) > 0:
             return int(rank[0])
@@ -337,7 +343,7 @@ class Game:
         for a team participating in the Big Ten Conference. If the team is not
         a Division-I school, a string constant for non-majors is returned.
         """
-        if self._opponent_conference == "":
+        if not self._opponent_conference:
             return NON_DI
         return self._opponent_conference
 
@@ -347,6 +353,8 @@ class Game:
         Returns a ``string`` constant to indicate whether the team won or lost
         the game.
         """
+        if not self._result:
+            return None
         if self._result.lower() == "w":
             return WIN
         return LOSS
@@ -530,14 +538,9 @@ class Schedule:
         """
         if not year:
             year = utils.find_year_for_season("ncaab")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(
-                SCHEDULE_URL % (abbreviation.lower(), year)
-            ) and utils.url_exists(SCHEDULE_URL % (abbreviation.lower(), str(int(year) - 1))):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(
+                year, lambda y: SCHEDULE_URL % (abbreviation.lower(), y)
+            )
         page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation.lower(), year))
         if not page_source:
             utils.no_data_found()

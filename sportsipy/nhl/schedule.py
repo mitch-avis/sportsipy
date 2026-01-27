@@ -28,16 +28,16 @@ class Game:
     """
 
     def __init__(self, game_data):
-        self._game = None
-        self._date = None
-        self._boxscore = None
-        self._location = None
-        self._opponent_abbr = None
-        self._opponent_name = None
+        self._game: str | None = None
+        self._date: str | None = None
+        self._boxscore: str | None = None
+        self._location: str | None = None
+        self._opponent_abbr: str | None = None
+        self._opponent_name: str | None = None
         self._goals_scored = None
         self._goals_allowed = None
-        self._result = None
-        self._overtime = None
+        self._result: str | None = None
+        self._overtime: str | None = None
         self._shots_on_goal = None
         self._penalties_in_minutes = None
         self._power_play_goals = None
@@ -198,7 +198,12 @@ class Game:
         Returns an ``int`` to indicate which game in the season was requested.
         The first game of the season returns 1.
         """
-        return int(self._game)
+        if self._game is None:
+            return None
+        try:
+            return int(self._game)
+        except ValueError:
+            return None
 
     @property
     def date(self):
@@ -214,6 +219,8 @@ class Game:
         Returns a datetime object to indicate the month, day, and year the game
         was played at.
         """
+        if not self._date:
+            return None
         return datetime.strptime(self._date, "%Y-%m-%d")
 
     @property
@@ -238,6 +245,8 @@ class Game:
         Returns a ``string`` constant to indicate whether the game was played
         at home or away.
         """
+        if self._location is None:
+            return None
         if self._location == "@":
             return AWAY
         return HOME
@@ -280,9 +289,11 @@ class Game:
         Returns a ``string`` constant to indicate whether the team lost in
         regulation, lost in overtime, or won.
         """
+        if not self._result:
+            return None
         if self._result.lower() == "w":
             return WIN
-        if self._result.lower() == "l" and self.overtime != 0:  # pylint: disable=W0143
+        if self._result.lower() == "l" and self.overtime != 0:
             return OVERTIME_LOSS
         return LOSS
 
@@ -292,12 +303,12 @@ class Game:
         Returns an ``int`` of the number of overtimes that were played during
         the game, or an int constant if the game went to a shootout.
         """
+        if not self._overtime:
+            return 0
         if self._overtime.lower() == "ot":
             return 1
         if self._overtime.lower() == "so":
             return SHOOTOUT
-        if self._overtime == "":
-            return 0
         num = re.findall(r"\d+", self._overtime)
         if len(num) > 0:
             return num[0]
@@ -593,14 +604,7 @@ class Schedule:
         """
         if not year:
             year = utils.find_year_for_season("nhl")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(SCHEDULE_URL % (abbreviation, year)) and utils.url_exists(
-                SCHEDULE_URL % (abbreviation, str(int(year) - 1))
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: SCHEDULE_URL % (abbreviation, y))
         page_source = utils.get_page_source(url=SCHEDULE_URL % (abbreviation, year))
         if not page_source:
             utils.no_data_found()
