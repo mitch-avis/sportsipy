@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -56,7 +55,6 @@ class MockDateTime:
 
 
 class TestMLBSchedule:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "game": 2,
@@ -170,7 +168,6 @@ class TestMLBSchedule:
         with pytest.raises(ValueError):
             self.schedule(datetime.now())
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
@@ -352,8 +349,6 @@ Sunday, Oct 1 - TOR"""
 
 
 class TestMLBScheduleInvalidYear:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         results = {
             "game": 2,

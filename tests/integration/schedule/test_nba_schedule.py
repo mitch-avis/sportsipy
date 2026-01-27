@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -64,7 +63,6 @@ class MockDateTime:
 
 
 class TestNBASchedule:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "game": 2,
@@ -144,7 +142,6 @@ class TestNBASchedule:
         with pytest.raises(ValueError):
             self.schedule(datetime.now())
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
@@ -263,8 +260,6 @@ Mon, Jun 12, 2017 - CLE"""
 
 
 class TestNBAScheduleInvalidError:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         results = {
             "game": 2,
@@ -291,8 +286,6 @@ class TestNBAScheduleInvalidError:
         for attribute, value in results.items():
             assert getattr(schedule[1], attribute) == value
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_2020_default_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2021)
 

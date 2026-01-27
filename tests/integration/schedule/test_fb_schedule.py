@@ -4,7 +4,6 @@ from os import path
 import pandas as pd
 import pytest
 from flexmock import flexmock
-from mock import patch
 from pyquery import PyQuery as pq
 
 from sportsipy import utils
@@ -31,7 +30,6 @@ def mock_pyquery(url, timeout=None):
 
 
 class TestFBSchedule:
-    @patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "competition": "Premier League",
@@ -80,7 +78,6 @@ class TestFBSchedule:
         with pytest.raises(ValueError):
             self.schedule(datetime(2020, 7, 1))
 
-    @patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
