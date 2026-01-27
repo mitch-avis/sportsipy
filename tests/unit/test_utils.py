@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import pytest
 from flexmock import flexmock
 from mock import patch
@@ -198,7 +200,7 @@ class TestUtils:
 
         for html, abbreviation in test_abbreviations.items():
             mock_html = MockHtml(html, None)
-            result = utils.parse_abbreviation(mock_html)
+            result = utils.parse_abbreviation(cast(Any, mock_html))
             assert result == abbreviation
 
     def test__parse_field_returns_abbreviation(self):
@@ -208,7 +210,7 @@ class TestUtils:
         flexmock(utils).should_receive("parse_abbreviation").and_return("ARI").once()
 
         result = utils.parse_field(
-            parsing_scheme, MockHtml(input_abbreviation, None), "abbreviation"
+            parsing_scheme, cast(Any, MockHtml(input_abbreviation, None)), "abbreviation"
         )
         assert result == expected
 
@@ -220,7 +222,10 @@ class TestUtils:
         expected = None
 
         result = utils.parse_field(
-            parsing_scheme, MockHtml(html_string, [expected]), "batters_used", index=3
+            parsing_scheme,
+            cast(Any, MockHtml(html_string, [expected])),
+            "batters_used",
+            index=3,
         )
         assert result == expected
 
@@ -232,7 +237,7 @@ class TestUtils:
         expected = "32"
 
         result = utils.parse_field(
-            parsing_scheme, MockHtml(html_string, [expected]), "batters_used"
+            parsing_scheme, cast(Any, MockHtml(html_string, [expected])), "batters_used"
         )
         assert result == expected
 
@@ -256,7 +261,8 @@ class TestUtils:
         div = "table#all_stats"
         flexmock(utils).should_receive("remove_html_comment_tags").and_return(html_string).once()
 
-        result = utils.get_stats_table(MockHtml(html_string, expected), div)
+        result = utils.get_stats_table(cast(Any, MockHtml(html_string, expected)), div)
+        assert result is not None
 
         i = 0
         for _ in result:
@@ -302,7 +308,7 @@ class TestUtils:
 
         result = utils.parse_field(
             parsing_scheme,
-            MockHtml(html_string, items),
+            cast(Any, MockHtml(html_string, items)),
             "batters_used",
             index=3,
             secondary_index=1,
@@ -320,7 +326,7 @@ class TestUtils:
 
         result = utils.parse_field(
             parsing_scheme,
-            MockHtml(html_string, items),
+            cast(Any, MockHtml(html_string, items)),
             "batters_used",
             index=3,
             secondary_index=4,
