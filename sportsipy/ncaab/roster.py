@@ -154,7 +154,10 @@ class Player(AbstractPlayer):
         """
         url = PLAYER_URL % self._player_id
         try:
-            url_data = utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
         except (HTTPError, ParserError):
             return None
         return pq(utils.remove_html_comment_tags(url_data))
@@ -289,7 +292,7 @@ class Player(AbstractPlayer):
         for section in player_info("div#meta p").items():
             if "Position" in str(section):
                 position = section.text().replace("Position: ", "")
-                setattr(self, "_position", position)
+                self._position = position
                 break
 
     def _pull_player_data(self):
@@ -312,7 +315,7 @@ class Player(AbstractPlayer):
         self._parse_player_information(player_info)
         self._parse_player_position(player_info)
         all_stats = self._combine_all_stats(player_info)
-        setattr(self, "_season", all_stats.keys())
+        self._season = all_stats.keys()
         return all_stats
 
     def find_initial_index(self):
@@ -657,7 +660,10 @@ class Roster:
             Returns a PyQuery object of the team's HTML page.
         """
         try:
-            return utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            return utils.pq(page_source)
         except HTTPError:
             return None
 

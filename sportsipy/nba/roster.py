@@ -245,7 +245,10 @@ class Player(AbstractPlayer):
         """
         url = self._build_url()
         try:
-            url_data = utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
         except (HTTPError, ParserError):
             return None
         return pq(utils.remove_html_comment_tags(url_data))
@@ -370,7 +373,7 @@ class Player(AbstractPlayer):
             if 'class="f-i' in str(span):
                 nationality = span.text()
                 nationality = NATIONALITY[nationality]
-                setattr(self, "_nationality", nationality)
+                self._nationality = nationality
                 break
 
     def _parse_player_information(self, player_info):
@@ -404,7 +407,7 @@ class Player(AbstractPlayer):
             A PyQuery object containing the HTML from the player's stats page.
         """
         date = player_info('span[itemprop="birthDate"]').attr("data-birth")
-        setattr(self, "_birth_date", date)
+        self._birth_date = date
 
     def _parse_contract_headers(self, table):
         """
@@ -506,7 +509,7 @@ class Player(AbstractPlayer):
                     # a contract and should have a value of None instead.
                     if not contract:
                         contract = None
-                    setattr(self, "_contract", contract)
+                    self._contract = contract
                     break
 
     def _pull_player_data(self):
@@ -533,7 +536,7 @@ class Player(AbstractPlayer):
         self._parse_birth_date(player_info)
         self._parse_contract(player_info)
         all_stats = self._combine_all_stats(player_info)
-        setattr(self, "_season", all_stats.keys())
+        self._season = all_stats.keys()
         return all_stats
 
     def find_initial_index(self):
@@ -1425,7 +1428,10 @@ class Roster:
             Returns a PyQuery object of the team's HTML page.
         """
         try:
-            return utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            return utils.pq(page_source)
         except HTTPError:
             return None
 
@@ -1540,7 +1546,9 @@ class Roster:
             # be pulled instead.
             if year == 2021:
                 try:
-                    _ = utils.pq(utils.get_page_source(url=self._create_url(year)))
+                    page_source = utils.get_page_source(url=self._create_url(year))
+                    if not page_source:
+                        year = str(int(year) - 1)
                 except HTTPError:
                     year = str(int(year) - 1)
             # If stats for the requested season do not exist yet (as is the

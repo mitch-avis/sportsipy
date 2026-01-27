@@ -450,7 +450,7 @@ class Player(AbstractPlayer):
             A PyQuery object containing the HTML from the player's stats page.
         """
         birth_date = player_info("span#necro-birth").attr("data-birth")
-        setattr(self, "_birth_date", birth_date)
+        self._birth_date = birth_date
 
     def _pull_player_data(self):
         """
@@ -474,7 +474,7 @@ class Player(AbstractPlayer):
         all_stats = self._combine_all_stats(player_info)
         self._parse_player_information(player_info)
         self._parse_birth_date(player_info)
-        setattr(self, "_season", list(all_stats.keys()))
+        self._season = list(all_stats.keys())
         return all_stats
 
     def find_initial_index(self):
