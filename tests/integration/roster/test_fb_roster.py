@@ -1,6 +1,5 @@
 from os import path
 
-import mock
 import pandas as pd
 from pyquery import PyQuery as pq
 
@@ -25,7 +24,6 @@ def mock_pyquery(url, timeout=None):
 
 
 class TestFBRoster:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results = {
             "name": "Harry Kane",
@@ -344,7 +342,6 @@ class TestFBRoster:
 
         assert df1.empty
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_fb_invalid_tables_returns_nothing(self, *args, **kwargs):
         roster = Roster("Tottenham Hotspur")
         stats = roster._pull_stats(pq("<div></div>"))

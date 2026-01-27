@@ -50,7 +50,6 @@ def mock_request(url, timeout=None):
 
 
 class TestMLBPlayer:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results_career = {
             "assists": 2763,
@@ -537,7 +536,6 @@ class TestMLBPlayer:
 
 
 class TestMLBPitcher:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results_career = {
             "assists": 278,
@@ -1077,7 +1075,6 @@ class TestMLBPitcher:
 
 
 class TestMLBRoster:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return("2017")
         roster = Roster("HOU")
@@ -1087,25 +1084,21 @@ class TestMLBRoster:
         for player in roster.players:
             assert player.name in ["José Altuve", "Justin Verlander", "Charlie Morton"]
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_bad_url_raises_value_error(self, *args, **kwargs):
         with pytest.raises(ValueError):
             Roster("bad")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_from_team_class(self, *args, **kwargs):
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         team = Team(None, 1, "2018")
-        mock_abbreviation = mock.PropertyMock(return_value="HOU")
-        type(team)._abbreviation = mock_abbreviation
+        team._abbreviation = "HOU"
 
         assert len(team.roster.players) == 3
 
         for player in team.roster.players:
             assert player.name in ["José Altuve", "Justin Verlander", "Charlie Morton"]
-        type(team)._abbreviation = None
+        team._abbreviation = None
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU", slim=True)
@@ -1117,8 +1110,6 @@ class TestMLBRoster:
             "mortoch02": "Charlie Morton",
         }
 
-    @mock.patch("requests.head", side_effect=mock_request)
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
@@ -1129,7 +1120,6 @@ class TestMLBRoster:
         for player in roster.players:
             assert player.name in ["José Altuve", "Justin Verlander", "Charlie Morton"]
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_string_representation(self, *args, **kwargs):
         expected = """José Altuve (altuvjo01)
 Justin Verlander (verlaju01)
@@ -1140,7 +1130,6 @@ José Altuve (mortoch02)"""
 
         assert repr(roster) == expected
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_coach(self, *args, **kwargs):
         roster = Roster("HOU", year=YEAR)
         assert "AJ Hinch" == roster.coach

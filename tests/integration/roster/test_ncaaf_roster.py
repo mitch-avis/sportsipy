@@ -1,6 +1,5 @@
 import os
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -53,7 +52,6 @@ def mock_request(url, timeout=None):
 
 
 class TestNCAAFPlayer:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results_career = {
             "adjusted_yards_per_attempt": 6.1,
@@ -468,14 +466,12 @@ class TestNCAAFPlayer:
         frames = [df, player.dataframe]
         pd.concat(frames).drop_duplicates(keep=False)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaaf_tight_end_skips_passing_without_errors(self, *args, **kwargs):
         player = Player("brycen-hopkins-1")
 
         assert player.name == "Brycen Hopkins"
         assert player.dataframe is not None
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaaf_kicker_returns_expected_kicking_stats(self, *args, **kwargs):
         stats = {
             "extra_points_made": 91,
@@ -492,14 +488,12 @@ class TestNCAAFPlayer:
         for attribute, value in stats.items():
             assert getattr(player, attribute) == value
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaaf_404_returns_none_with_no_errors(self, *args, **kwargs):
         player = Player("bad")
 
         assert player.name is None
         assert player.dataframe is None
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_ncaaf_404_returns_none_for_different_season(self, *args, **kwargs):
         player = Player("bad")
         player = player("2017")
@@ -515,35 +509,34 @@ class TestNCAAFPlayer:
 
 
 class TestNCAAFRoster:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("PURDUE")
 
         assert len(roster.players) == 2
 
-        for player in roster.players:
+        players = roster.players
+        assert isinstance(players, list)
+        for player in players:
             assert player.name in ["David Blough", "Rondale Moore"]
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_bad_url_raises_value_error(self, *args, **kwargs):
         with pytest.raises(ValueError):
             Roster("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_from_team_class(self, *args, **kwargs):
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         team = Team(team_data=None, team_conference=None, year="2018")
-        mock_abbreviation = mock.PropertyMock(return_value="PURDUE")
-        type(team)._abbreviation = mock_abbreviation
+        team._abbreviation = "PURDUE"
 
         assert len(team.roster.players) == 2
 
-        for player in team.roster.players:
+        players = team.roster.players
+        assert isinstance(players, list)
+        for player in players:
             assert player.name in ["David Blough", "Rondale Moore"]
-        type(team)._abbreviation = None
+        team._abbreviation = None
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("PURDUE", slim=True)
@@ -554,18 +547,17 @@ class TestNCAAFRoster:
             "rondale-moore-1": "Rondale Moore",
         }
 
-    @mock.patch("requests.head", side_effect=mock_request)
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return("2019")
 
         roster = Roster("PURDUE")
 
         assert len(roster.players) == 2
-        for player in roster.players:
+        players = roster.players
+        assert isinstance(players, list)
+        for player in players:
             assert player.name in ["David Blough", "Rondale Moore"]
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_string_representation(self, *args, **kwargs):
         expected = """David Blough (david-blough-1)
 David Blough (rondale-moore-1)"""
@@ -575,6 +567,5 @@ David Blough (rondale-moore-1)"""
 
         assert repr(roster) == expected
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_coach(self, *args, **kwargs):
         assert "Jeff Brohm" == Roster("PURDUE", year=YEAR).coach

@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -58,7 +57,6 @@ def mock_request(url, timeout=None):
 
 
 class TestNBAPlayer:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def setup_method(self, *args, **kwargs):
         self.results_career = {
             "player_id": "hardeja01",
@@ -1252,7 +1250,6 @@ class TestNBAPlayer:
         frames = [df, player.dataframe]
         pd.concat(frames).drop_duplicates(keep=False)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nba_player_with_no_stats_handled_without_error(self, *args, **kwargs):
         player = Player("youngtr01")
 
@@ -1266,14 +1263,15 @@ class TestNBAPlayer:
 
 
 class TestNBARoster:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
 
         assert len(roster.players) == 4
 
-        for player in roster.players:
+        players = roster.players
+        assert isinstance(players, list)
+        for player in players:
             assert player.name in [
                 "James Harden",
                 "Tarik Black",
@@ -1281,21 +1279,20 @@ class TestNBARoster:
                 "Trevor Ariza",
             ]
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_bad_url_raises_value_error(self, *args, **kwargs):
         with pytest.raises(ValueError):
             Roster("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_from_team_class(self, *args, **kwargs):
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         team = Team(None, 1, "2018")
-        mock_abbreviation = mock.PropertyMock(return_value="HOU")
-        type(team)._abbreviation = mock_abbreviation
+        team._abbreviation = "HOU"
 
         assert len(team.roster.players) == 4
 
-        for player in team.roster.players:
+        players = team.roster.players
+        assert isinstance(players, list)
+        for player in players:
             assert player.name in [
                 "James Harden",
                 "Tarik Black",
@@ -1303,9 +1300,8 @@ class TestNBARoster:
                 "Trevor Ariza",
             ]
 
-        type(team)._abbreviation = None
+        team._abbreviation = None
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU", slim=True)
@@ -1318,8 +1314,6 @@ class TestNBARoster:
             "arizatr01": "Trevor Ariza",
         }
 
-    @mock.patch("requests.head", side_effect=mock_request)
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
@@ -1335,7 +1329,6 @@ class TestNBARoster:
                 "Trevor Ariza",
             ]
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_rows_are_skipped(self, *args, **kwargs):
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         flexmock(Roster).should_receive("_get_id").and_return(None)
@@ -1344,7 +1337,6 @@ class TestNBARoster:
 
         assert len(roster.players) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_roster_class_string_representation(self, *args, **kwargs):
         expected = """Ryan Anderson (anderry01)
 Trevor Ariza (arizatr01)
@@ -1356,6 +1348,5 @@ James Harden (hardeja01)"""
 
         assert repr(roster) == expected
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_coach(self, *args, **kwargs):
         assert "Mike D'Antoni" == Roster("HOU").coach
