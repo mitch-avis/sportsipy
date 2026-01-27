@@ -135,6 +135,8 @@ class Team:
             the specified team.
         """
         team_data_dict, year = _retrieve_all_teams(year, season_page)
+        if team_data_dict is None:
+            raise ValueError("No team data found for the requested season.")
         self._year = year
         team_data = team_data_dict[team_name]["data"]
         self._rank = team_data_dict[team_name]["rank"]

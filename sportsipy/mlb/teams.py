@@ -206,6 +206,8 @@ class Team:
             the specified team.
         """
         team_data_dict, year = _retrieve_all_teams(year, standings_file, teams_file)
+        if team_data_dict is None:
+            raise ValueError("No team data found for the requested season.")
         self._year = year
         team_data = team_data_dict[team_name]["data"]
         self._rank = team_data_dict[team_name]["rank"]
@@ -1226,6 +1228,8 @@ class Teams:
         self._teams = []
 
         team_data_dict, year = _retrieve_all_teams(year, standings_file, teams_file)
+        if team_data_dict is None:
+            raise ValueError("No team data found for the requested season.")
         self._instantiate_teams(team_data_dict, year)
 
     def __str__(self):

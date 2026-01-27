@@ -109,6 +109,8 @@ class Team:
             be of the Season page for the designated year.
         """
         teams_list, year = _retrieve_all_teams(year, season_page)
+        if teams_list is None:
+            raise ValueError("No team data found for the requested season.")
         self._year = year
         # Teams are listed in terms of rank with the first team being #1
         rank = 1

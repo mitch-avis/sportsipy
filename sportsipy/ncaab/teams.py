@@ -215,6 +215,8 @@ class Team:
         team_data_dict, year = _retrieve_all_teams(
             year, basic_stats, basic_opp_stats, adv_stats, adv_opp_stats
         )
+        if team_data_dict is None:
+            raise ValueError("No team data found for the requested season.")
         self._year = year
         team_data = team_data_dict[team_name]["data"]
         return team_data
@@ -538,7 +540,11 @@ class Team:
         Returns an ``int`` of the total number of two point field goals made
         during the season.
         """
-        return self.field_goals - self.three_point_field_goals
+        field_goals = self.field_goals
+        three_point_field_goals = self.three_point_field_goals
+        if field_goals is None or three_point_field_goals is None:
+            return None
+        return field_goals - three_point_field_goals
 
     @int_property_decorator
     def two_point_field_goal_attempts(self):
@@ -546,7 +552,11 @@ class Team:
         Returns an ``int`` of the total number of two point field goal attempts
         during the season.
         """
-        return self.field_goal_attempts - self.three_point_field_goal_attempts
+        attempts = self.field_goal_attempts
+        three_point_attempts = self.three_point_field_goal_attempts
+        if attempts is None or three_point_attempts is None:
+            return None
+        return attempts - three_point_attempts
 
     @float_property_decorator
     def two_point_field_goal_percentage(self):
@@ -555,11 +565,13 @@ class Team:
         by the number of two point field goal attempts. Percentage ranges from
         0-1.
         """
-        try:
-            result = float(self.two_point_field_goals) / float(self.two_point_field_goal_attempts)
-            return round(result, 3)
-        except ZeroDivisionError:
+        field_goals = self.two_point_field_goals
+        attempts = self.two_point_field_goal_attempts
+        if field_goals is None or attempts is None:
+            return None
+        if attempts == 0:
             return 0.0
+        return round(field_goals / attempts, 3)
 
     @int_property_decorator
     def three_point_field_goals(self):
@@ -624,10 +636,11 @@ class Team:
         Returns an ``int`` of the total number of defensive rebounds during the
         season.
         """
-        try:
-            return self.total_rebounds - self.offensive_rebounds
-        except TypeError:
+        total_rebounds = self.total_rebounds
+        offensive_rebounds = self.offensive_rebounds
+        if total_rebounds is None or offensive_rebounds is None:
             return None
+        return total_rebounds - offensive_rebounds
 
     @int_property_decorator
     def total_rebounds(self):
@@ -703,7 +716,11 @@ class Team:
         Returns an ``int`` of the total number of two point field goals made
         during the season by opponents.
         """
-        return self.opp_field_goals - self.opp_three_point_field_goals
+        field_goals = self.opp_field_goals
+        three_point_field_goals = self.opp_three_point_field_goals
+        if field_goals is None or three_point_field_goals is None:
+            return None
+        return field_goals - three_point_field_goals
 
     @int_property_decorator
     def opp_two_point_field_goal_attempts(self):
@@ -711,7 +728,11 @@ class Team:
         Returns an ``int`` of the total number of two point field goal attempts
         during the season by opponents.
         """
-        return self.opp_field_goal_attempts - self.opp_three_point_field_goal_attempts
+        attempts = self.opp_field_goal_attempts
+        three_point_attempts = self.opp_three_point_field_goal_attempts
+        if attempts is None or three_point_attempts is None:
+            return None
+        return attempts - three_point_attempts
 
     @float_property_decorator
     def opp_two_point_field_goal_percentage(self):
@@ -720,13 +741,13 @@ class Team:
         by the number of two point field goal attempts by opponents. Percentage
         ranges from 0-1.
         """
-        try:
-            result = float(self.opp_two_point_field_goals) / float(
-                self.opp_two_point_field_goal_attempts
-            )
-            return round(result, 3)
-        except ZeroDivisionError:
+        field_goals = self.opp_two_point_field_goals
+        attempts = self.opp_two_point_field_goal_attempts
+        if field_goals is None or attempts is None:
+            return None
+        if attempts == 0:
             return 0.0
+        return round(field_goals / attempts, 3)
 
     @int_property_decorator
     def opp_three_point_field_goals(self):
@@ -791,10 +812,11 @@ class Team:
         Returns an ``int`` of the total number of defensive rebounds during the
         season by opponents.
         """
-        try:
-            return self.opp_total_rebounds - self.opp_offensive_rebounds
-        except TypeError:
+        total_rebounds = self.opp_total_rebounds
+        offensive_rebounds = self.opp_offensive_rebounds
+        if total_rebounds is None or offensive_rebounds is None:
             return None
+        return total_rebounds - offensive_rebounds
 
     @int_property_decorator
     def opp_total_rebounds(self):
@@ -868,10 +890,11 @@ class Team:
         opponent's offensive) rating. Positive values indicate teams that score
         more points than they allow per 100 possessions.
         """
-        try:
-            return self.offensive_rating - self.opp_offensive_rating
-        except TypeError:
+        offensive_rating = self.offensive_rating
+        opp_offensive_rating = self.opp_offensive_rating
+        if offensive_rating is None or opp_offensive_rating is None:
             return None
+        return offensive_rating - opp_offensive_rating
 
     @float_property_decorator
     def free_throw_attempt_rate(self):
