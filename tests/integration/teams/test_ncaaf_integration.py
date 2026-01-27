@@ -7,7 +7,11 @@ from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.ncaaf.conferences import Conferences
-from sportsipy.ncaaf.constants import DEFENSIVE_STATS_URL, OFFENSIVE_STATS_URL, SEASON_PAGE_URL
+from sportsipy.ncaaf.constants import (
+    DEFENSIVE_STATS_URL,
+    OFFENSIVE_STATS_URL,
+    SEASON_PAGE_URL,
+)
 from sportsipy.ncaaf.teams import Team, Teams
 
 MONTH = 9
