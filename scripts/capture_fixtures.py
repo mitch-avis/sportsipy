@@ -33,8 +33,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--fixtures-dir",
-        default="tests/fixtures",
-        help="Root fixtures directory (default: tests/fixtures)",
+        default="tests/integration",
+        help="Root fixtures directory (default: tests/integration)",
     )
     parser.add_argument(
         "--map",
