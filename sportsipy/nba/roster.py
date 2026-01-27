@@ -1434,7 +1434,8 @@ class Roster:
             page_source = utils.get_page_source(url=url)
             if not page_source:
                 return None
-            return utils.pq(page_source)
+            cleaned_page = utils.remove_html_comment_tags(page_source)
+            return utils.pq(cleaned_page)
         except HTTPError:
             return None
 
