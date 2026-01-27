@@ -1,6 +1,11 @@
 from sportsipy import utils
 
-from .constants import DEFENSIVE_STATS_URL, OFFENSIVE_STATS_URL, PARSING_SCHEME, SEASON_PAGE_URL
+from .constants import (
+    DEFENSIVE_STATS_URL,
+    OFFENSIVE_STATS_URL,
+    PARSING_SCHEME,
+    SEASON_PAGE_URL,
+)
 
 
 def _add_stats_data(teams_list, team_data_dict):
