@@ -136,13 +136,16 @@ class TestNHLSchedule:
         assert df1.empty
 
     def test_nhl_schedule_all_dataframe_returns_dataframe(self):
-        result = self.schedule.dataframe.drop_duplicates(keep=False)
+        df = self.schedule.dataframe
+        assert df is not None
+        result = df.drop_duplicates(keep=False)
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
         assert set(result.columns.values) == set(self.results.keys())
 
     def test_nhl_schedule_all_dataframe_extended_returns_dataframe(self):
         result = self.schedule.dataframe_extended
+        assert result is not None
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
 
