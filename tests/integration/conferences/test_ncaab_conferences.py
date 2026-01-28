@@ -83,7 +83,7 @@ class TestNCAABConferences:
                     "texas-tech": "Texas Tech",
                     "west-virginia": "West Virginia",
                     "kansas-state": "Kansas State",
-                    "texas-christian": "Texas Christian",
+                    "texas-christian": "TCU",
                     "oklahoma-state": "Oklahoma State",
                     "oklahoma": "Oklahoma",
                     "baylor": "Baylor",
