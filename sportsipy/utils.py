@@ -780,6 +780,7 @@ def parse_abbreviation(uri_link: PyQuery | str) -> str:
         abbr = re.sub(r"/[0-9]+\..*htm.*", "", href)
         abbr = re.sub(r"/.*/schools/", "", abbr)
         abbr = re.sub(r"/teams/", "", abbr)
+        abbr = re.sub(r"/.*", "", abbr)
         return abbr.upper()
     except (ParserError, XMLSyntaxError):
         return ""
