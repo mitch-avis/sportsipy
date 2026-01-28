@@ -1372,9 +1372,17 @@ class Boxscores:
         string
             Returns a ``string`` of the team's abbreviation.
         """
-        if "cfb/schools" not in str(abbr):
+        if not abbr:
             return None
-        abbr = re.sub(r".*/schools/", "", str(abbr))
+        href = abbr.attr("href") if hasattr(abbr, "attr") else None
+        if isinstance(href, str) and href:
+            if "cfb/schools" not in href:
+                return None
+            abbr = re.sub(r".*/schools/", "", href)
+        else:
+            if "cfb/schools" not in str(abbr):
+                return None
+            abbr = re.sub(r".*/schools/", "", str(abbr))
         abbr = re.sub(r"/.*", "", abbr)
         return abbr
 
