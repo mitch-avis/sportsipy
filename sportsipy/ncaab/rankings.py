@@ -2,7 +2,7 @@ import re
 from urllib.error import HTTPError
 
 from .. import utils
-from .constants import RANKINGS_SCHEME, RANKINGS_URL
+from .constants import RANKINGS_URL
 
 
 class Rankings:
@@ -62,33 +62,82 @@ class Rankings:
         except HTTPError:
             return None
 
-    def _get_team(self, team):
+    def _parse_table_columns(self, page):
         """
-        Retrieve team's name and abbreviation.
-
-        The team's name and abbreviation are embedded within the 'school_name'
-        tag and, in the case of the abbreviation, require special parsing as it
-        is located in the middle of a URI. The name and abbreviation are
-        returned for the requested school.
-
-        Parameters
-        ----------
-        team : PyQuery object
-            A PyQuery object representing a single row in a table on the
-            rankings page.
-
-        Returns
-        -------
-        tuple (string, string)
-            Returns a tuple of two strings where the first string is the team's
-            abbreviation, such as 'PURDUE' and the second string is the team's
-            name, such as 'Purdue'.
+        Build metadata for each week column in the rankings table.
         """
-        name_tag = team('td[data-stat="school_name"]')
-        abbreviation = re.sub(r".*/cbb/schools/", "", str(name_tag("a")))
+        header_rows = page("table#ap-polls thead tr")
+        collapsed_header = header_rows.eq(2)
+        columns = {}
+        for th in collapsed_header("th").items():
+            data_stat = th.attr("data-stat")
+            if not data_stat or not data_stat.startswith("week"):
+                continue
+            try:
+                week_number = int(data_stat.replace("week", ""))
+            except ValueError:
+                continue
+            columns[week_number] = {
+                "stat": data_stat,
+                "date": th.text().strip() or "Final",
+            }
+        return dict(sorted(columns.items()))
+
+    def _parse_team(self, row):
+        link = row('th[data-stat="school"] a')
+        if not link:
+            return None, None
+        href = link.attr("href") or ""
+        abbreviation = re.sub(r".*/cbb/schools/", "", href)
         abbreviation = re.sub(r"/.*", "", abbreviation)
-        name = name_tag.text()
+        name = link.text()
         return abbreviation, name
+
+    def _parse_rank_cell(self, row, data_stat):
+        cell_text = row(f'td[data-stat="{data_stat}"]').text().strip()
+        if not cell_text:
+            return None
+        try:
+            return int(cell_text)
+        except ValueError:
+            return None
+
+    def _previous_week(self, columns, week_number):
+        keys = sorted(columns.keys())
+        try:
+            index = keys.index(week_number)
+        except ValueError:
+            return None
+        if index == 0:
+            return None
+        return keys[index - 1]
+
+    def _build_entry(self, row, week_number, columns):
+        abbreviation, name = self._parse_team(row)
+        if not abbreviation or not name:
+            return None
+        rank = self._parse_rank_cell(row, columns[week_number]["stat"])
+        if rank is None:
+            return None
+        prev_week = self._previous_week(columns, week_number)
+        previous_rank = None
+        if prev_week:
+            previous_rank = self._parse_rank_cell(row, columns[prev_week]["stat"])
+        change = 0
+        if previous_rank is not None:
+            change = previous_rank - rank
+            previous_value = str(previous_rank)
+        else:
+            previous_value = ""
+        return {
+            "abbreviation": abbreviation,
+            "name": name,
+            "rank": rank,
+            "week": week_number,
+            "date": columns[week_number]["date"],
+            "previous": previous_value,
+            "change": change,
+        }
 
     def _find_rankings(self, year):
         """
@@ -109,51 +158,32 @@ class Rankings:
             year = utils.resolve_year_for_url(year, lambda y: RANKINGS_URL % y)
         page = self._pull_rankings_page(year)
         if not page:
-            output = f"Can't pull rankings page. Ensure the following URL exists: {RANKINGS_URL}"
+            output = (
+                f"Can't pull rankings page. Ensure the following URL exists: {RANKINGS_URL % year}"
+            )
             raise ValueError(output)
 
-        def _safe_int(value, default=0):
-            try:
-                return int(value)
-            except (TypeError, ValueError):
-                return default
-
-        rankings = page("table#ap tbody tr").items()
-        weekly_rankings = []
-        week_value = 0
-        for team in rankings:
-            if 'class="thead"' in str(team):
-                self._rankings[week_value] = weekly_rankings
-                weekly_rankings = []
-                continue
-            abbreviation, name = self._get_team(team)
-            rank = utils.parse_field(RANKINGS_SCHEME, team, "rank")
-            week = utils.parse_field(RANKINGS_SCHEME, team, "week")
-            date = utils.parse_field(RANKINGS_SCHEME, team, "date")
-            previous = utils.parse_field(RANKINGS_SCHEME, team, "previous")
-            change = utils.parse_field(RANKINGS_SCHEME, team, "change")
-            week_value = _safe_int(week)
-            rank_value = _safe_int(rank)
-            change_value = _safe_int(change)
-            if "decrease" in str(team(RANKINGS_SCHEME["change"])):
-                change_value = change_value * -1
-            elif "increase" in str(team(RANKINGS_SCHEME["change"])):
-                change_value = change_value
-            else:
-                change_value = 0
-            rank_details = {
-                "abbreviation": abbreviation,
-                "name": name,
-                "rank": rank_value,
-                "week": week_value,
-                "date": date,
-                "previous": previous,
-                "change": change_value,
-            }
-            weekly_rankings.append(rank_details)
-        # Add the final rankings which is not terminated with another header
-        # row and hence will not hit the first if statement in the loop above.
-        self._rankings[week_value] = weekly_rankings
+        columns = self._parse_table_columns(page)
+        if not columns:
+            return
+        sorted_weeks = sorted(columns.keys())
+        final_week = sorted_weeks[-1]
+        previous_week = sorted_weeks[-2] if len(sorted_weeks) > 1 else None
+        final_rankings = []
+        previous_rankings = []
+        rows = page("table#ap-polls tbody tr").items()
+        for row in rows:
+            final_entry = self._build_entry(row, final_week, columns)
+            if final_entry:
+                final_rankings.append(final_entry)
+            if previous_week:
+                previous_entry = self._build_entry(row, previous_week, columns)
+                if previous_entry:
+                    previous_rankings.append(previous_entry)
+        if final_rankings:
+            self._rankings[final_week] = sorted(final_rankings, key=lambda item: item["rank"])
+        if previous_rankings:
+            self._rankings[previous_week] = sorted(previous_rankings, key=lambda item: item["rank"])
 
     @property
     def current_extended(self):
