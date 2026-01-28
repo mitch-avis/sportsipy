@@ -28,6 +28,22 @@
     "path": "conferences/ncaab/2018.html"
   },
   {
+    "contains": "/cfb/conferences/acc/2018.html",
+    "path": "conferences/ncaaf/2018-acc.html"
+  },
+  {
+    "contains": "/cfb/conferences/sec/2018.html",
+    "path": "conferences/ncaaf/2018-sec.html"
+  },
+  {
+    "contains": "/cbb/conferences/big-12/2018.html",
+    "path": "conferences/ncaab/2018-big-12.html"
+  },
+  {
+    "contains": "/cbb/conferences/big-east/2018.html",
+    "path": "conferences/ncaab/2018-big-east.html"
+  },
+  {
     "contains": "/teams/kan/2017/gamelog",
     "path": "teams/nfl_stats/2017_gamelog.html"
   },
