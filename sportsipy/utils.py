@@ -77,6 +77,17 @@ def _env_flag(name: str) -> bool:
     return value.lower() in {"1", "true", "yes", "on"}
 
 
+def offline_mode() -> bool:
+    """
+    Return True when offline fixtures mode is enabled.
+
+    This is a simple helper intended to provide a readable way for other
+    modules to detect that network requests are being redirected to offline
+    fixtures.
+    """
+    return _env_flag("SPORTSIPY_OFFLINE")
+
+
 def _rate_limit_seconds() -> float:
     value = os.environ.get("SPORTSIPY_RATE_LIMIT_SECONDS")
     if value:
