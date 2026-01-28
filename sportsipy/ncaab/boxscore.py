@@ -1766,9 +1766,17 @@ class Boxscores:
         string
             Returns a ``string`` of the team's abbreviation.
         """
-        if "cbb/schools" not in str(abbr):
+        if not abbr:
             return None
-        abbr = re.sub(r".*/schools/", "", str(abbr))
+        href = abbr.attr("href") if hasattr(abbr, "attr") else None
+        if isinstance(href, str) and href:
+            if "cbb/schools" not in href:
+                return None
+            abbr = re.sub(r".*/schools/", "", href)
+        else:
+            if "cbb/schools" not in str(abbr):
+                return None
+            abbr = re.sub(r".*/schools/", "", str(abbr))
         abbr = re.sub(r"/.*", "", abbr)
         return abbr
 
@@ -2052,7 +2060,11 @@ class Boxscores:
             if not page:
                 date_step += timedelta(days=1)
                 continue
-            games = page('table[class="teams"]').items()
+            games = (
+                game
+                for game in page('table[class="teams"]').items()
+                if "gender-f" not in (game.parent().attr("class") or "")
+            )
             boxscores = self._extract_game_info(games)
             timestamp = f"{date_step.month}-{date_step.day}-{date_step.year}"
             self._boxscores[timestamp] = boxscores
