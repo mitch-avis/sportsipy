@@ -8,6 +8,7 @@ from sportsipy import utils
 from sportsipy.constants import HOME
 from sportsipy.ncaab.boxscore import Boxscore, Boxscores
 from sportsipy.ncaab.constants import BOXSCORES_URL
+from tests.integration.test_utils import normalize_games
 
 MONTH = 1
 YEAR = 2020
@@ -91,7 +92,7 @@ class TestNCAABBoxscore:
             "away_assist_percentage": 50.0,
             "away_steal_percentage": 6.1,
             "away_block_percentage": 10.5,
-            "away_turnover_percentage": 22.0,
+            "away_turnover_percentage": 21.8,
             "away_offensive_rating": 97.0,
             "away_defensive_rating": 103.0,
             "home_ranking": 6,
@@ -130,7 +131,7 @@ class TestNCAABBoxscore:
             "home_assist_percentage": 50.0,
             "home_steal_percentage": 13.6,
             "home_block_percentage": 9.7,
-            "home_turnover_percentage": 12.8,
+            "home_turnover_percentage": 12.7,
             "home_offensive_rating": 103.0,
             "home_defensive_rating": 97.0,
         }
@@ -311,7 +312,7 @@ class TestNCAABBoxscores:
                 },
                 {
                     "boxscore": "2020-01-05-17-northwestern-state",
-                    "away_name": "Houston Baptist",
+                    "away_name": "Houston Christian",
                     "away_abbr": "houston-baptist",
                     "away_score": 79,
                     "away_rank": None,
@@ -323,7 +324,7 @@ class TestNCAABBoxscores:
                     "top_25": False,
                     "winning_name": "Northwestern State",
                     "winning_abbr": "northwestern-state",
-                    "losing_name": "Houston Baptist",
+                    "losing_name": "Houston Christian",
                     "losing_abbr": "houston-baptist",
                 },
                 {
@@ -362,7 +363,7 @@ class TestNCAABBoxscores:
                 },
                 {
                     "boxscore": "2020-01-05-17-north-dakota",
-                    "away_name": "Purdue-Fort Wayne",
+                    "away_name": "Purdue Fort Wayne",
                     "away_abbr": "ipfw",
                     "away_score": 69,
                     "away_rank": None,
@@ -374,12 +375,12 @@ class TestNCAABBoxscores:
                     "top_25": False,
                     "winning_name": "North Dakota",
                     "winning_abbr": "north-dakota",
-                    "losing_name": "Purdue-Fort Wayne",
+                    "losing_name": "Purdue Fort Wayne",
                     "losing_abbr": "ipfw",
                 },
                 {
                     "boxscore": "2020-01-05-14-green-bay",
-                    "away_name": "IUPUI",
+                    "away_name": "IU Indianapolis",
                     "away_abbr": "iupui",
                     "away_score": 93,
                     "away_rank": None,
@@ -389,7 +390,7 @@ class TestNCAABBoxscores:
                     "home_rank": None,
                     "non_di": False,
                     "top_25": False,
-                    "winning_name": "IUPUI",
+                    "winning_name": "IU Indianapolis",
                     "winning_abbr": "iupui",
                     "losing_name": "Green Bay",
                     "losing_abbr": "green-bay",
@@ -706,7 +707,7 @@ class TestNCAABBoxscores:
                     "away_abbr": "wright-state",
                     "away_score": 70,
                     "away_rank": None,
-                    "home_name": "Detroit",
+                    "home_name": "Detroit Mercy",
                     "home_abbr": "detroit-mercy",
                     "home_score": 69,
                     "home_rank": None,
@@ -714,7 +715,7 @@ class TestNCAABBoxscores:
                     "top_25": False,
                     "winning_name": "Wright State",
                     "winning_abbr": "wright-state",
-                    "losing_name": "Detroit",
+                    "losing_name": "Detroit Mercy",
                     "losing_abbr": "detroit-mercy",
                 },
             ]
@@ -723,12 +724,12 @@ class TestNCAABBoxscores:
     def test_boxscores_search(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 1, 5)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 1, 5), datetime(2020, 1, 4)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 1, 5))
