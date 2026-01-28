@@ -92,10 +92,11 @@ class Rankings:
             abbreviation, such as 'PURDUE' and the second string is the team's
             name, such as 'Purdue'.
         """
-        name_tag = team('td[data-stat="school_name"]')
-        abbreviation = re.sub(r".*/cfb/schools/", "", str(name_tag("a")))
+        link = team('td[data-stat="school_name"] a')
+        href = link.attr("href") or ""
+        abbreviation = re.sub(r".*/cfb/schools/", "", href)
         abbreviation = re.sub(r"/.*", "", abbreviation)
-        name = team('td[data-stat="school_name"] a').text()
+        name = link.text()
         return abbreviation, name
 
     def _find_rankings(self, year):
@@ -311,10 +312,11 @@ class CFPRankings:
             abbreviation, such as 'PURDUE' and the second string is the team's
             name, such as 'Purdue'.
         """
-        name_tag = team('td[data-stat="school_name"]')
-        abbreviation = re.sub(r".*/cfb/schools/", "", str(name_tag("a")))
+        link = team('td[data-stat="school_name"] a')
+        href = link.attr("href") or ""
+        abbreviation = re.sub(r".*/cfb/schools/", "", href)
         abbreviation = re.sub(r"/.*", "", abbreviation)
-        name = team('td[data-stat="school_name"] a').text()
+        name = link.text()
         return abbreviation, name
 
     def _find_rankings(self, year):
@@ -530,10 +532,11 @@ class CoachesRankings:
             abbreviation, such as 'PURDUE' and the second string is the team's
             name, such as 'Purdue'.
         """
-        name_tag = team('td[data-stat="school_name"]')
-        abbreviation = re.sub(r".*/cfb/schools/", "", str(name_tag("a")))
+        link = team('td[data-stat="school_name"] a')
+        href = link.attr("href") or ""
+        abbreviation = re.sub(r".*/cfb/schools/", "", href)
         abbreviation = re.sub(r"/.*", "", abbreviation)
-        name = team('td[data-stat="school_name"] a').text()
+        name = link.text()
         return abbreviation, name
 
     def _find_rankings(self, year):
