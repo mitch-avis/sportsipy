@@ -92,7 +92,8 @@ class Conference:
             Returns a string of the team's abbreviation, such as 'PURDUE'.
         """
         name_tag = team('th[data-stat="school_name"] a')
-        team_abbreviation = re.sub(r".*/cfb/schools/", "", str(name_tag))
+        team_href = name_tag.attr("href") if hasattr(name_tag, "attr") else ""
+        team_abbreviation = re.sub(r".*/cfb/schools/", "", team_href or str(name_tag))
         team_abbreviation = re.sub(r"/.*", "", team_abbreviation)
         return team_abbreviation
 
@@ -225,7 +226,8 @@ class Conferences:
             Returns a string of the conference abbreviation, such as 'big-12'.
         """
         name_tag = conference('td[data-stat="conf_name"] a')
-        conference_id = re.sub(r".*/cfb/conferences/", "", str(name_tag))
+        conference_href = name_tag.attr("href") if hasattr(name_tag, "attr") else ""
+        conference_id = re.sub(r".*/cfb/conferences/", "", conference_href or str(name_tag))
         conference_id = re.sub(r"/.*", "", conference_id)
         return conference_id
 
@@ -257,8 +259,13 @@ class Conferences:
         conferences = page("table#conferences tbody tr").items()
         for conference in conferences:
             conference_abbreviation = self._get_conference_id(conference)
-            conference_name = conference('td[data-stat="conf_name"]').text()
-            teams_dict = Conference(conference_abbreviation, year, self._ignore_missing).teams
+            conference_name = str(conference('td[data-stat="conf_name"]').text()).strip()
+            try:
+                teams_dict = Conference(conference_abbreviation, year, self._ignore_missing).teams
+            except ValueError as error:
+                if utils.offline_mode():
+                    continue
+                raise error
             conference_dict = {"name": conference_name, "teams": teams_dict}
             for team in teams_dict:
                 self._team_conference[team] = conference_abbreviation
