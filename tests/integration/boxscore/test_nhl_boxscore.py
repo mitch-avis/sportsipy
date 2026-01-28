@@ -8,6 +8,7 @@ from sportsipy import utils
 from sportsipy.constants import AWAY
 from sportsipy.nhl.boxscore import Boxscore, Boxscores
 from sportsipy.nhl.constants import BOXSCORES_URL
+from tests.integration.test_utils import normalize_games
 
 MONTH = 10
 YEAR = 2020
@@ -197,12 +198,12 @@ class TestNHLBoxscores:
     def test_boxscores_search(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 3, 4)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 3, 4), datetime(2020, 3, 3)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_multiple_days(self, *args, **kwargs):
         expected = {
@@ -395,7 +396,7 @@ class TestNHLBoxscores:
         }
         result = Boxscores(datetime(2020, 3, 4), datetime(2020, 3, 5)).games
 
-        assert result == expected
+        assert normalize_games(result) == normalize_games(expected)
 
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 3, 4))
