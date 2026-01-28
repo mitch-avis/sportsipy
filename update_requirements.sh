@@ -15,21 +15,13 @@ fi
 uv self update >/dev/null 2>&1 || true
 
 echo "==> Compiling requirements.txt (upgrade all)"
-uv pip compile \
-  --upgrade \
-  requirements.in \
-  --output-file requirements.txt \
-  --strip-extras
+uv pip compile -U requirements.in -o requirements.txt --strip-extras
 
 echo "==> Installing requirements.txt"
 uv pip install -U -r requirements.txt
 
 echo "==> Compiling requirements-dev.txt (upgrade all)"
-uv pip compile \
-  --upgrade \
-  requirements-dev.in \
-  --output-file requirements-dev.txt \
-  --strip-extras
+uv pip compile -U requirements-dev.in -o requirements-dev.txt --strip-extras
 
 echo "==> Installing requirements-dev.txt"
 uv pip install -U -r requirements-dev.txt
