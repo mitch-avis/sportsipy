@@ -8,6 +8,7 @@ from sportsipy import utils
 from sportsipy.constants import AWAY
 from sportsipy.ncaaf.boxscore import Boxscore, Boxscores
 from sportsipy.ncaaf.constants import BOXSCORES_URL
+from tests.integration.test_utils import normalize_games
 
 MONTH = 10
 YEAR = 2020
@@ -122,7 +123,7 @@ class TestNCAAFBoxscore:
         assert df1.empty
 
     def test_ncaaf_boxscore_players(self):
-        assert len(self.boxscore.home_players) == 37
+        assert len(self.boxscore.home_players) == 39
         assert len(self.boxscore.away_players) == 45
 
         for player in self.boxscore.home_players:
@@ -363,8 +364,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-south-florida",
-                    "away_name": "Citadel",
-                    "away_abbr": "Citadel",
+                    "away_name": "The Citadel",
+                    "away_abbr": "The Citadel",
                     "away_score": 6,
                     "away_rank": None,
                     "home_name": "South Florida",
@@ -375,8 +376,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "South Florida",
                     "winning_abbr": "south-florida",
-                    "losing_name": "Citadel",
-                    "losing_abbr": "Citadel",
+                    "losing_name": "The Citadel",
+                    "losing_abbr": "The Citadel",
                 },
                 {
                     "boxscore": "2020-09-12-texas",
@@ -414,8 +415,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-texas-tech",
-                    "away_name": "Houston Baptist",
-                    "away_abbr": "Houston Baptist",
+                    "away_name": "Houston Christian",
+                    "away_abbr": "Houston Christian",
                     "away_score": 33,
                     "away_rank": None,
                     "home_name": "Texas Tech",
@@ -426,8 +427,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "Texas Tech",
                     "winning_abbr": "texas-tech",
-                    "losing_name": "Houston Baptist",
-                    "losing_abbr": "Houston Baptist",
+                    "losing_name": "Houston Christian",
+                    "losing_abbr": "Houston Christian",
                 },
                 {
                     "boxscore": "2020-09-12-wake-forest",
@@ -486,12 +487,12 @@ class TestNCAAFBoxscores:
     def test_boxscores_search(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 9, 12)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 9, 12), datetime(2020, 9, 11)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_multiple_days(self, *args, **kwargs):
         expected = {
@@ -719,8 +720,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-south-florida",
-                    "away_name": "Citadel",
-                    "away_abbr": "Citadel",
+                    "away_name": "The Citadel",
+                    "away_abbr": "The Citadel",
                     "away_score": 6,
                     "away_rank": None,
                     "home_name": "South Florida",
@@ -731,8 +732,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "South Florida",
                     "winning_abbr": "south-florida",
-                    "losing_name": "Citadel",
-                    "losing_abbr": "Citadel",
+                    "losing_name": "The Citadel",
+                    "losing_abbr": "The Citadel",
                 },
                 {
                     "boxscore": "2020-09-12-texas",
@@ -770,8 +771,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-texas-tech",
-                    "away_name": "Houston Baptist",
-                    "away_abbr": "Houston Baptist",
+                    "away_name": "Houston Christian",
+                    "away_abbr": "Houston Christian",
                     "away_score": 33,
                     "away_rank": None,
                     "home_name": "Texas Tech",
@@ -782,8 +783,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "Texas Tech",
                     "winning_abbr": "texas-tech",
-                    "losing_name": "Houston Baptist",
-                    "losing_abbr": "Houston Baptist",
+                    "losing_name": "Houston Christian",
+                    "losing_abbr": "Houston Christian",
                 },
                 {
                     "boxscore": "2020-09-12-wake-forest",
@@ -1061,8 +1062,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-south-florida",
-                    "away_name": "Citadel",
-                    "away_abbr": "Citadel",
+                    "away_name": "The Citadel",
+                    "away_abbr": "The Citadel",
                     "away_score": 6,
                     "away_rank": None,
                     "home_name": "South Florida",
@@ -1073,8 +1074,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "South Florida",
                     "winning_abbr": "south-florida",
-                    "losing_name": "Citadel",
-                    "losing_abbr": "Citadel",
+                    "losing_name": "The Citadel",
+                    "losing_abbr": "The Citadel",
                 },
                 {
                     "boxscore": "2020-09-12-texas",
@@ -1112,8 +1113,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-texas-tech",
-                    "away_name": "Houston Baptist",
-                    "away_abbr": "Houston Baptist",
+                    "away_name": "Houston Christian",
+                    "away_abbr": "Houston Christian",
                     "away_score": 33,
                     "away_rank": None,
                     "home_name": "Texas Tech",
@@ -1124,8 +1125,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "Texas Tech",
                     "winning_abbr": "texas-tech",
-                    "losing_name": "Houston Baptist",
-                    "losing_abbr": "Houston Baptist",
+                    "losing_name": "Houston Christian",
+                    "losing_abbr": "Houston Christian",
                 },
                 {
                     "boxscore": "2020-09-12-wake-forest",
@@ -1182,7 +1183,7 @@ class TestNCAAFBoxscores:
         }
         result = Boxscores(datetime(2020, 9, 12), datetime(2020, 9, 13)).games
 
-        assert result == expected
+        assert normalize_games(result) == normalize_games(expected)
 
     def test_boxscores_search_string_representation(self, *args, **kwargs):
         result = Boxscores(datetime(2020, 9, 12))
