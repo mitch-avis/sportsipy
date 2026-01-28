@@ -15,3 +15,18 @@ def normalize_games(games):
         )
         for date, day_games in games.items()
     }
+
+
+def normalize_rankings_entries(entries):
+    """Strip non-deterministic fields before comparing ranking rows."""
+    normalized = []
+    for entry in entries:
+        copy = {k: v for k, v in entry.items() if k != "date"}
+        normalized.append(copy)
+    return sorted(normalized, key=lambda row: (row.get("rank"), row.get("name")))
+
+
+def normalize_rankings_complete(complete):
+    return {
+        week: normalize_rankings_entries(week_entries) for week, week_entries in complete.items()
+    }
