@@ -685,6 +685,36 @@ class Boxscore:
             setattr(self, field, value)
         self._away_players, self._home_players = self._find_players(boxscore)
 
+        # Fallback: if pace is not present in the HTML, estimate it using the official
+        # sports-reference Poss/Pace formulas:
+        # Poss = 0.5 * (FGA + 0.475 * FTA - ORB + TOV) + \
+        #        0.5 * (Opp FGA + 0.475 * Opp FTA - Opp ORB + Opp TOV)
+        # Pace = 40 * (Poss / (0.2 * TeamMP))
+        if self._pace is None:
+            try:
+                afga = self.away_field_goal_attempts or 0
+                afta = self.away_free_throw_attempts or 0
+                aorb = self.away_offensive_rebounds or 0
+                atov = self.away_turnovers or 0
+
+                hfga = self.home_field_goal_attempts or 0
+                hfta = self.home_free_throw_attempts or 0
+                horb = self.home_offensive_rebounds or 0
+                htov = self.home_turnovers or 0
+
+                # Compute per-team possessions using the formula
+                team_poss = 0.5 * (afga + 0.475 * afta - aorb + atov)
+                opp_poss = 0.5 * (hfga + 0.475 * hfta - horb + htov)
+                poss = team_poss + opp_poss
+
+                minutes = self.away_minutes_played or self.home_minutes_played or 200
+                denom = 0.2 * minutes
+                if denom and poss is not None:
+                    pace_val = 40 * (poss / denom)
+                    self._pace = round(pace_val, 1)
+            except Exception:
+                pass
+
     @property
     def dataframe(self):
         """
