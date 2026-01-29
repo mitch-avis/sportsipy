@@ -33,7 +33,7 @@ def mock_pyquery(url, timeout=None):
                 return read_file("playoff_table.html")
             return read_file("table.html")
 
-    schedule = read_file("gamelog")
+    schedule = read_file("gamelog.html")
     return MockPQ(schedule)
 
 
