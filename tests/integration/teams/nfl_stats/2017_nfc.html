@@ -1,5 +1,5 @@
-<table class="sortable stats_table" id="NFC" data-cols-to-freeze=1>
-    <caption>NFC Standings Table</caption>
+<table class="sortable stats_table now_sortable" id="NFC" data-cols-to-freeze=",1">
+    <caption>2017 NFC Standings Table</caption>
     <colgroup>
         <col>
         <col>
@@ -22,9 +22,9 @@
                 data-tip="Games Won">W</th>
             <th aria-label="Losses" data-stat="losses" scope="col" class=" poptip center"
                 data-tip="Games Lost">L</th>
-            <th aria-label="Win-Loss Percentage of teamFor coaches, minimum to qualify for leading is 50 games.After 1972, ties are counted as half-wins and half-losses.Prior, the league didn\'t count them as games in W-L% calculations."
-                data-stat="win_loss_perc" scope="col" class=" poptip hide_non_quals center"
-                data-tip="<b>Win-Loss Percentage of team</b><br>For coaches, minimum to qualify for leading is 50 games.<br>After 1972, ties are counted as half-wins and half-losses.<br>Prior, the league didn\'t count them as games in W-L% calculations.">
+            <th aria-label="W-L%" data-stat="win_loss_perc" scope="col"
+                class=" poptip hide_non_quals center"
+                data-tip="&lt;b&gt;Win-Loss Percentage of team&lt;/b&gt;&lt;br&gt;For coaches, minimum to qualify for leading is 50 games.&lt;br&gt;After 1972, ties are counted as half-wins and half-losses.&lt;br&gt;Prior, the league didn\'t count them as games in W-L% calculations.">
                 W-L%</th>
             <th aria-label="Points For" data-stat="points" scope="col" class=" poptip center"
                 data-tip="Points Scored by team">PF</th>
@@ -32,35 +32,31 @@
                 class=" poptip center" data-tip="Points Scored by opposition">PA</th>
             <th aria-label="Points Differential" data-stat="points_diff" scope="col"
                 class=" poptip center"
-                data-tip="<b>Points Differential</b><br>Points Scored - Points Allowed">PD</th>
-            <th aria-label="Margin of Victory(Points Scored - Points Allowed)/ Games Played"
-                data-stat="mov" scope="col" class=" poptip center"
-                data-tip="<b>Margin of Victory</b><br>(Points Scored - Points Allowed)/ Games Played">
+                data-tip="&lt;b&gt;Points Differential&lt;/b&gt;&lt;br&gt;Points Scored - Points Allowed">
+                PD</th>
+            <th aria-label="MoV" data-stat="mov" scope="col" class=" poptip center"
+                data-tip="&lt;b&gt;Margin of Victory&lt;/b&gt;&lt;br&gt;(Points Scored - Points Allowed)/ Games Played">
                 MoV</th>
-            <th aria-label="Strength of ScheduleAverage quality of opponent as measured by SRS (Simple Rating System)"
-                data-stat="sos_total" scope="col" class=" poptip center"
-                data-tip="<b>Strength of Schedule</b><br>Average quality of opponent as measured by SRS (Simple Rating System)">
+            <th aria-label="SoS" data-stat="sos_total" scope="col" class=" poptip center"
+                data-tip="&lt;b&gt;Strength of Schedule&lt;/b&gt;&lt;br&gt;Average quality of opponent as measured by SRS (Simple Rating System)">
                 SoS</th>
-            <th aria-label="Simple Rating SystemTeam quality relative to average (0.0) as measured by SRS (Simple Rating System)SRS = MoV + SoS = OSRS + DSRSThe difference in SRS can be considered a point spread (add about 2 pt for HFA)"
-                data-stat="srs_total" scope="col" class=" poptip center"
-                data-tip="<b>Simple Rating System</b><br>Team quality relative to average (0.0) as measured by SRS (Simple Rating System)<br>SRS = MoV + SoS = OSRS + DSRS<br>The difference in SRS can be considered a point spread (add about 2 pt for HFA)">
+            <th aria-label="SRS" data-stat="srs_total" scope="col" class=" poptip center"
+                data-tip="&lt;b&gt;Simple Rating System&lt;/b&gt;&lt;br&gt;Team quality relative to average (0.0) as measured by SRS (Simple Rating System)&lt;br&gt;SRS = MoV + SoS = OSRS + DSRS&lt;br&gt;The difference in SRS can be considered a point spread (add about 2 pt for HFA)">
                 SRS</th>
-            <th aria-label="Offensive SRSTeam offense quality relative to average (0.0) as measured by SRS (Simple Rating System)"
-                data-stat="srs_offense" scope="col" class=" poptip center"
-                data-tip="<b>Offensive SRS</b><br>Team offense quality relative to average (0.0) as measured by SRS (Simple Rating System)">
+            <th aria-label="OSRS" data-stat="srs_offense" scope="col" class=" poptip center"
+                data-tip="&lt;b&gt;Offensive SRS&lt;/b&gt;&lt;br&gt;Team offense quality relative to average (0.0) as measured by SRS (Simple Rating System)">
                 OSRS</th>
-            <th aria-label="Defensive SRSTeam defense quality relative to average (0.0) as measured by SRS (Simple Rating System)"
-                data-stat="srs_defense" scope="col" class=" poptip center"
-                data-tip="<b>Defensive SRS</b><br>Team defense quality relative to average (0.0) as measured by SRS (Simple Rating System)">
+            <th aria-label="DSRS" data-stat="srs_defense" scope="col" class=" poptip center"
+                data-tip="&lt;b&gt;Defensive SRS&lt;/b&gt;&lt;br&gt;Team defense quality relative to average (0.0) as measured by SRS (Simple Rating System)">
                 DSRS</th>
         </tr>
-
     </thead>
     <tbody>
-        <tr class="thead onecell">
-            <td class="right left" data-stat="onecell" colspan="12"> NFC East</td>
+        <tr class="thead onecell" data-row="0">
+            <td class="right left" data-stat="onecell" colspan="12"> NFC
+                East</td>
         </tr>
-        <tr>
+        <tr data-row="1">
             <th scope="row" class="left " data-stat="team" csk="21"><a
                     href="/teams/phi/2017.htm">Philadelphia Eagles</a>*</th>
             <td class="right " data-stat="wins">13</td>
@@ -75,7 +71,7 @@
             <td class="right " data-stat="srs_offense">7.0</td>
             <td class="right " data-stat="srs_defense">2.5</td>
         </tr>
-        <tr>
+        <tr data-row="2">
             <th scope="row" class="left " data-stat="team" csk="22"><a
                     href="/teams/dal/2017.htm">Dallas Cowboys</a></th>
             <td class="right " data-stat="wins">9</td>
@@ -90,7 +86,7 @@
             <td class="right " data-stat="srs_offense">0.4</td>
             <td class="right " data-stat="srs_defense">1.2</td>
         </tr>
-        <tr>
+        <tr data-row="3">
             <th scope="row" class="left " data-stat="team" csk="23"><a
                     href="/teams/was/2017.htm">Washington Redskins</a></th>
             <td class="right " data-stat="wins">7</td>
@@ -105,10 +101,9 @@
             <td class="right " data-stat="srs_offense">0.5</td>
             <td class="right " data-stat="srs_defense">-1.8</td>
         </tr>
-        <tr>
+        <tr data-row="4">
             <th scope="row" class="left " data-stat="team" csk="24"><a
-                    href="/teams/nyg/2017.htm">New
-                    York Giants</a></th>
+                    href="/teams/nyg/2017.htm">New York Giants</a></th>
             <td class="right " data-stat="wins">3</td>
             <td class="right " data-stat="losses">13</td>
             <td class="right " data-stat="win_loss_perc">.188</td>
@@ -121,10 +116,11 @@
             <td class="right " data-stat="srs_offense">-6.4</td>
             <td class="right " data-stat="srs_defense">-1.2</td>
         </tr>
-        <tr class="thead onecell">
-            <td class="right left" data-stat="onecell" colspan="12"> NFC North</td>
+        <tr class="thead onecell" data-row="5">
+            <td class="right left" data-stat="onecell" colspan="12"> NFC
+                North</td>
         </tr>
-        <tr>
+        <tr data-row="6">
             <th scope="row" class="left " data-stat="team" csk="26"><a
                     href="/teams/min/2017.htm">Minnesota Vikings</a>*</th>
             <td class="right " data-stat="wins">13</td>
@@ -139,7 +135,7 @@
             <td class="right " data-stat="srs_offense">2.3</td>
             <td class="right " data-stat="srs_defense">6.8</td>
         </tr>
-        <tr>
+        <tr data-row="7">
             <th scope="row" class="left " data-stat="team" csk="27"><a
                     href="/teams/det/2017.htm">Detroit Lions</a></th>
             <td class="right " data-stat="wins">9</td>
@@ -154,10 +150,9 @@
             <td class="right " data-stat="srs_offense">5.2</td>
             <td class="right " data-stat="srs_defense">-2.5</td>
         </tr>
-        <tr>
+        <tr data-row="8">
             <th scope="row" class="left " data-stat="team" csk="28"><a
-                    href="/teams/gnb/2017.htm">Green
-                    Bay Packers</a></th>
+                    href="/teams/gnb/2017.htm">Green Bay Packers</a></th>
             <td class="right " data-stat="wins">7</td>
             <td class="right " data-stat="losses">9</td>
             <td class="right " data-stat="win_loss_perc">.438</td>
@@ -170,7 +165,7 @@
             <td class="right " data-stat="srs_offense">-0.3</td>
             <td class="right " data-stat="srs_defense">-1.6</td>
         </tr>
-        <tr>
+        <tr data-row="9">
             <th scope="row" class="left " data-stat="team" csk="29"><a
                     href="/teams/chi/2017.htm">Chicago Bears</a></th>
             <td class="right " data-stat="wins">5</td>
@@ -185,13 +180,13 @@
             <td class="right " data-stat="srs_offense">-4.6</td>
             <td class="right " data-stat="srs_defense">3.3</td>
         </tr>
-        <tr class="thead onecell">
-            <td class="right left" data-stat="onecell" colspan="12"> NFC South</td>
+        <tr class="thead onecell" data-row="10">
+            <td class="right left" data-stat="onecell" colspan="12"> NFC
+                South</td>
         </tr>
-        <tr>
+        <tr data-row="11">
             <th scope="row" class="left " data-stat="team" csk="31"><a
-                    href="/teams/nor/2017.htm">New
-                    Orleans Saints</a>*</th>
+                    href="/teams/nor/2017.htm">New Orleans Saints</a>*</th>
             <td class="right " data-stat="wins">11</td>
             <td class="right " data-stat="losses">5</td>
             <td class="right " data-stat="win_loss_perc">.688</td>
@@ -204,7 +199,7 @@
             <td class="right " data-stat="srs_offense">7.0</td>
             <td class="right " data-stat="srs_defense">2.2</td>
         </tr>
-        <tr>
+        <tr data-row="12">
             <th scope="row" class="left " data-stat="team" csk="32"><a
                     href="/teams/car/2017.htm">Carolina Panthers</a>+</th>
             <td class="right " data-stat="wins">11</td>
@@ -219,7 +214,7 @@
             <td class="right " data-stat="srs_offense">1.7</td>
             <td class="right " data-stat="srs_defense">2.7</td>
         </tr>
-        <tr>
+        <tr data-row="13">
             <th scope="row" class="left " data-stat="team" csk="33"><a
                     href="/teams/atl/2017.htm">Atlanta Falcons</a>+</th>
             <td class="right " data-stat="wins">10</td>
@@ -234,10 +229,9 @@
             <td class="right " data-stat="srs_offense">1.1</td>
             <td class="right " data-stat="srs_defense">3.2</td>
         </tr>
-        <tr>
+        <tr data-row="14">
             <th scope="row" class="left " data-stat="team" csk="34"><a
-                    href="/teams/tam/2017.htm">Tampa
-                    Bay Buccaneers</a></th>
+                    href="/teams/tam/2017.htm">Tampa Bay Buccaneers</a></th>
             <td class="right " data-stat="wins">5</td>
             <td class="right " data-stat="losses">11</td>
             <td class="right " data-stat="win_loss_perc">.313</td>
@@ -250,13 +244,13 @@
             <td class="right " data-stat="srs_offense">0.4</td>
             <td class="right " data-stat="srs_defense">-1.7</td>
         </tr>
-        <tr class="thead onecell">
-            <td class="right left" data-stat="onecell" colspan="12"> NFC West</td>
+        <tr class="thead onecell" data-row="15">
+            <td class="right left" data-stat="onecell" colspan="12"> NFC
+                West</td>
         </tr>
-        <tr>
+        <tr data-row="16">
             <th scope="row" class="left " data-stat="team" csk="36"><a
-                    href="/teams/ram/2017.htm">Los
-                    Angeles Rams</a>*</th>
+                    href="/teams/ram/2017.htm">Los Angeles Rams</a>*</th>
             <td class="right " data-stat="wins">11</td>
             <td class="right " data-stat="losses">5</td>
             <td class="right " data-stat="win_loss_perc">.688</td>
@@ -269,7 +263,7 @@
             <td class="right " data-stat="srs_offense">8.2</td>
             <td class="right " data-stat="srs_defense">1.0</td>
         </tr>
-        <tr>
+        <tr data-row="17">
             <th scope="row" class="left " data-stat="team" csk="37"><a
                     href="/teams/sea/2017.htm">Seattle Seahawks</a></th>
             <td class="right " data-stat="wins">9</td>
@@ -284,7 +278,7 @@
             <td class="right " data-stat="srs_offense">0.7</td>
             <td class="right " data-stat="srs_defense">1.2</td>
         </tr>
-        <tr>
+        <tr data-row="18">
             <th scope="row" class="left " data-stat="team" csk="38"><a
                     href="/teams/crd/2017.htm">Arizona Cardinals</a></th>
             <td class="right " data-stat="wins">8</td>
@@ -299,10 +293,9 @@
             <td class="right " data-stat="srs_offense">-4.0</td>
             <td class="right " data-stat="srs_defense">0.2</td>
         </tr>
-        <tr>
+        <tr data-row="19">
             <th scope="row" class="left " data-stat="team" csk="39"><a
-                    href="/teams/sfo/2017.htm">San
-                    Francisco 49ers</a></th>
+                    href="/teams/sfo/2017.htm">San Francisco 49ers</a></th>
             <td class="right " data-stat="wins">6</td>
             <td class="right " data-stat="losses">10</td>
             <td class="right " data-stat="win_loss_perc">.375</td>
@@ -315,6 +308,5 @@
             <td class="right " data-stat="srs_offense">-0.8</td>
             <td class="right " data-stat="srs_defense">-2.1</td>
         </tr>
-
     </tbody>
 </table>

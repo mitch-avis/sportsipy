@@ -1,74 +1,1096 @@
-<table class="row_summable sortable stats_table" id="gamelog2017" data-cols-to-freeze=2><caption>Game Logs Table</caption>
-   <colgroup><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col></colgroup>
+<table class="stats_table sortable row_summable soc"
+   id="table_pfr_team-year_game-logs_team-year-regular-season-game-log" data-cols-to-freeze="4,4"
+   data-soc-sum-scope-type="team_game" data-soc-sum-phase-type="reg"
+   data-soc-sum-table-type="TeamGamelog" data-soc-sum-entity-id="nwe"
+   data-soc-sum-params="%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+   data-soc-sum-year="2017">
+   <caption>2017 Regular Season Table</caption>
+   <colgroup>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+      <col>
+   </colgroup>
    <thead>
-      
       <tr class="over_header">
-         <th aria-label="" data-stat="" colspan="8" class=" over_header center" ></th>
-         <th aria-label="" data-stat="header_score" colspan="2" class=" over_header center" >Score</th>
-         <th aria-label="" data-stat="header_pass" colspan="10" class=" over_header center" >Passing</th>
-         <th aria-label="" data-stat="header_rush" colspan="4" class=" over_header center" >Rushing</th>
-         <th aria-label="" data-stat="header_scoring" colspan="4" class=" over_header center" >Scoring</th>
-         <th aria-label="" data-stat="header_punt" colspan="2" class=" over_header center" >Punting</th>
-         <th aria-label="" data-stat="header_downs" colspan="4" class=" over_header center" >Downs</th><th></th>
+         <th aria-label=" " data-stat="header_empty_0" colspan="7"
+            class=" poptip over_header center"></th>
+         <th aria-label="Score" data-stat="header_score" colspan="4"
+            class=" poptip over_header center">Score</th>
+         <th aria-label="Passing" data-stat="header_pass" colspan="10"
+            class=" poptip over_header center">Passing</th>
+         <th aria-label="Rushing" data-stat="header_rush" colspan="4"
+            class=" poptip over_header center">Rushing</th>
+         <th aria-label="Total Offense" data-stat="block_auto_header_Total Offense" colspan="3"
+            class=" poptip over_header center">Total Offense</th>
+         <th aria-label="Kicking" data-stat="block_auto_header_Kicking" colspan="4"
+            class=" poptip over_header center">Kicking</th>
+         <th aria-label="Punting" data-stat="block_auto_header_Punting" colspan="2"
+            class=" poptip over_header center">Punting</th>
+         <th aria-label="First Downs" data-stat="block_auto_header_First Downs" colspan="4"
+            class=" poptip over_header center">First Downs</th>
+         <th aria-label="Downs" data-stat="block_auto_header_Downs" colspan="4"
+            class=" poptip over_header center">Downs</th>
+         <th aria-label="Penalties" data-stat="block_auto_header_Penalties" colspan="2"
+            class=" poptip over_header center">Penalties</th>
+         <th aria-label="Turnovers" data-stat="block_auto_header_Turnovers" colspan="3"
+            class=" poptip over_header center">Turnovers</th>
+         <th></th>
       </tr>
-      
-
-      
       <tr>
-         <th aria-label="Week number in season" data-stat="week_num" scope="col" class=" poptip sort_default_asc sorttable_nosort center" data-tip="Week number in season" >Week</th>
-         <th aria-label="Day" data-stat="game_day_of_week" scope="col" class=" poptip sort_default_asc left" >Day</th>
-         <th aria-label="Date" data-stat="game_date" scope="col" class=" poptip sort_default_asc center" >Date</th>
-         <th aria-label="boxscore_word" data-stat="boxscore_word" scope="col" class=" poptip sort_default_asc center" ></th>
-         <th aria-label="game_outcome" data-stat="game_outcome" scope="col" class=" poptip center" ></th>
-         <th aria-label="OT" data-stat="overtime" scope="col" class=" poptip sort_default_asc left" >OT</th>
-         <th aria-label="game_location" data-stat="game_location" scope="col" class=" poptip sort_default_asc center" ></th>
-         <th aria-label="Opp" data-stat="opp" scope="col" class=" poptip sort_default_asc center" >Opp</th>
-         <th aria-label="Points scored" data-stat="pts_off" scope="col" class=" poptip center" data-tip="Points scored" data-over-header="Score" >Tm</th>
-         <th aria-label="Points allowed" data-stat="pts_def" scope="col" class=" poptip center" data-tip="Points allowed" data-over-header="Score" >Opp</th>
-         <th aria-label="Passes Completed" data-stat="pass_cmp" scope="col" class=" poptip center" data-tip="Passes completed" data-over-header="Passing" >Cmp</th>
-         <th aria-label="Pass Attempts" data-stat="pass_att" scope="col" class=" poptip center" data-tip="Passes attempted" data-over-header="Passing" >Att</th>
-         <th aria-label="Passing Yds" data-stat="pass_yds" scope="col" class=" poptip center" data-tip="Yards Gained by Passing<br>For teams, sack yardage is deducted from this total" data-over-header="Passing" >Yds</th>
-         <th aria-label="Passing TD" data-stat="pass_td" scope="col" class=" poptip center" data-tip="Passing Touchdowns" data-over-header="Passing" >TD</th>
-         <th aria-label="Passes Intercepted" data-stat="pass_int" scope="col" class=" poptip center" data-tip="Interceptions thrown" data-over-header="Passing" >Int</th>
-         <th aria-label="Sacked " data-stat="pass_sacked" scope="col" class=" poptip center" data-tip="Times Sacked (first recorded in 1969, player per game since 1981)" data-over-header="Passing" >Sk</th>
-         <th aria-label="Sacked Yds Lost" data-stat="pass_sacked_yds" scope="col" class=" poptip center" data-tip="Yards lost due to sacks (first recorded in 1969, player per game since 1981)" data-over-header="Passing" >Yds</th>
-         <th aria-label="Yds/Pass Att" data-stat="pass_yds_per_att" scope="col" class=" poptip hide_non_quals center" data-tip="Yards gained per pass attempt <br>Minimum 14 attempts per scheduled game to qualify as leader.<br>Minimum 1500 pass attempts to qualify as career leader." data-over-header="Passing" data-filter="1" data-name="Yds/Pass Att" >Y/A</th>
-         <th aria-label="Pass Completion %" data-stat="pass_cmp_perc" scope="col" class=" poptip hide_non_quals center" data-tip="Percentage of Passes Completed<br>Minimum 14 attempts per scheduled game to qualify as leader.<br />Minimum 1500 pass attempts to qualify as career leader." data-over-header="Passing" data-filter="1" data-name="Pass Completion %" >Cmp%</th>
-         <th aria-label="Passer Rating" data-stat="pass_rating" scope="col" class=" poptip hide_non_quals center" data-tip="Quarterback Rating, see glossary for details<br>Different ratings are used by the NFL and NCAA.<br />Minimum 1500 pass attempts to qualify as career leader, minimum 150 pass attempts for playoffs leader." data-over-header="Passing" data-filter="1" data-name="Passer Rating" >Rate</th>
-         <th aria-label="Rushing Att" data-stat="rush_att" scope="col" class=" poptip center" data-tip="Rushing Attempts (sacks not included in NFL)" data-over-header="Rushing" >Att</th>
-         <th aria-label="Rushing Yds" data-stat="rush_yds" scope="col" class=" poptip center" data-tip="Rushing Yards Gained (sack yardage is not included by NFL)" data-over-header="Rushing" >Yds</th>
-         <th aria-label="Yds/Rushing Att" data-stat="rush_yds_per_att" scope="col" class=" poptip hide_non_quals center" data-tip="Rushing Yards per Attempt<br>Minimum 6.25 rushes per game scheduled to qualify as leader.<br />Minimum 750 rushes to qualify as career leader." data-over-header="Rushing" data-filter="1" data-name="Yds/Rushing Att" >Y/A</th>
-         <th aria-label="Rushing TD" data-stat="rush_td" scope="col" class=" poptip center" data-tip="Rushing Touchdowns" data-over-header="Rushing" >TD</th>
-         <th aria-label="Total Field Goals Made" data-stat="fgm" scope="col" class=" poptip center" data-tip="Total Field Goals Made" data-over-header="Scoring" >FGM</th>
-         <th aria-label="Field Goals Att" data-stat="fga" scope="col" class=" poptip center" data-tip="Field Goals Attempted" data-over-header="Scoring" >FGA</th>
-         <th aria-label="Extra Pt Made" data-stat="xpm" scope="col" class=" poptip center" data-tip="Extra Points Made" data-over-header="Scoring" >XPM</th>
-         <th aria-label="Extra Pt Att" data-stat="xpa" scope="col" class=" poptip center" data-tip="Extra Points Attempted" data-over-header="Scoring" >XPA</th>
-         <th aria-label="Punts" data-stat="punt" scope="col" class=" poptip center" data-tip="Times Punted" data-over-header="Punting" >Pnt</th>
-         <th aria-label="Punting Yds" data-stat="punt_yds" scope="col" class=" poptip center" data-tip="Total Punt Yardage" data-over-header="Punting" >Yds</th>
-         <th aria-label="3rd Down Conversions" data-stat="third_down_success" scope="col" class=" poptip center" data-tip="3rd Down Conversions in game" data-over-header="Downs" >3DConv</th>
-         <th aria-label="3rd Down Attempts" data-stat="third_down_att" scope="col" class=" poptip center" data-tip="3rd Down Attempts in game" data-over-header="Downs" >3DAtt</th>
-         <th aria-label="4th Down Conversions" data-stat="fourth_down_success" scope="col" class=" poptip center" data-tip="4th Down Conversions in game" data-over-header="Downs" >4DConv</th>
-         <th aria-label="4th Down Attempts" data-stat="fourth_down_att" scope="col" class=" poptip center" data-tip="4th Down Attempts in game" data-over-header="Downs" >4DAtt</th>
-         <th aria-label="Time of Possession" data-stat="time_of_poss" scope="col" class=" poptip center" data-tip="Offensive time of possesion" data-over-header="Tot Yds &amp; TO" >ToP</th>
+         <th aria-label="Rk" data-stat="ranker" scope="col" class="ranker poptip center"
+            data-tip="Rank">Rk</th>
+         <th aria-label="Gtm" data-stat="team_game_num_season" scope="col" class=" poptip center"
+            data-tip="&lt;strong&gt;Season Game Number for Team&lt;/strong&gt;&lt;br&gt;Click to see season stats through the&lt;br&gt;end of this game for this player.">
+            Gtm</th>
+         <th aria-label="Week" data-stat="week_num" scope="col" class=" poptip center"
+            data-tip="Week number in season">Week</th>
+         <th aria-label="Date" data-stat="date" scope="col" class=" poptip center">Date</th>
+         <th aria-label="Day" data-stat="game_day_of_week" scope="col" class=" poptip left">Day</th>
+         <th aria-label=" " data-stat="game_location" scope="col" class=" poptip center"></th>
+         <th aria-label="Opp" data-stat="opp_name_abbr" scope="col"
+            class=" poptip sort_default_asc center">Opp</th>
+         <th aria-label="Rslt" data-stat="team_game_result" scope="col" class=" poptip center">Rslt
+         </th>
+         <th aria-label="Pts" data-stat="points" scope="col" class=" poptip center"
+            data-tip="Points Scored by team">Pts</th>
+         <th aria-label="PtsO" data-stat="points_opp" scope="col" class=" poptip center"
+            data-tip="Points Scored by opposition">PtsO</th>
+         <th aria-label="OT" data-stat="overtimes" scope="col" class=" poptip center" data-tip="OT">
+            OT</th>
+         <th aria-label="Cmp" data-stat="pass_cmp" scope="col" class=" poptip center"
+            data-tip="Passes completed">Cmp</th>
+         <th aria-label="Att" data-stat="pass_att" scope="col" class=" poptip center"
+            data-tip="Passes attempted">Att</th>
+         <th aria-label="Cmp%" data-stat="pass_cmp_pct" scope="col"
+            class=" poptip hide_non_quals center"
+            data-tip="Percentage of Passes Completed&lt;br&gt;Minimum 14 attempts per scheduled game to qualify as leader.&lt;br /&gt;Minimum 1500 pass attempts to qualify as career leader."
+            data-filter="1" data-name>Cmp%</th>
+         <th aria-label="Yds" data-stat="pass_yds" scope="col" class=" poptip center"
+            data-tip="Yards Gained by Passing&lt;br&gt;For teams, sack yardage is deducted from this total">
+            Yds</th>
+         <th aria-label="TD" data-stat="pass_td" scope="col" class=" poptip center"
+            data-tip="Passing Touchdowns">TD</th>
+         <th aria-label="Y/A" data-stat="pass_yds_per_att" scope="col"
+            class=" poptip hide_non_quals center"
+            data-tip="Yards gained per pass attempt &lt;br&gt;Minimum 14 attempts per scheduled game to qualify as leader.&lt;br&gt;Minimum 1500 pass attempts to qualify as career leader."
+            data-filter="1" data-name>Y/A</th>
+         <th aria-label="AY/A" data-stat="pass_adj_yds_per_att" scope="col"
+            class=" poptip hide_non_quals center"
+            data-tip="Adjusted Yards gained per pass attempt&lt;br /&gt;(Passing Yards + 20 * Passing TD - 45 * Interceptions) / (Passes Attempted)&lt;br /&gt;Minimum 14 attempts per scheduled game to qualify as leader.&lt;br /&gt;Minimum 1500 pass attempts to qualify as career leader."
+            data-filter="1" data-name>AY/A</th>
+         <th aria-label="Rate" data-stat="pass_rating" scope="col"
+            class=" poptip hide_non_quals center"
+            data-tip="Passer Rating, &lt;a href='https://www.pro-football-reference.com/about/glossary.htm'&gt;see glossary&lt;/a&gt; for details&lt;br&gt;Different ratings are used by the NFL and NCAA.&lt;br /&gt;Minimum 1500 pass attempts to qualify as career leader, minimum 150 pass attempts for playoffs leader."
+            data-filter="1" data-name>Rate</th>
+         <th aria-label="Sk" data-stat="pass_sacked" scope="col" class=" poptip center"
+            data-tip="Times sacked (first recorded in 1969, player per game since 1981)">Sk</th>
+         <th aria-label="Yds" data-stat="pass_sacked_yds" scope="col" class=" poptip center"
+            data-tip="Yards lost due to sacks (first recorded in 1969, player per game since 1981)">
+            Yds</th>
+         <th aria-label="Att" data-stat="rush_att" scope="col" class=" poptip center"
+            data-tip="Rushing Attempts (sacks not included in NFL)">Att</th>
+         <th aria-label="Yds" data-stat="rush_yds" scope="col" class=" poptip center"
+            data-tip="Rushing Yards Gained (sack yardage is not included by NFL)">Yds</th>
+         <th aria-label="TD" data-stat="rush_td" scope="col" class=" poptip center"
+            data-tip="Rushing Touchdowns">TD</th>
+         <th aria-label="Y/A" data-stat="rush_yds_per_att" scope="col"
+            class=" poptip hide_non_quals center"
+            data-tip="Rushing Yards per Attempt&lt;br&gt;Minimum 6.25 rushes per game scheduled to qualify as leader.&lt;br /&gt;Minimum 750 rushes to qualify as career leader."
+            data-filter="1" data-name>Y/A</th>
+         <th aria-label="Ply" data-stat="plays_offense" scope="col" class=" poptip center"
+            data-tip="Offensive Plays: Pass Attempts + Rush Attempts + Times Sacked">Ply</th>
+         <th aria-label="Tot" data-stat="tot_yds" scope="col" class=" poptip center"
+            data-tip="Total Yardage">Tot</th>
+         <th aria-label="Y/P" data-stat="yds_per_play_offense" scope="col" class=" poptip center"
+            data-tip="Yards per Offensive Play&lt;br&gt;(Rush + Pass Yards)/( Pass Attempts + Rush Attempts + Times Sacked)"
+            data-filter="1" data-name>Y/P</th>
+         <th aria-label="FGA" data-stat="fga" scope="col" class=" poptip center"
+            data-tip="Field Goals Attempted">FGA</th>
+         <th aria-label="FGM" data-stat="fgm" scope="col" class=" poptip center"
+            data-tip="Field Goals Made">FGM</th>
+         <th aria-label="XPA" data-stat="xpa" scope="col" class=" poptip center"
+            data-tip="Extra Points Attempted">XPA</th>
+         <th aria-label="XPM" data-stat="xpm" scope="col" class=" poptip center"
+            data-tip="Extra Points Made">XPM</th>
+         <th aria-label="Pnt" data-stat="punt" scope="col" class=" poptip center"
+            data-tip="Times Punted">Pnt</th>
+         <th aria-label="Yds" data-stat="punt_yds" scope="col" class=" poptip center"
+            data-tip="Total Punt Yardage">Yds</th>
+         <th aria-label="Pass" data-stat="first_down_pass" scope="col" class=" poptip center"
+            data-tip="First Downs reached by passing">Pass</th>
+         <th aria-label="Rsh" data-stat="first_down_rush" scope="col" class=" poptip center"
+            data-tip="First Downs reached by rushing">Rsh</th>
+         <th aria-label="Pen" data-stat="first_down_penalty" scope="col" class=" poptip center"
+            data-tip="First Downs reached by penalty">Pen</th>
+         <th aria-label="1stD" data-stat="first_down" scope="col" class=" poptip center"
+            data-tip="1st Downs">1stD</th>
+         <th aria-label="3DConv" data-stat="third_down_success" scope="col" class=" poptip center"
+            data-tip="3rd Down Conversions in game">3DConv</th>
+         <th aria-label="3DAtt" data-stat="third_down_att" scope="col" class=" poptip center"
+            data-tip="3rd Down Attempts in game">3DAtt</th>
+         <th aria-label="4DConv" data-stat="fourth_down_success" scope="col" class=" poptip center"
+            data-tip="4th Down Conversions in game">4DConv</th>
+         <th aria-label="4DAtt" data-stat="fourth_down_att" scope="col" class=" poptip center"
+            data-tip="4th Down Attempts in game">4DAtt</th>
+         <th aria-label="Pen" data-stat="penalties" scope="col" class=" poptip center"
+            data-tip="Penalties committed by team and accepted ">Pen</th>
+         <th aria-label="Yds" data-stat="penalties_yds" scope="col" class=" poptip center"
+            data-tip="Penalties in yards committed by team ">Yds</th>
+         <th aria-label="FL" data-stat="fumbles_lost" scope="col" class=" poptip center"
+            data-tip="Fumbles Lost by Player (since 1994) or Team">FL</th>
+         <th aria-label="Int" data-stat="pass_int" scope="col" class=" poptip center"
+            data-tip="Interceptions thrown">Int</th>
+         <th aria-label="TO" data-stat="turnovers" scope="col" class=" poptip center"
+            data-tip="Team Turnovers Lost">TO</th>
+         <th aria-label="ToP" data-stat="time_of_poss" scope="col" class=" poptip center"
+            data-tip="Offensive time of possesion">ToP</th>
       </tr>
-      
    </thead>
    <tbody>
-<tr id="gamelog2017.1" ><th scope="row" class="right " data-stat="week_num" csk="1" >1</th><td class="left " data-stat="game_day_of_week" >Thu</td><td class="left " data-stat="game_date" csk="2017-09-07" >September 7</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201709070nwe.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >L</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" ></td><td class="left " data-stat="opp" ><a href="/teams/kan/2017.htm">Kansas City Chiefs</a></td><td class="right " data-stat="pts_off" >27</td><td class="right " data-stat="pts_def" >42</td><td class="right " data-stat="pass_cmp" >16</td><td class="right " data-stat="pass_att" >36</td><td class="right " data-stat="pass_yds" >247</td><td class="right " data-stat="pass_td" >0</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >3</td><td class="right " data-stat="pass_sacked_yds" >20</td><td class="right " data-stat="pass_yds_per_att" >6.9</td><td class="right " data-stat="pass_cmp_perc" >44.4</td><td class="right " data-stat="pass_rating" >67.7</td><td class="right " data-stat="rush_att" >35</td><td class="right " data-stat="rush_yds" >124</td><td class="right " data-stat="rush_yds_per_att" >3.5</td><td class="right " data-stat="rush_td" >3</td><td class="right " data-stat="fgm" >2</td><td class="right " data-stat="fga" >2</td><td class="right " data-stat="xpm" >3</td><td class="right " data-stat="xpa" >3</td><td class="right " data-stat="punt" >6</td><td class="right " data-stat="punt_yds" >242</td><td class="right " data-stat="third_down_success" >5</td><td class="right " data-stat="third_down_att" >15</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >2</td><td class="right " data-stat="time_of_poss" >29:46</td></tr>
-<tr id="gamelog2017.2" ><th scope="row" class="right " data-stat="week_num" csk="2" >2</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-09-17" >September 17</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201709170nor.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" >@</td><td class="left " data-stat="opp" ><a href="/teams/nor/2017.htm">New Orleans Saints</a></td><td class="right " data-stat="pts_off" >36</td><td class="right " data-stat="pts_def" >20</td><td class="right " data-stat="pass_cmp" >30</td><td class="right " data-stat="pass_att" >39</td><td class="right " data-stat="pass_yds" >436</td><td class="right " data-stat="pass_td" >3</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >2</td><td class="right " data-stat="pass_sacked_yds" >11</td><td class="right " data-stat="pass_yds_per_att" >11.2</td><td class="right " data-stat="pass_cmp_perc" >76.9</td><td class="right " data-stat="pass_rating" >138.4</td><td class="right " data-stat="rush_att" >31</td><td class="right " data-stat="rush_yds" >119</td><td class="right " data-stat="rush_yds_per_att" >3.8</td><td class="right " data-stat="rush_td" >1</td><td class="right " data-stat="fgm" >3</td><td class="right " data-stat="fga" >3</td><td class="right " data-stat="xpm" >3</td><td class="right " data-stat="xpa" >4</td><td class="right " data-stat="punt" >3</td><td class="right " data-stat="punt_yds" >111</td><td class="right " data-stat="third_down_success" >6</td><td class="right " data-stat="third_down_att" >12</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >0</td><td class="right " data-stat="time_of_poss" >35:06</td></tr>
-<tr id="gamelog2017.3" ><th scope="row" class="right " data-stat="week_num" csk="3" >3</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-09-24" >September 24</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201709240nwe.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" ></td><td class="left " data-stat="opp" ><a href="/teams/htx/2017.htm">Houston Texans</a></td><td class="right " data-stat="pts_off" >36</td><td class="right " data-stat="pts_def" >33</td><td class="right " data-stat="pass_cmp" >25</td><td class="right " data-stat="pass_att" >35</td><td class="right " data-stat="pass_yds" >337</td><td class="right " data-stat="pass_td" >5</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >5</td><td class="right " data-stat="pass_sacked_yds" >41</td><td class="right " data-stat="pass_yds_per_att" >9.6</td><td class="right " data-stat="pass_cmp_perc" >71.4</td><td class="right " data-stat="pass_rating" >141.3</td><td class="right " data-stat="rush_att" >20</td><td class="right " data-stat="rush_yds" >59</td><td class="right " data-stat="rush_yds_per_att" >3.0</td><td class="right " data-stat="rush_td" >0</td><td class="right " data-stat="fgm" >0</td><td class="right " data-stat="fga" >0</td><td class="right " data-stat="xpm" >4</td><td class="right " data-stat="xpa" >4</td><td class="right " data-stat="punt" >6</td><td class="right " data-stat="punt_yds" >272</td><td class="right " data-stat="third_down_success" >6</td><td class="right " data-stat="third_down_att" >13</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >0</td><td class="right " data-stat="time_of_poss" >26:22</td></tr>
-<tr id="gamelog2017.4" ><th scope="row" class="right " data-stat="week_num" csk="4" >4</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-10-01" >October 1</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201710010nwe.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >L</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" ></td><td class="left " data-stat="opp" ><a href="/teams/car/2017.htm">Carolina Panthers</a></td><td class="right " data-stat="pts_off" >30</td><td class="right " data-stat="pts_def" >33</td><td class="right " data-stat="pass_cmp" >32</td><td class="right " data-stat="pass_att" >45</td><td class="right " data-stat="pass_yds" >293</td><td class="right " data-stat="pass_td" >2</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >3</td><td class="right " data-stat="pass_sacked_yds" >14</td><td class="right " data-stat="pass_yds_per_att" >6.5</td><td class="right " data-stat="pass_cmp_perc" >71.1</td><td class="right " data-stat="pass_rating" >103.3</td><td class="right " data-stat="rush_att" >19</td><td class="right " data-stat="rush_yds" >80</td><td class="right " data-stat="rush_yds_per_att" >4.2</td><td class="right " data-stat="rush_td" >1</td><td class="right " data-stat="fgm" >3</td><td class="right " data-stat="fga" >3</td><td class="right " data-stat="xpm" >3</td><td class="right " data-stat="xpa" >3</td><td class="right " data-stat="punt" >3</td><td class="right " data-stat="punt_yds" >135</td><td class="right " data-stat="third_down_success" >7</td><td class="right " data-stat="third_down_att" >14</td><td class="right " data-stat="fourth_down_success" >2</td><td class="right " data-stat="fourth_down_att" >2</td><td class="right " data-stat="time_of_poss" >31:07</td></tr>
-<tr id="gamelog2017.5" ><th scope="row" class="right " data-stat="week_num" csk="5" >5</th><td class="left " data-stat="game_day_of_week" >Thu</td><td class="left " data-stat="game_date" csk="2017-10-05" >October 5</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201710050tam.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" >@</td><td class="left " data-stat="opp" ><a href="/teams/tam/2017.htm">Tampa Bay Buccaneers</a></td><td class="right " data-stat="pts_off" >19</td><td class="right " data-stat="pts_def" >14</td><td class="right " data-stat="pass_cmp" >30</td><td class="right " data-stat="pass_att" >40</td><td class="right " data-stat="pass_yds" >289</td><td class="right " data-stat="pass_td" >1</td><td class="right " data-stat="pass_int" >1</td><td class="right " data-stat="pass_sacked" >3</td><td class="right " data-stat="pass_sacked_yds" >14</td><td class="right " data-stat="pass_yds_per_att" >7.2</td><td class="right " data-stat="pass_cmp_perc" >75</td><td class="right " data-stat="pass_rating" >92.6</td><td class="right " data-stat="rush_att" >23</td><td class="right " data-stat="rush_yds" >113</td><td class="right " data-stat="rush_yds_per_att" >4.9</td><td class="right " data-stat="rush_td" >0</td><td class="right " data-stat="fgm" >4</td><td class="right " data-stat="fga" >4</td><td class="right " data-stat="xpm" >1</td><td class="right " data-stat="xpa" >1</td><td class="right " data-stat="punt" >4</td><td class="right " data-stat="punt_yds" >188</td><td class="right " data-stat="third_down_success" >4</td><td class="right " data-stat="third_down_att" >12</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >0</td><td class="right " data-stat="time_of_poss" >30:50</td></tr>
-<tr id="gamelog2017.6" ><th scope="row" class="right " data-stat="week_num" csk="6" >6</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-10-15" >October 15</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201710150nyj.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" >@</td><td class="left " data-stat="opp" ><a href="/teams/nyj/2017.htm">New York Jets</a></td><td class="right " data-stat="pts_off" >24</td><td class="right " data-stat="pts_def" >17</td><td class="right " data-stat="pass_cmp" >20</td><td class="right " data-stat="pass_att" >38</td><td class="right " data-stat="pass_yds" >257</td><td class="right " data-stat="pass_td" >2</td><td class="right " data-stat="pass_int" >1</td><td class="right " data-stat="pass_sacked" >0</td><td class="right " data-stat="pass_sacked_yds" >0</td><td class="right " data-stat="pass_yds_per_att" >6.8</td><td class="right " data-stat="pass_cmp_perc" >52.6</td><td class="right " data-stat="pass_rating" >80.7</td><td class="right " data-stat="rush_att" >25</td><td class="right " data-stat="rush_yds" >118</td><td class="right " data-stat="rush_yds_per_att" >4.7</td><td class="right " data-stat="rush_td" >1</td><td class="right " data-stat="fgm" >1</td><td class="right " data-stat="fga" >2</td><td class="right " data-stat="xpm" >3</td><td class="right " data-stat="xpa" >3</td><td class="right " data-stat="punt" >4</td><td class="right " data-stat="punt_yds" >160</td><td class="right " data-stat="third_down_success" >7</td><td class="right " data-stat="third_down_att" >13</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >0</td><td class="right " data-stat="time_of_poss" >26:20</td></tr>
-<tr id="gamelog2017.7" ><th scope="row" class="right " data-stat="week_num" csk="7" >7</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-10-22" >October 22</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201710220nwe.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" ></td><td class="left " data-stat="opp" ><a href="/teams/atl/2017.htm">Atlanta Falcons</a></td><td class="right " data-stat="pts_off" >23</td><td class="right " data-stat="pts_def" >7</td><td class="right " data-stat="pass_cmp" >21</td><td class="right " data-stat="pass_att" >29</td><td class="right " data-stat="pass_yds" >241</td><td class="right " data-stat="pass_td" >2</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >2</td><td class="right " data-stat="pass_sacked_yds" >8</td><td class="right " data-stat="pass_yds_per_att" >8.3</td><td class="right " data-stat="pass_cmp_perc" >72.4</td><td class="right " data-stat="pass_rating" >120.0</td><td class="right " data-stat="rush_att" >36</td><td class="right " data-stat="rush_yds" >162</td><td class="right " data-stat="rush_yds_per_att" >4.5</td><td class="right " data-stat="rush_td" >0</td><td class="right " data-stat="fgm" >3</td><td class="right " data-stat="fga" >3</td><td class="right " data-stat="xpm" >2</td><td class="right " data-stat="xpa" >2</td><td class="right " data-stat="punt" >2</td><td class="right " data-stat="punt_yds" >100</td><td class="right " data-stat="third_down_success" >7</td><td class="right " data-stat="third_down_att" >13</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >0</td><td class="right " data-stat="time_of_poss" >34:05</td></tr>
-<tr id="gamelog2017.8" ><th scope="row" class="right " data-stat="week_num" csk="8" >8</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-10-29" >October 29</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201710290nwe.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" ></td><td class="left " data-stat="opp" ><a href="/teams/sdg/2017.htm">Los Angeles Chargers</a></td><td class="right " data-stat="pts_off" >21</td><td class="right " data-stat="pts_def" >13</td><td class="right " data-stat="pass_cmp" >32</td><td class="right " data-stat="pass_att" >47</td><td class="right " data-stat="pass_yds" >317</td><td class="right " data-stat="pass_td" >1</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >3</td><td class="right " data-stat="pass_sacked_yds" >16</td><td class="right " data-stat="pass_yds_per_att" >6.7</td><td class="right " data-stat="pass_cmp_perc" >68.1</td><td class="right " data-stat="pass_rating" >94.0</td><td class="right " data-stat="rush_att" >32</td><td class="right " data-stat="rush_yds" >97</td><td class="right " data-stat="rush_yds_per_att" >3.0</td><td class="right " data-stat="rush_td" >0</td><td class="right " data-stat="fgm" >4</td><td class="right " data-stat="fga" >6</td><td class="right " data-stat="xpm" >1</td><td class="right " data-stat="xpa" >1</td><td class="right " data-stat="punt" >3</td><td class="right " data-stat="punt_yds" >130</td><td class="right " data-stat="third_down_success" >9</td><td class="right " data-stat="third_down_att" >19</td><td class="right " data-stat="fourth_down_success" >1</td><td class="right " data-stat="fourth_down_att" >1</td><td class="right " data-stat="time_of_poss" >36:59</td></tr>
-<tr id="gamelog2017.10" ><th scope="row" class="right " data-stat="week_num" csk="9" >10</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-11-12" >November 12</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201711120den.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" >@</td><td class="left " data-stat="opp" ><a href="/teams/den/2017.htm">Denver Broncos</a></td><td class="right " data-stat="pts_off" >41</td><td class="right " data-stat="pts_def" >16</td><td class="right " data-stat="pass_cmp" >28</td><td class="right " data-stat="pass_att" >37</td><td class="right " data-stat="pass_yds" >297</td><td class="right " data-stat="pass_td" >3</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >1</td><td class="right " data-stat="pass_sacked_yds" >6</td><td class="right " data-stat="pass_yds_per_att" >8.0</td><td class="right " data-stat="pass_cmp_perc" >75.7</td><td class="right " data-stat="pass_rating" >125.6</td><td class="right " data-stat="rush_att" >29</td><td class="right " data-stat="rush_yds" >99</td><td class="right " data-stat="rush_yds_per_att" >3.4</td><td class="right " data-stat="rush_td" >1</td><td class="right " data-stat="fgm" >2</td><td class="right " data-stat="fga" >2</td><td class="right " data-stat="xpm" >5</td><td class="right " data-stat="xpa" >5</td><td class="right " data-stat="punt" >1</td><td class="right " data-stat="punt_yds" >43</td><td class="right " data-stat="third_down_success" >4</td><td class="right " data-stat="third_down_att" >11</td><td class="right " data-stat="fourth_down_success" >1</td><td class="right " data-stat="fourth_down_att" >3</td><td class="right " data-stat="time_of_poss" >29:43</td></tr>
-<tr id="gamelog2017.11" ><th scope="row" class="right " data-stat="week_num" csk="10" >11</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-11-19" >November 19</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201711190rai.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" >@</td><td class="left " data-stat="opp" ><a href="/teams/rai/2017.htm">Oakland Raiders</a></td><td class="right " data-stat="pts_off" >33</td><td class="right " data-stat="pts_def" >8</td><td class="right " data-stat="pass_cmp" >30</td><td class="right " data-stat="pass_att" >37</td><td class="right " data-stat="pass_yds" >332</td><td class="right " data-stat="pass_td" >3</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >1</td><td class="right " data-stat="pass_sacked_yds" >8</td><td class="right " data-stat="pass_yds_per_att" >9.0</td><td class="right " data-stat="pass_cmp_perc" >81.1</td><td class="right " data-stat="pass_rating" >131.1</td><td class="right " data-stat="rush_att" >20</td><td class="right " data-stat="rush_yds" >89</td><td class="right " data-stat="rush_yds_per_att" >4.5</td><td class="right " data-stat="rush_td" >0</td><td class="right " data-stat="fgm" >4</td><td class="right " data-stat="fga" >4</td><td class="right " data-stat="xpm" >3</td><td class="right " data-stat="xpa" >3</td><td class="right " data-stat="punt" >2</td><td class="right " data-stat="punt_yds" >95</td><td class="right " data-stat="third_down_success" >5</td><td class="right " data-stat="third_down_att" >10</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >0</td><td class="right " data-stat="time_of_poss" >27:37</td></tr>
-<tr id="gamelog2017.12" ><th scope="row" class="right " data-stat="week_num" csk="11" >12</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-11-26" >November 26</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201711260nwe.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" ></td><td class="left " data-stat="opp" ><a href="/teams/mia/2017.htm">Miami Dolphins</a></td><td class="right " data-stat="pts_off" >35</td><td class="right " data-stat="pts_def" >17</td><td class="right " data-stat="pass_cmp" >18</td><td class="right " data-stat="pass_att" >28</td><td class="right " data-stat="pass_yds" >221</td><td class="right " data-stat="pass_td" >4</td><td class="right " data-stat="pass_int" >1</td><td class="right " data-stat="pass_sacked" >1</td><td class="right " data-stat="pass_sacked_yds" >6</td><td class="right " data-stat="pass_yds_per_att" >7.9</td><td class="right " data-stat="pass_cmp_perc" >64.3</td><td class="right " data-stat="pass_rating" >113.2</td><td class="right " data-stat="rush_att" >38</td><td class="right " data-stat="rush_yds" >196</td><td class="right " data-stat="rush_yds_per_att" >5.2</td><td class="right " data-stat="rush_td" >1</td><td class="right " data-stat="fgm" >0</td><td class="right " data-stat="fga" >0</td><td class="right " data-stat="xpm" >5</td><td class="right " data-stat="xpa" >5</td><td class="right " data-stat="punt" >3</td><td class="right " data-stat="punt_yds" >122</td><td class="right " data-stat="third_down_success" >5</td><td class="right " data-stat="third_down_att" >12</td><td class="right " data-stat="fourth_down_success" >1</td><td class="right " data-stat="fourth_down_att" >2</td><td class="right " data-stat="time_of_poss" >32:41</td></tr>
-<tr id="gamelog2017.13" ><th scope="row" class="right " data-stat="week_num" csk="12" >13</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-12-03" >December 3</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201712030buf.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" >@</td><td class="left " data-stat="opp" ><a href="/teams/buf/2017.htm">Buffalo Bills</a></td><td class="right " data-stat="pts_off" >23</td><td class="right " data-stat="pts_def" >3</td><td class="right " data-stat="pass_cmp" >21</td><td class="right " data-stat="pass_att" >30</td><td class="right " data-stat="pass_yds" >244</td><td class="right " data-stat="pass_td" >0</td><td class="right " data-stat="pass_int" >1</td><td class="right " data-stat="pass_sacked" >3</td><td class="right " data-stat="pass_sacked_yds" >14</td><td class="right " data-stat="pass_yds_per_att" >8.1</td><td class="right " data-stat="pass_cmp_perc" >70</td><td class="right " data-stat="pass_rating" >80.4</td><td class="right " data-stat="rush_att" >35</td><td class="right " data-stat="rush_yds" >191</td><td class="right " data-stat="rush_yds_per_att" >5.5</td><td class="right " data-stat="rush_td" >2</td><td class="right " data-stat="fgm" >3</td><td class="right " data-stat="fga" >3</td><td class="right " data-stat="xpm" >2</td><td class="right " data-stat="xpa" >2</td><td class="right " data-stat="punt" >3</td><td class="right " data-stat="punt_yds" >105</td><td class="right " data-stat="third_down_success" >5</td><td class="right " data-stat="third_down_att" >12</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >0</td><td class="right " data-stat="time_of_poss" >34:01</td></tr>
-<tr id="gamelog2017.14" ><th scope="row" class="right " data-stat="week_num" csk="13" >14</th><td class="left " data-stat="game_day_of_week" >Mon</td><td class="left " data-stat="game_date" csk="2017-12-11" >December 11</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201712110mia.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >L</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" >@</td><td class="left " data-stat="opp" ><a href="/teams/mia/2017.htm">Miami Dolphins</a></td><td class="right " data-stat="pts_off" >20</td><td class="right " data-stat="pts_def" >27</td><td class="right " data-stat="pass_cmp" >24</td><td class="right " data-stat="pass_att" >43</td><td class="right " data-stat="pass_yds" >223</td><td class="right " data-stat="pass_td" >1</td><td class="right " data-stat="pass_int" >2</td><td class="right " data-stat="pass_sacked" >2</td><td class="right " data-stat="pass_sacked_yds" >10</td><td class="right " data-stat="pass_yds_per_att" >5.2</td><td class="right " data-stat="pass_cmp_perc" >55.8</td><td class="right " data-stat="pass_rating" >58.6</td><td class="right " data-stat="rush_att" >10</td><td class="right " data-stat="rush_yds" >25</td><td class="right " data-stat="rush_yds_per_att" >2.5</td><td class="right " data-stat="rush_td" >1</td><td class="right " data-stat="fgm" >2</td><td class="right " data-stat="fga" >2</td><td class="right " data-stat="xpm" >2</td><td class="right " data-stat="xpa" >2</td><td class="right " data-stat="punt" >7</td><td class="right " data-stat="punt_yds" >334</td><td class="right " data-stat="third_down_success" >0</td><td class="right " data-stat="third_down_att" >11</td><td class="right " data-stat="fourth_down_success" >0</td><td class="right " data-stat="fourth_down_att" >0</td><td class="right " data-stat="time_of_poss" >23:51</td></tr>
-<tr id="gamelog2017.15" ><th scope="row" class="right " data-stat="week_num" csk="14" >15</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-12-17" >December 17</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201712170pit.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" >@</td><td class="left " data-stat="opp" ><a href="/teams/pit/2017.htm">Pittsburgh Steelers</a></td><td class="right " data-stat="pts_off" >27</td><td class="right " data-stat="pts_def" >24</td><td class="right " data-stat="pass_cmp" >22</td><td class="right " data-stat="pass_att" >35</td><td class="right " data-stat="pass_yds" >283</td><td class="right " data-stat="pass_td" >1</td><td class="right " data-stat="pass_int" >1</td><td class="right " data-stat="pass_sacked" >2</td><td class="right " data-stat="pass_sacked_yds" >15</td><td class="right " data-stat="pass_yds_per_att" >8.1</td><td class="right " data-stat="pass_cmp_perc" >62.9</td><td class="right " data-stat="pass_rating" >85.8</td><td class="right " data-stat="rush_att" >19</td><td class="right " data-stat="rush_yds" >77</td><td class="right " data-stat="rush_yds_per_att" >4.1</td><td class="right " data-stat="rush_td" >2</td><td class="right " data-stat="fgm" >2</td><td class="right " data-stat="fga" >2</td><td class="right " data-stat="xpm" >1</td><td class="right " data-stat="xpa" >2</td><td class="right " data-stat="punt" >2</td><td class="right " data-stat="punt_yds" >96</td><td class="right " data-stat="third_down_success" >3</td><td class="right " data-stat="third_down_att" >9</td><td class="right " data-stat="fourth_down_success" >1</td><td class="right " data-stat="fourth_down_att" >1</td><td class="right " data-stat="time_of_poss" >24:53</td></tr>
-<tr id="gamelog2017.16" ><th scope="row" class="right " data-stat="week_num" csk="15" >16</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-12-24" >December 24</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201712240nwe.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" ></td><td class="left " data-stat="opp" ><a href="/teams/buf/2017.htm">Buffalo Bills</a></td><td class="right " data-stat="pts_off" >37</td><td class="right " data-stat="pts_def" >16</td><td class="right " data-stat="pass_cmp" >21</td><td class="right " data-stat="pass_att" >28</td><td class="right " data-stat="pass_yds" >218</td><td class="right " data-stat="pass_td" >2</td><td class="right " data-stat="pass_int" >1</td><td class="right " data-stat="pass_sacked" >2</td><td class="right " data-stat="pass_sacked_yds" >6</td><td class="right " data-stat="pass_yds_per_att" >7.8</td><td class="right " data-stat="pass_cmp_perc" >75</td><td class="right " data-stat="pass_rating" >106.0</td><td class="right " data-stat="rush_att" >38</td><td class="right " data-stat="rush_yds" >193</td><td class="right " data-stat="rush_yds_per_att" >5.1</td><td class="right " data-stat="rush_td" >2</td><td class="right " data-stat="fgm" >3</td><td class="right " data-stat="fga" >3</td><td class="right " data-stat="xpm" >4</td><td class="right " data-stat="xpa" >4</td><td class="right " data-stat="punt" >1</td><td class="right " data-stat="punt_yds" >44</td><td class="right " data-stat="third_down_success" >5</td><td class="right " data-stat="third_down_att" >11</td><td class="right " data-stat="fourth_down_success" >1</td><td class="right " data-stat="fourth_down_att" >1</td><td class="right " data-stat="time_of_poss" >31:44</td></tr>
-<tr id="gamelog2017.17" ><th scope="row" class="right " data-stat="week_num" csk="16" >17</th><td class="left " data-stat="game_day_of_week" >Sun</td><td class="left " data-stat="game_date" csk="2017-12-31" >December 31</td><td class="center " data-stat="boxscore_word" ><a href="/boxscores/201712310nwe.htm">boxscore</a></td><td class="right " data-stat="game_outcome" >W</td><td class="left " data-stat="overtime" ></td><td class="right " data-stat="game_location" ></td><td class="left " data-stat="opp" ><a href="/teams/nyj/2017.htm">New York Jets</a></td><td class="right " data-stat="pts_off" >26</td><td class="right " data-stat="pts_def" >6</td><td class="right " data-stat="pass_cmp" >19</td><td class="right " data-stat="pass_att" >40</td><td class="right " data-stat="pass_yds" >183</td><td class="right " data-stat="pass_td" >2</td><td class="right " data-stat="pass_int" >0</td><td class="right " data-stat="pass_sacked" >2</td><td class="right " data-stat="pass_sacked_yds" >12</td><td class="right " data-stat="pass_yds_per_att" >4.6</td><td class="right " data-stat="pass_cmp_perc" >47.5</td><td class="right " data-stat="pass_rating" >77.4</td><td class="right " data-stat="rush_att" >38</td><td class="right " data-stat="rush_yds" >147</td><td class="right " data-stat="rush_yds_per_att" >3.9</td><td class="right " data-stat="rush_td" >1</td><td class="right " data-stat="fgm" >1</td><td class="right " data-stat="fga" >1</td><td class="right " data-stat="xpm" >3</td><td class="right " data-stat="xpa" >3</td><td class="right " data-stat="punt" >8</td><td class="right " data-stat="punt_yds" >338</td><td class="right " data-stat="third_down_success" >4</td><td class="right " data-stat="third_down_att" >15</td><td class="right " data-stat="fourth_down_success" >1</td><td class="right " data-stat="fourth_down_att" >1</td><td class="right " data-stat="time_of_poss" >34:49</td></tr>
-
-</tbody></table>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.1">
+         <th scope="row" class="right " data-stat="ranker" csk="1">1</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=1&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">1</td>
+         <td class="right " data-stat="week_num">1</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201709070nwe.htm">2017-09-07</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Thu</td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/kan/2017.htm">KAN</a></td>
+         <td class="right " data-stat="team_game_result" csk="-14.7300000000">L</td>
+         <td class="right " data-stat="points">27</td>
+         <td class="right " data-stat="points_opp">42</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">16</td>
+         <td class="right " data-stat="pass_att">36</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.4444444444">44.4</td>
+         <td class="right " data-stat="pass_yds">247</td>
+         <td class="right iz" data-stat="pass_td">0</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="6.8611111111">6.9</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="6.86111111111">6.86</td>
+         <td class="right " data-stat="pass_rating" csk="67.7">67.7</td>
+         <td class="right " data-stat="pass_sacked">3</td>
+         <td class="right " data-stat="pass_sacked_yds">20</td>
+         <td class="right " data-stat="rush_att">35</td>
+         <td class="right " data-stat="rush_yds">124</td>
+         <td class="right " data-stat="rush_td">3</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="3.5428571429">3.5</td>
+         <td class="right " data-stat="plays_offense">74</td>
+         <td class="right " data-stat="tot_yds">371</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="5.0135135135">5.01</td>
+         <td class="right " data-stat="fga">2</td>
+         <td class="right " data-stat="fgm">2</td>
+         <td class="right " data-stat="xpa">3</td>
+         <td class="right " data-stat="xpm">3</td>
+         <td class="right " data-stat="punt">6</td>
+         <td class="right " data-stat="punt_yds">242</td>
+         <td class="right " data-stat="first_down_pass">11</td>
+         <td class="right " data-stat="first_down_rush">10</td>
+         <td class="right " data-stat="first_down_penalty">4</td>
+         <td class="right " data-stat="first_down">25</td>
+         <td class="right " data-stat="third_down_success">5</td>
+         <td class="right " data-stat="third_down_att">15</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right " data-stat="fourth_down_att">2</td>
+         <td class="right " data-stat="penalties">6</td>
+         <td class="right " data-stat="penalties_yds">55</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right iz" data-stat="turnovers">0</td>
+         <td class="right " data-stat="time_of_poss">29:46</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.2">
+         <th scope="row" class="right " data-stat="ranker" csk="2">2</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=2&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">2</td>
+         <td class="right " data-stat="week_num">2</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201709170nor.htm">2017-09-17</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location">@</td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/nor/2017.htm">NOR</a></td>
+         <td class="right " data-stat="team_game_result" csk="16.3600000000">W</td>
+         <td class="right " data-stat="points">36</td>
+         <td class="right " data-stat="points_opp">20</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">30</td>
+         <td class="right " data-stat="pass_att">39</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.7692307692">76.9</td>
+         <td class="right " data-stat="pass_yds">436</td>
+         <td class="right " data-stat="pass_td">3</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="11.1794871795">11.2</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="12.71794871795">12.72</td>
+         <td class="right " data-stat="pass_rating" csk="138.4">138.4</td>
+         <td class="right " data-stat="pass_sacked">2</td>
+         <td class="right " data-stat="pass_sacked_yds">11</td>
+         <td class="right " data-stat="rush_att">31</td>
+         <td class="right " data-stat="rush_yds">119</td>
+         <td class="right " data-stat="rush_td">1</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="3.8387096774">3.8</td>
+         <td class="right " data-stat="plays_offense">72</td>
+         <td class="right " data-stat="tot_yds">555</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="7.7083333333">7.71</td>
+         <td class="right " data-stat="fga">3</td>
+         <td class="right " data-stat="fgm">3</td>
+         <td class="right " data-stat="xpa">4</td>
+         <td class="right " data-stat="xpm">3</td>
+         <td class="right " data-stat="punt">3</td>
+         <td class="right " data-stat="punt_yds">111</td>
+         <td class="right " data-stat="first_down_pass">19</td>
+         <td class="right " data-stat="first_down_rush">8</td>
+         <td class="right " data-stat="first_down_penalty">2</td>
+         <td class="right " data-stat="first_down">29</td>
+         <td class="right " data-stat="third_down_success">6</td>
+         <td class="right " data-stat="third_down_att">12</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right iz" data-stat="fourth_down_att">0</td>
+         <td class="right " data-stat="penalties">9</td>
+         <td class="right " data-stat="penalties_yds">66</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right iz" data-stat="turnovers">0</td>
+         <td class="right " data-stat="time_of_poss">35:06</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.3">
+         <th scope="row" class="right " data-stat="ranker" csk="3">3</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=3&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">3</td>
+         <td class="right " data-stat="week_num">3</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201709240nwe.htm">2017-09-24</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/htx/2017.htm">HOU</a></td>
+         <td class="right " data-stat="team_game_result" csk="3.3600000000">W</td>
+         <td class="right " data-stat="points">36</td>
+         <td class="right " data-stat="points_opp">33</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">25</td>
+         <td class="right " data-stat="pass_att">35</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.7142857143">71.4</td>
+         <td class="right " data-stat="pass_yds">337</td>
+         <td class="right " data-stat="pass_td">5</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="9.6285714286">9.6</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="12.48571428571">12.49</td>
+         <td class="right " data-stat="pass_rating" csk="141.3">141.3</td>
+         <td class="right " data-stat="pass_sacked">5</td>
+         <td class="right " data-stat="pass_sacked_yds">41</td>
+         <td class="right " data-stat="rush_att">20</td>
+         <td class="right " data-stat="rush_yds">59</td>
+         <td class="right iz" data-stat="rush_td">0</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="2.9500000000">3.0</td>
+         <td class="right " data-stat="plays_offense">60</td>
+         <td class="right " data-stat="tot_yds">396</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="6.6000000000">6.60</td>
+         <td class="right iz" data-stat="fga">0</td>
+         <td class="right iz" data-stat="fgm">0</td>
+         <td class="right " data-stat="xpa">4</td>
+         <td class="right " data-stat="xpm">4</td>
+         <td class="right " data-stat="punt">6</td>
+         <td class="right " data-stat="punt_yds">272</td>
+         <td class="right " data-stat="first_down_pass">16</td>
+         <td class="right " data-stat="first_down_rush">1</td>
+         <td class="right " data-stat="first_down_penalty">4</td>
+         <td class="right " data-stat="first_down">21</td>
+         <td class="right " data-stat="third_down_success">6</td>
+         <td class="right " data-stat="third_down_att">13</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right iz" data-stat="fourth_down_att">0</td>
+         <td class="right " data-stat="penalties">5</td>
+         <td class="right " data-stat="penalties_yds">69</td>
+         <td class="right " data-stat="fumbles_lost">1</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right " data-stat="turnovers">1</td>
+         <td class="right " data-stat="time_of_poss">26:22</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.4">
+         <th scope="row" class="right " data-stat="ranker" csk="4">4</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=4&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">4</td>
+         <td class="right " data-stat="week_num">4</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201710010nwe.htm">2017-10-01</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/car/2017.htm">CAR</a></td>
+         <td class="right " data-stat="team_game_result" csk="-2.7000000000">L</td>
+         <td class="right " data-stat="points">30</td>
+         <td class="right " data-stat="points_opp">33</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">32</td>
+         <td class="right " data-stat="pass_att">45</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.7111111111">71.1</td>
+         <td class="right " data-stat="pass_yds">293</td>
+         <td class="right " data-stat="pass_td">2</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="6.5111111111">6.5</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="7.40000000000">7.40</td>
+         <td class="right " data-stat="pass_rating" csk="103.3">103.3</td>
+         <td class="right " data-stat="pass_sacked">3</td>
+         <td class="right " data-stat="pass_sacked_yds">14</td>
+         <td class="right " data-stat="rush_att">19</td>
+         <td class="right " data-stat="rush_yds">80</td>
+         <td class="right " data-stat="rush_td">1</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="4.2105263158">4.2</td>
+         <td class="right " data-stat="plays_offense">67</td>
+         <td class="right " data-stat="tot_yds">373</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="5.5671641791">5.57</td>
+         <td class="right " data-stat="fga">3</td>
+         <td class="right " data-stat="fgm">3</td>
+         <td class="right " data-stat="xpa">3</td>
+         <td class="right " data-stat="xpm">3</td>
+         <td class="right " data-stat="punt">3</td>
+         <td class="right " data-stat="punt_yds">135</td>
+         <td class="right " data-stat="first_down_pass">18</td>
+         <td class="right " data-stat="first_down_rush">5</td>
+         <td class="right " data-stat="first_down_penalty">1</td>
+         <td class="right " data-stat="first_down">24</td>
+         <td class="right " data-stat="third_down_success">7</td>
+         <td class="right " data-stat="third_down_att">14</td>
+         <td class="right " data-stat="fourth_down_success">2</td>
+         <td class="right " data-stat="fourth_down_att">2</td>
+         <td class="right " data-stat="penalties">7</td>
+         <td class="right " data-stat="penalties_yds">55</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right iz" data-stat="turnovers">0</td>
+         <td class="right " data-stat="time_of_poss">31:07</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.5">
+         <th scope="row" class="right " data-stat="ranker" csk="5">5</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=5&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">5</td>
+         <td class="right " data-stat="week_num">5</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201710050tam.htm">2017-10-05</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Thu</td>
+         <td class="center " data-stat="game_location">@</td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/tam/2017.htm">TAM</a></td>
+         <td class="right " data-stat="team_game_result" csk="5.1900000000">W</td>
+         <td class="right " data-stat="points">19</td>
+         <td class="right " data-stat="points_opp">14</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">30</td>
+         <td class="right " data-stat="pass_att">40</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.7500000000">75.0</td>
+         <td class="right " data-stat="pass_yds">289</td>
+         <td class="right " data-stat="pass_td">1</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="7.2250000000">7.2</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="6.60000000000">6.60</td>
+         <td class="right " data-stat="pass_rating" csk="92.6">92.6</td>
+         <td class="right " data-stat="pass_sacked">3</td>
+         <td class="right " data-stat="pass_sacked_yds">14</td>
+         <td class="right " data-stat="rush_att">23</td>
+         <td class="right " data-stat="rush_yds">113</td>
+         <td class="right iz" data-stat="rush_td">0</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="4.9130434783">4.9</td>
+         <td class="right " data-stat="plays_offense">66</td>
+         <td class="right " data-stat="tot_yds">402</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="6.0909090909">6.09</td>
+         <td class="right " data-stat="fga">4</td>
+         <td class="right " data-stat="fgm">4</td>
+         <td class="right " data-stat="xpa">1</td>
+         <td class="right " data-stat="xpm">1</td>
+         <td class="right " data-stat="punt">4</td>
+         <td class="right " data-stat="punt_yds">188</td>
+         <td class="right " data-stat="first_down_pass">15</td>
+         <td class="right " data-stat="first_down_rush">5</td>
+         <td class="right " data-stat="first_down_penalty">3</td>
+         <td class="right " data-stat="first_down">23</td>
+         <td class="right " data-stat="third_down_success">4</td>
+         <td class="right " data-stat="third_down_att">12</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right iz" data-stat="fourth_down_att">0</td>
+         <td class="right " data-stat="penalties">12</td>
+         <td class="right " data-stat="penalties_yds">108</td>
+         <td class="right " data-stat="fumbles_lost">1</td>
+         <td class="right " data-stat="pass_int">1</td>
+         <td class="right " data-stat="turnovers">2</td>
+         <td class="right " data-stat="time_of_poss">30:50</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.6">
+         <th scope="row" class="right " data-stat="ranker" csk="6">6</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=6&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">6</td>
+         <td class="right " data-stat="week_num">6</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201710150nyj.htm">2017-10-15</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location">@</td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/nyj/2017.htm">NYJ</a></td>
+         <td class="right " data-stat="team_game_result" csk="7.2400000000">W</td>
+         <td class="right " data-stat="points">24</td>
+         <td class="right " data-stat="points_opp">17</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">20</td>
+         <td class="right " data-stat="pass_att">38</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.5263157895">52.6</td>
+         <td class="right " data-stat="pass_yds">257</td>
+         <td class="right " data-stat="pass_td">2</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="6.7631578947">6.8</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="6.63157894737">6.63</td>
+         <td class="right " data-stat="pass_rating" csk="80.7">80.7</td>
+         <td class="right iz" data-stat="pass_sacked">0</td>
+         <td class="right iz" data-stat="pass_sacked_yds">0</td>
+         <td class="right " data-stat="rush_att">25</td>
+         <td class="right " data-stat="rush_yds">118</td>
+         <td class="right " data-stat="rush_td">1</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="4.7200000000">4.7</td>
+         <td class="right " data-stat="plays_offense">63</td>
+         <td class="right " data-stat="tot_yds">375</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="5.9523809524">5.95</td>
+         <td class="right " data-stat="fga">2</td>
+         <td class="right " data-stat="fgm">1</td>
+         <td class="right " data-stat="xpa">3</td>
+         <td class="right " data-stat="xpm">3</td>
+         <td class="right " data-stat="punt">4</td>
+         <td class="right " data-stat="punt_yds">160</td>
+         <td class="right " data-stat="first_down_pass">13</td>
+         <td class="right " data-stat="first_down_rush">6</td>
+         <td class="right " data-stat="first_down_penalty">4</td>
+         <td class="right " data-stat="first_down">23</td>
+         <td class="right " data-stat="third_down_success">7</td>
+         <td class="right " data-stat="third_down_att">13</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right iz" data-stat="fourth_down_att">0</td>
+         <td class="right " data-stat="penalties">6</td>
+         <td class="right " data-stat="penalties_yds">45</td>
+         <td class="right " data-stat="fumbles_lost">1</td>
+         <td class="right " data-stat="pass_int">1</td>
+         <td class="right " data-stat="turnovers">2</td>
+         <td class="right " data-stat="time_of_poss">26:20</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.7">
+         <th scope="row" class="right " data-stat="ranker" csk="7">7</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=7&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">7</td>
+         <td class="right " data-stat="week_num">7</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201710220nwe.htm">2017-10-22</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/atl/2017.htm">ATL</a></td>
+         <td class="right " data-stat="team_game_result" csk="16.2300000000">W</td>
+         <td class="right " data-stat="points">23</td>
+         <td class="right " data-stat="points_opp">7</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">21</td>
+         <td class="right " data-stat="pass_att">29</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.7241379310">72.4</td>
+         <td class="right " data-stat="pass_yds">241</td>
+         <td class="right " data-stat="pass_td">2</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="8.3103448276">8.3</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="9.68965517241">9.69</td>
+         <td class="right " data-stat="pass_rating" csk="120.0">120.0</td>
+         <td class="right " data-stat="pass_sacked">2</td>
+         <td class="right " data-stat="pass_sacked_yds">8</td>
+         <td class="right " data-stat="rush_att">36</td>
+         <td class="right " data-stat="rush_yds">162</td>
+         <td class="right iz" data-stat="rush_td">0</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="4.5000000000">4.5</td>
+         <td class="right " data-stat="plays_offense">67</td>
+         <td class="right " data-stat="tot_yds">403</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="6.0149253731">6.01</td>
+         <td class="right " data-stat="fga">3</td>
+         <td class="right " data-stat="fgm">3</td>
+         <td class="right " data-stat="xpa">2</td>
+         <td class="right " data-stat="xpm">2</td>
+         <td class="right " data-stat="punt">2</td>
+         <td class="right " data-stat="punt_yds">100</td>
+         <td class="right " data-stat="first_down_pass">13</td>
+         <td class="right " data-stat="first_down_rush">9</td>
+         <td class="right " data-stat="first_down_penalty">3</td>
+         <td class="right " data-stat="first_down">25</td>
+         <td class="right " data-stat="third_down_success">7</td>
+         <td class="right " data-stat="third_down_att">13</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right iz" data-stat="fourth_down_att">0</td>
+         <td class="right " data-stat="penalties">8</td>
+         <td class="right " data-stat="penalties_yds">65</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right iz" data-stat="turnovers">0</td>
+         <td class="right " data-stat="time_of_poss">34:05</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.8">
+         <th scope="row" class="right " data-stat="ranker" csk="8">8</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=8&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">8</td>
+         <td class="right " data-stat="week_num">8</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201710290nwe.htm">2017-10-29</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/sdg/2017.htm">LAC</a></td>
+         <td class="right " data-stat="team_game_result" csk="8.2100000000">W</td>
+         <td class="right " data-stat="points">21</td>
+         <td class="right " data-stat="points_opp">13</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">32</td>
+         <td class="right " data-stat="pass_att">47</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.6808510638">68.1</td>
+         <td class="right " data-stat="pass_yds">317</td>
+         <td class="right " data-stat="pass_td">1</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="6.7446808511">6.7</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="7.17021276596">7.17</td>
+         <td class="right " data-stat="pass_rating" csk="94.0">94.0</td>
+         <td class="right " data-stat="pass_sacked">3</td>
+         <td class="right " data-stat="pass_sacked_yds">16</td>
+         <td class="right " data-stat="rush_att">32</td>
+         <td class="right " data-stat="rush_yds">97</td>
+         <td class="right iz" data-stat="rush_td">0</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="3.0312500000">3.0</td>
+         <td class="right " data-stat="plays_offense">82</td>
+         <td class="right " data-stat="tot_yds">414</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="5.0487804878">5.05</td>
+         <td class="right " data-stat="fga">6</td>
+         <td class="right " data-stat="fgm">4</td>
+         <td class="right " data-stat="xpa">1</td>
+         <td class="right " data-stat="xpm">1</td>
+         <td class="right " data-stat="punt">3</td>
+         <td class="right " data-stat="punt_yds">130</td>
+         <td class="right " data-stat="first_down_pass">19</td>
+         <td class="right " data-stat="first_down_rush">5</td>
+         <td class="right " data-stat="first_down_penalty">3</td>
+         <td class="right " data-stat="first_down">27</td>
+         <td class="right " data-stat="third_down_success">9</td>
+         <td class="right " data-stat="third_down_att">19</td>
+         <td class="right " data-stat="fourth_down_success">1</td>
+         <td class="right " data-stat="fourth_down_att">1</td>
+         <td class="right " data-stat="penalties">6</td>
+         <td class="right " data-stat="penalties_yds">80</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right iz" data-stat="turnovers">0</td>
+         <td class="right " data-stat="time_of_poss">36:59</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.9">
+         <th scope="row" class="right " data-stat="ranker" csk="9">9</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=9&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">9</td>
+         <td class="right " data-stat="week_num">10</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201711120den.htm">2017-11-12</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location">@</td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/den/2017.htm">DEN</a></td>
+         <td class="right " data-stat="team_game_result" csk="25.4100000000">W</td>
+         <td class="right " data-stat="points">41</td>
+         <td class="right " data-stat="points_opp">16</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">28</td>
+         <td class="right " data-stat="pass_att">37</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.7567567568">75.7</td>
+         <td class="right " data-stat="pass_yds">297</td>
+         <td class="right " data-stat="pass_td">3</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="8.0270270270">8.0</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="9.64864864865">9.65</td>
+         <td class="right " data-stat="pass_rating" csk="125.6">125.6</td>
+         <td class="right " data-stat="pass_sacked">1</td>
+         <td class="right " data-stat="pass_sacked_yds">6</td>
+         <td class="right " data-stat="rush_att">29</td>
+         <td class="right " data-stat="rush_yds">99</td>
+         <td class="right " data-stat="rush_td">1</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="3.4137931034">3.4</td>
+         <td class="right " data-stat="plays_offense">67</td>
+         <td class="right " data-stat="tot_yds">396</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="5.9104477612">5.91</td>
+         <td class="right " data-stat="fga">2</td>
+         <td class="right " data-stat="fgm">2</td>
+         <td class="right " data-stat="xpa">5</td>
+         <td class="right " data-stat="xpm">5</td>
+         <td class="right " data-stat="punt">1</td>
+         <td class="right " data-stat="punt_yds">43</td>
+         <td class="right " data-stat="first_down_pass">18</td>
+         <td class="right " data-stat="first_down_rush">6</td>
+         <td class="right " data-stat="first_down_penalty">4</td>
+         <td class="right " data-stat="first_down">28</td>
+         <td class="right " data-stat="third_down_success">4</td>
+         <td class="right " data-stat="third_down_att">11</td>
+         <td class="right " data-stat="fourth_down_success">1</td>
+         <td class="right " data-stat="fourth_down_att">3</td>
+         <td class="right " data-stat="penalties">1</td>
+         <td class="right " data-stat="penalties_yds">5</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right iz" data-stat="turnovers">0</td>
+         <td class="right " data-stat="time_of_poss">29:43</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.10">
+         <th scope="row" class="right " data-stat="ranker" csk="10">10</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=10&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">10</td>
+         <td class="right " data-stat="week_num">11</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201711190rai.htm">2017-11-19</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location">@</td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/rai/2017.htm">OAK</a></td>
+         <td class="right " data-stat="team_game_result" csk="25.3300000000">W</td>
+         <td class="right " data-stat="points">33</td>
+         <td class="right " data-stat="points_opp">8</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">30</td>
+         <td class="right " data-stat="pass_att">37</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.8108108108">81.1</td>
+         <td class="right " data-stat="pass_yds">332</td>
+         <td class="right " data-stat="pass_td">3</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="8.9729729730">9.0</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="10.59459459459">10.59</td>
+         <td class="right " data-stat="pass_rating" csk="131.1">131.1</td>
+         <td class="right " data-stat="pass_sacked">1</td>
+         <td class="right " data-stat="pass_sacked_yds">8</td>
+         <td class="right " data-stat="rush_att">20</td>
+         <td class="right " data-stat="rush_yds">89</td>
+         <td class="right iz" data-stat="rush_td">0</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="4.4500000000">4.5</td>
+         <td class="right " data-stat="plays_offense">58</td>
+         <td class="right " data-stat="tot_yds">421</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="7.2586206897">7.26</td>
+         <td class="right " data-stat="fga">4</td>
+         <td class="right " data-stat="fgm">4</td>
+         <td class="right " data-stat="xpa">3</td>
+         <td class="right " data-stat="xpm">3</td>
+         <td class="right " data-stat="punt">2</td>
+         <td class="right " data-stat="punt_yds">95</td>
+         <td class="right " data-stat="first_down_pass">16</td>
+         <td class="right " data-stat="first_down_rush">5</td>
+         <td class="right " data-stat="first_down_penalty">4</td>
+         <td class="right " data-stat="first_down">25</td>
+         <td class="right " data-stat="third_down_success">5</td>
+         <td class="right " data-stat="third_down_att">10</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right iz" data-stat="fourth_down_att">0</td>
+         <td class="right " data-stat="penalties">2</td>
+         <td class="right " data-stat="penalties_yds">10</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right iz" data-stat="turnovers">0</td>
+         <td class="right " data-stat="time_of_poss">27:37</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.11">
+         <th scope="row" class="right " data-stat="ranker" csk="11">11</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=11&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">11</td>
+         <td class="right " data-stat="week_num">12</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201711260nwe.htm">2017-11-26</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/mia/2017.htm">MIA</a></td>
+         <td class="right " data-stat="team_game_result" csk="18.3500000000">W</td>
+         <td class="right " data-stat="points">35</td>
+         <td class="right " data-stat="points_opp">17</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">18</td>
+         <td class="right " data-stat="pass_att">28</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.6428571429">64.3</td>
+         <td class="right " data-stat="pass_yds">221</td>
+         <td class="right " data-stat="pass_td">4</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="7.8928571429">7.9</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="9.14285714286">9.14</td>
+         <td class="right " data-stat="pass_rating" csk="113.2">113.2</td>
+         <td class="right " data-stat="pass_sacked">1</td>
+         <td class="right " data-stat="pass_sacked_yds">6</td>
+         <td class="right " data-stat="rush_att">38</td>
+         <td class="right " data-stat="rush_yds">196</td>
+         <td class="right " data-stat="rush_td">1</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="5.1578947368">5.2</td>
+         <td class="right " data-stat="plays_offense">67</td>
+         <td class="right " data-stat="tot_yds">417</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="6.2238805970">6.22</td>
+         <td class="right iz" data-stat="fga">0</td>
+         <td class="right iz" data-stat="fgm">0</td>
+         <td class="right " data-stat="xpa">5</td>
+         <td class="right " data-stat="xpm">5</td>
+         <td class="right " data-stat="punt">3</td>
+         <td class="right " data-stat="punt_yds">122</td>
+         <td class="right " data-stat="first_down_pass">11</td>
+         <td class="right " data-stat="first_down_rush">9</td>
+         <td class="right " data-stat="first_down_penalty">5</td>
+         <td class="right " data-stat="first_down">25</td>
+         <td class="right " data-stat="third_down_success">5</td>
+         <td class="right " data-stat="third_down_att">12</td>
+         <td class="right " data-stat="fourth_down_success">1</td>
+         <td class="right " data-stat="fourth_down_att">2</td>
+         <td class="right " data-stat="penalties">7</td>
+         <td class="right " data-stat="penalties_yds">70</td>
+         <td class="right " data-stat="fumbles_lost">1</td>
+         <td class="right " data-stat="pass_int">1</td>
+         <td class="right " data-stat="turnovers">2</td>
+         <td class="right " data-stat="time_of_poss">32:41</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.12">
+         <th scope="row" class="right " data-stat="ranker" csk="12">12</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=12&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">12</td>
+         <td class="right " data-stat="week_num">13</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201712030buf.htm">2017-12-03</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location">@</td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/buf/2017.htm">BUF</a></td>
+         <td class="right " data-stat="team_game_result" csk="20.2300000000">W</td>
+         <td class="right " data-stat="points">23</td>
+         <td class="right " data-stat="points_opp">3</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">21</td>
+         <td class="right " data-stat="pass_att">30</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.7000000000">70.0</td>
+         <td class="right " data-stat="pass_yds">244</td>
+         <td class="right iz" data-stat="pass_td">0</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="8.1333333333">8.1</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="6.63333333333">6.63</td>
+         <td class="right " data-stat="pass_rating" csk="80.4">80.4</td>
+         <td class="right " data-stat="pass_sacked">3</td>
+         <td class="right " data-stat="pass_sacked_yds">14</td>
+         <td class="right " data-stat="rush_att">35</td>
+         <td class="right " data-stat="rush_yds">191</td>
+         <td class="right " data-stat="rush_td">2</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="5.4571428571">5.5</td>
+         <td class="right " data-stat="plays_offense">68</td>
+         <td class="right " data-stat="tot_yds">435</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="6.3970588235">6.40</td>
+         <td class="right " data-stat="fga">3</td>
+         <td class="right " data-stat="fgm">3</td>
+         <td class="right " data-stat="xpa">2</td>
+         <td class="right " data-stat="xpm">2</td>
+         <td class="right " data-stat="punt">3</td>
+         <td class="right " data-stat="punt_yds">105</td>
+         <td class="right " data-stat="first_down_pass">15</td>
+         <td class="right " data-stat="first_down_rush">8</td>
+         <td class="right iz" data-stat="first_down_penalty">0</td>
+         <td class="right " data-stat="first_down">23</td>
+         <td class="right " data-stat="third_down_success">5</td>
+         <td class="right " data-stat="third_down_att">12</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right iz" data-stat="fourth_down_att">0</td>
+         <td class="right " data-stat="penalties">9</td>
+         <td class="right " data-stat="penalties_yds">66</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right " data-stat="pass_int">1</td>
+         <td class="right " data-stat="turnovers">1</td>
+         <td class="right " data-stat="time_of_poss">34:01</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.13">
+         <th scope="row" class="right " data-stat="ranker" csk="13">13</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=13&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">13</td>
+         <td class="right " data-stat="week_num">14</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201712110mia.htm">2017-12-11</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Mon</td>
+         <td class="center " data-stat="game_location">@</td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/mia/2017.htm">MIA</a></td>
+         <td class="right " data-stat="team_game_result" csk="-6.8000000000">L</td>
+         <td class="right " data-stat="points">20</td>
+         <td class="right " data-stat="points_opp">27</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">24</td>
+         <td class="right " data-stat="pass_att">43</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.5581395349">55.8</td>
+         <td class="right " data-stat="pass_yds">223</td>
+         <td class="right " data-stat="pass_td">1</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="5.1860465116">5.2</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="3.55813953488">3.56</td>
+         <td class="right " data-stat="pass_rating" csk="58.6">58.6</td>
+         <td class="right " data-stat="pass_sacked">2</td>
+         <td class="right " data-stat="pass_sacked_yds">10</td>
+         <td class="right " data-stat="rush_att">10</td>
+         <td class="right " data-stat="rush_yds">25</td>
+         <td class="right " data-stat="rush_td">1</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="2.5000000000">2.5</td>
+         <td class="right " data-stat="plays_offense">55</td>
+         <td class="right " data-stat="tot_yds">248</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="4.5090909091">4.51</td>
+         <td class="right " data-stat="fga">2</td>
+         <td class="right " data-stat="fgm">2</td>
+         <td class="right " data-stat="xpa">2</td>
+         <td class="right " data-stat="xpm">2</td>
+         <td class="right " data-stat="punt">7</td>
+         <td class="right " data-stat="punt_yds">334</td>
+         <td class="right " data-stat="first_down_pass">9</td>
+         <td class="right " data-stat="first_down_rush">2</td>
+         <td class="right " data-stat="first_down_penalty">3</td>
+         <td class="right " data-stat="first_down">14</td>
+         <td class="right iz" data-stat="third_down_success">0</td>
+         <td class="right " data-stat="third_down_att">11</td>
+         <td class="right iz" data-stat="fourth_down_success">0</td>
+         <td class="right iz" data-stat="fourth_down_att">0</td>
+         <td class="right " data-stat="penalties">9</td>
+         <td class="right " data-stat="penalties_yds">78</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right " data-stat="pass_int">2</td>
+         <td class="right " data-stat="turnovers">2</td>
+         <td class="right " data-stat="time_of_poss">23:51</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.14">
+         <th scope="row" class="right " data-stat="ranker" csk="14">14</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=14&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">14</td>
+         <td class="right " data-stat="week_num">15</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201712170pit.htm">2017-12-17</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location">@</td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/pit/2017.htm">PIT</a></td>
+         <td class="right " data-stat="team_game_result" csk="3.2700000000">W</td>
+         <td class="right " data-stat="points">27</td>
+         <td class="right " data-stat="points_opp">24</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">22</td>
+         <td class="right " data-stat="pass_att">35</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.6285714286">62.9</td>
+         <td class="right " data-stat="pass_yds">283</td>
+         <td class="right " data-stat="pass_td">1</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="8.0857142857">8.1</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="7.37142857143">7.37</td>
+         <td class="right " data-stat="pass_rating" csk="85.8">85.8</td>
+         <td class="right " data-stat="pass_sacked">2</td>
+         <td class="right " data-stat="pass_sacked_yds">15</td>
+         <td class="right " data-stat="rush_att">19</td>
+         <td class="right " data-stat="rush_yds">77</td>
+         <td class="right " data-stat="rush_td">2</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="4.0526315789">4.1</td>
+         <td class="right " data-stat="plays_offense">56</td>
+         <td class="right " data-stat="tot_yds">360</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="6.4285714286">6.43</td>
+         <td class="right " data-stat="fga">2</td>
+         <td class="right " data-stat="fgm">2</td>
+         <td class="right " data-stat="xpa">2</td>
+         <td class="right " data-stat="xpm">1</td>
+         <td class="right " data-stat="punt">2</td>
+         <td class="right " data-stat="punt_yds">96</td>
+         <td class="right " data-stat="first_down_pass">14</td>
+         <td class="right " data-stat="first_down_rush">5</td>
+         <td class="right " data-stat="first_down_penalty">2</td>
+         <td class="right " data-stat="first_down">21</td>
+         <td class="right " data-stat="third_down_success">3</td>
+         <td class="right " data-stat="third_down_att">9</td>
+         <td class="right " data-stat="fourth_down_success">1</td>
+         <td class="right " data-stat="fourth_down_att">1</td>
+         <td class="right " data-stat="penalties">2</td>
+         <td class="right " data-stat="penalties_yds">4</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right " data-stat="pass_int">1</td>
+         <td class="right " data-stat="turnovers">1</td>
+         <td class="right " data-stat="time_of_poss">24:53</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.15">
+         <th scope="row" class="right " data-stat="ranker" csk="15">15</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=15&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">15</td>
+         <td class="right " data-stat="week_num">16</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201712240nwe.htm">2017-12-24</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/buf/2017.htm">BUF</a></td>
+         <td class="right " data-stat="team_game_result" csk="21.3700000000">W</td>
+         <td class="right " data-stat="points">37</td>
+         <td class="right " data-stat="points_opp">16</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">21</td>
+         <td class="right " data-stat="pass_att">28</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.7500000000">75.0</td>
+         <td class="right " data-stat="pass_yds">218</td>
+         <td class="right " data-stat="pass_td">2</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="7.7857142857">7.8</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="7.60714285714">7.61</td>
+         <td class="right " data-stat="pass_rating" csk="106.0">106.0</td>
+         <td class="right " data-stat="pass_sacked">2</td>
+         <td class="right " data-stat="pass_sacked_yds">6</td>
+         <td class="right " data-stat="rush_att">38</td>
+         <td class="right " data-stat="rush_yds">193</td>
+         <td class="right " data-stat="rush_td">2</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="5.0789473684">5.1</td>
+         <td class="right " data-stat="plays_offense">68</td>
+         <td class="right " data-stat="tot_yds">411</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="6.0441176471">6.04</td>
+         <td class="right " data-stat="fga">3</td>
+         <td class="right " data-stat="fgm">3</td>
+         <td class="right " data-stat="xpa">4</td>
+         <td class="right " data-stat="xpm">4</td>
+         <td class="right " data-stat="punt">1</td>
+         <td class="right " data-stat="punt_yds">44</td>
+         <td class="right " data-stat="first_down_pass">13</td>
+         <td class="right " data-stat="first_down_rush">13</td>
+         <td class="right " data-stat="first_down_penalty">2</td>
+         <td class="right " data-stat="first_down">28</td>
+         <td class="right " data-stat="third_down_success">5</td>
+         <td class="right " data-stat="third_down_att">11</td>
+         <td class="right " data-stat="fourth_down_success">1</td>
+         <td class="right " data-stat="fourth_down_att">1</td>
+         <td class="right " data-stat="penalties">2</td>
+         <td class="right " data-stat="penalties_yds">10</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right " data-stat="pass_int">1</td>
+         <td class="right " data-stat="turnovers">1</td>
+         <td class="right " data-stat="time_of_poss">31:44</td>
+      </tr>
+      <tr id="table_pfr_team-year_game-logs_team-year-regular-season-game-log.16">
+         <th scope="row" class="right " data-stat="ranker" csk="16">16</th>
+         <td class="right endpoint"
+            data-endpoint="/tools/soc_team_game_summing.cgi?entity_id=nwe&amp;type=season_cume&amp;range=16&amp;table_type=TeamGamelog&amp;phase_type=reg&amp;year_id=2017&amp;addl_params=%7B%22team_type%22%3Anull%2C%22skip_title_year_to_season_convert%22%3A1%7D"
+            data-stat="team_game_num_season">16</td>
+         <td class="right " data-stat="week_num">17</td>
+         <td class="left " data-stat="date"><a href="/boxscores/201712310nwe.htm">2017-12-31</a>
+         </td>
+         <td class="left " data-stat="game_day_of_week">Sun</td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/nyj/2017.htm">NYJ</a></td>
+         <td class="right " data-stat="team_game_result" csk="20.2600000000">W</td>
+         <td class="right " data-stat="points">26</td>
+         <td class="right " data-stat="points_opp">6</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">19</td>
+         <td class="right " data-stat="pass_att">40</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.4750000000">47.5</td>
+         <td class="right " data-stat="pass_yds">183</td>
+         <td class="right " data-stat="pass_td">2</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="4.5750000000">4.6</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="5.57500000000">5.58</td>
+         <td class="right " data-stat="pass_rating" csk="77.4">77.4</td>
+         <td class="right " data-stat="pass_sacked">2</td>
+         <td class="right " data-stat="pass_sacked_yds">12</td>
+         <td class="right " data-stat="rush_att">38</td>
+         <td class="right " data-stat="rush_yds">147</td>
+         <td class="right " data-stat="rush_td">1</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="3.8684210526">3.9</td>
+         <td class="right " data-stat="plays_offense">80</td>
+         <td class="right " data-stat="tot_yds">330</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="4.1250000000">4.13</td>
+         <td class="right " data-stat="fga">1</td>
+         <td class="right " data-stat="fgm">1</td>
+         <td class="right " data-stat="xpa">3</td>
+         <td class="right " data-stat="xpm">3</td>
+         <td class="right " data-stat="punt">8</td>
+         <td class="right " data-stat="punt_yds">338</td>
+         <td class="right " data-stat="first_down_pass">12</td>
+         <td class="right " data-stat="first_down_rush">10</td>
+         <td class="right " data-stat="first_down_penalty">6</td>
+         <td class="right " data-stat="first_down">28</td>
+         <td class="right " data-stat="third_down_success">4</td>
+         <td class="right " data-stat="third_down_att">15</td>
+         <td class="right " data-stat="fourth_down_success">1</td>
+         <td class="right " data-stat="fourth_down_att">1</td>
+         <td class="right " data-stat="penalties">4</td>
+         <td class="right " data-stat="penalties_yds">49</td>
+         <td class="right iz" data-stat="fumbles_lost">0</td>
+         <td class="right iz" data-stat="pass_int">0</td>
+         <td class="right iz" data-stat="turnovers">0</td>
+         <td class="right " data-stat="time_of_poss">34:49</td>
+      </tr>
+   </tbody>
+   <tfoot>
+      <tr>
+         <th scope="row" class="right " data-stat="ranker"></th>
+         <td class="right " data-stat="team_game_num_season"></td>
+         <td class="right " data-stat="week_num"></td>
+         <td class="left " data-stat="date"></td>
+         <td class="left incomplete" data-stat="game_day_of_week"></td>
+         <td class="center " data-stat="game_location"></td>
+         <td class="left " data-stat="opp_name_abbr"><a href="/teams/kan/2017.htm"></a></td>
+         <td class="right " data-stat="team_game_result" csk="-14.7300000000">13-3</td>
+         <td class="right " data-stat="points">458</td>
+         <td class="right " data-stat="points_opp">296</td>
+         <td class="right " data-stat="overtimes"></td>
+         <td class="right " data-stat="pass_cmp">389</td>
+         <td class="right " data-stat="pass_att">587</td>
+         <td class="right " data-stat="pass_cmp_pct" csk="0.6626916525">66.3</td>
+         <td class="right " data-stat="pass_yds">4418</td>
+         <td class="right " data-stat="pass_td">32</td>
+         <td class="right " data-stat="pass_yds_per_att" csk="7.5264054514">7.5</td>
+         <td class="right " data-stat="pass_adj_yds_per_att" csk="8.00340715503">8.00</td>
+         <td class="right " data-stat="pass_rating" csk="101.2">101.2</td>
+         <td class="right " data-stat="pass_sacked">35</td>
+         <td class="right " data-stat="pass_sacked_yds">201</td>
+         <td class="right " data-stat="rush_att">448</td>
+         <td class="right " data-stat="rush_yds">1889</td>
+         <td class="right " data-stat="rush_td">16</td>
+         <td class="right " data-stat="rush_yds_per_att" csk="4.2165178571">4.2</td>
+         <td class="right " data-stat="plays_offense">1070</td>
+         <td class="right " data-stat="tot_yds">6307</td>
+         <td class="right " data-stat="yds_per_play_offense" csk="5.8943925234">5.89</td>
+         <td class="right " data-stat="fga">40</td>
+         <td class="right " data-stat="fgm">37</td>
+         <td class="right " data-stat="xpa">47</td>
+         <td class="right " data-stat="xpm">45</td>
+         <td class="right " data-stat="punt">58</td>
+         <td class="right " data-stat="punt_yds">2515</td>
+         <td class="right " data-stat="first_down_pass">232</td>
+         <td class="right " data-stat="first_down_rush">107</td>
+         <td class="right " data-stat="first_down_penalty">50</td>
+         <td class="right " data-stat="first_down">389</td>
+         <td class="right " data-stat="third_down_success">82</td>
+         <td class="right " data-stat="third_down_att">202</td>
+         <td class="right " data-stat="fourth_down_success">8</td>
+         <td class="right " data-stat="fourth_down_att">13</td>
+         <td class="right " data-stat="penalties">95</td>
+         <td class="right " data-stat="penalties_yds">835</td>
+         <td class="right " data-stat="fumbles_lost">4</td>
+         <td class="right " data-stat="pass_int">8</td>
+         <td class="right " data-stat="turnovers">12</td>
+         <td class="right " data-stat="time_of_poss">489:54</td>
+      </tr>
+   </tfoot>
+</table>
