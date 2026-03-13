@@ -1,5 +1,7 @@
 """Provide utilities for schedule."""
 
+from __future__ import annotations
+
 import re
 from datetime import datetime
 
@@ -49,7 +51,7 @@ class Game:
 
     """
 
-    def __init__(self, game_data, game_type, year):
+    def __init__(self, game_data: str | None, game_type: str, year: str | int | None) -> None:
         """Initialize the class instance."""
         self._year = year
         self._week: str | None = None
@@ -316,6 +318,8 @@ class Game:
         if re.fullmatch(r"\d{4}-\d{2}-\d{2}", self._date):
             return datetime.strptime(self._date, "%Y-%m-%d")
         year = self._year
+        if year is None:
+            return None
         # Check if the first word of the date (the month) is either january or
         # february, and increase the year by 1.
         if self._date.split(" ")[0].lower() in ["january", "february"]:
@@ -592,7 +596,7 @@ class Schedule:
 
     """
 
-    def __init__(self, abbreviation, year=None):
+    def __init__(self, abbreviation: str | None, year: int | str | None = None) -> None:
         """Initialize the class instance."""
         self._games = []
         self._pull_schedule(abbreviation, year)
