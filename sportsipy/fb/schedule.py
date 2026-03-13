@@ -1,7 +1,10 @@
 """Provide utilities for schedule."""
 
+from __future__ import annotations
+
 import re
 from datetime import datetime
+from typing import Any
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -26,7 +29,7 @@ class Game:
 
     """
 
-    def __init__(self, game_data):
+    def __init__(self, game_data: Any) -> None:
         """Initialize the class instance."""
         self._competition: str | None = None
         self._matchweek: str | None = None
@@ -483,7 +486,7 @@ class Schedule:
 
     """
 
-    def __init__(self, team_id, doc=None):
+    def __init__(self, team_id: str | None, doc: Any | None = None) -> None:
         """Initialize the class instance."""
         self._games = []
         self._pull_schedule(team_id, doc)
