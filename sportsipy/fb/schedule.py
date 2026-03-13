@@ -1,3 +1,5 @@
+"""Provide utilities for schedule."""
+
 import re
 from datetime import datetime
 from urllib.error import HTTPError
@@ -6,15 +8,13 @@ import pandas as pd
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, DRAW, HOME, LOSS, NEUTRAL, WIN
-
-from ..decorators import float_property_decorator, int_property_decorator
-from .constants import SCHEDULE_SCHEME, SQUAD_URL
-from .fb_utils import _lookup_team
+from sportsipy.decorators import float_property_decorator, int_property_decorator
+from sportsipy.fb.constants import SCHEDULE_SCHEME, SQUAD_URL
+from sportsipy.fb.fb_utils import _lookup_team
 
 
 class Game:
-    """
-    A representation of a matchup between two teams.
+    """A representation of a matchup between two teams.
 
     Stores all relevant high-level match information for a game in a team's
     schedule including date, time, week, opponent, and score.
@@ -23,9 +23,11 @@ class Game:
     ----------
     game_data : string
         The row containing the specified game information.
+
     """
 
     def __init__(self, game_data):
+        """Initialize the class instance."""
         self._competition: str | None = None
         self._matchweek: str | None = None
         self._day: str | None = None
@@ -51,20 +53,15 @@ class Game:
         self._parse_game_data(game_data)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return f"{self.date} - {self.opponent}"
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def _parse_opponent_id(self, game_data):
-        """
-        Parse the opponent's squad ID.
+        """Parse the opponent's squad ID.
 
         The opponent field has a squad ID embedded in the URL which can be used
         to more directly lookup or match an opponent. By pulling the opponent
@@ -80,6 +77,7 @@ class Game:
         -------
         string
             Returns a ``string`` of the opponent's squad ID.
+
         """
         opponent = game_data(SCHEDULE_SCHEME["opponent"])
         opponent_id = opponent("a").attr("href")
@@ -91,8 +89,7 @@ class Game:
         return opponent_id
 
     def _parse_captain_id(self, game_data):
-        """
-        Parse the captain's player ID.
+        """Parse the captain's player ID.
 
         The captain field contains a link to the captain's unique player ID in
         the URL which can be used to more directly lookup or match the player.
@@ -108,6 +105,7 @@ class Game:
         -------
         string
             Returns a ``string`` of the player's unique ID.
+
         """
         captain = game_data(SCHEDULE_SCHEME["captain"])
         captain_id = captain("a").attr("href")
@@ -119,8 +117,7 @@ class Game:
         return captain_id
 
     def _parse_match_report(self, game_data):
-        """
-        Parse the match report ID.
+        """Parse the match report ID.
 
         The match report field contains a link to the detailed match report via
         the match report ID which is embedded in the URL. By pulling the match
@@ -136,6 +133,7 @@ class Game:
         -------
         string
             Returns a ``string`` of the match report's unique ID.
+
         """
         match_report = game_data(SCHEDULE_SCHEME["match_report"])
         match_report_id = match_report("a").attr("href")
@@ -147,8 +145,7 @@ class Game:
         return match_report_id
 
     def _parse_game_data(self, game_data):
-        """
-        Parse a value for every attribute.
+        """Parse a value for every attribute.
 
         The function looks through every attribute with the exception of those
         listed below and retrieves the value according to the parsing scheme
@@ -163,6 +160,7 @@ class Game:
         ----------
         game_data : string
             A ``string`` containing all of the rows of stats for a given game.
+
         """
         for field in self.__dict__:
             # Remove the leading '_' from the name
@@ -186,8 +184,8 @@ class Game:
 
     @property
     def dataframe(self):
-        """
-        Returns a pandas ``DataFrame`` containing all other class properties
+        """Return a pandas ``DataFrame`` containing all other class properties.
+
         and values. The index for the DataFrame is the match report ID.
         """
         if self._goals_for is None and self._goals_against is None:
@@ -218,53 +216,49 @@ class Game:
             "notes": self.notes,
         }
         # Pandas stubs can trip Pyright/Pylance here; runtime is correct.
-        return pd.DataFrame(
-            [fields_to_include], index=[self.match_report]
-        )  # pyright: ignore[reportGeneralTypeIssues]
+        return pd.DataFrame([fields_to_include], index=[self.match_report])  # pyright: ignore[reportGeneralTypeIssues]
 
     @property
     def competition(self):
-        """
-        Returns a ``string`` of the competitions name, such as 'Premier
+        """Return a ``string`` of the competitions name, such as 'Premier.
+
         League' or 'Champions Lg'.
         """
         return self._competition
 
     @property
     def matchweek(self):
-        """
-        Returns a ``string`` of the matchweek the game was played in, such
+        """Return a ``string`` of the matchweek the game was played in, such.
+
         as 'Matchweek 1' or 'Group Stage'.
         """
         return self._matchweek
 
     @property
     def day(self):
-        """
-        Returns a ``string`` of the day of the week the game was played on.
-        """
+        """Return a ``string`` of the day of the week the game was played on."""
         return self._day
 
     @property
     def date(self):
-        """
-        Returns a ``string`` of the date the game was played in the format
+        """Return a ``string`` of the date the game was played in the format.
+
         'YYYY-MM-DD'.
         """
         return self._date
 
     @property
     def time(self):
-        """
-        Returns a ``string`` of the time the game started in 24-hour
+        """Return a ``string`` of the time the game started in 24-hour.
+
         format, local to the home venue.
         """
         return self._time
 
     @property
     def datetime(self):
-        """
-        Returns a ``datetime`` object representing the date and time the match
+        """Return a ``datetime`` object representing the date and time the match.
+
         started. If the time is not present, the default time of midnight on
         the given day will be used instead.
         """
@@ -306,8 +300,8 @@ class Game:
 
     @property
     def venue(self):
-        """
-        Returns a ``string`` constant representing if the team played at
+        """Return a ``string`` constant representing if the team played at.
+
         home ('Home'), on the road ('Away'), or at a neutral site
         ('Neutral').
         """
@@ -326,8 +320,8 @@ class Game:
 
     @property
     def result(self):
-        """
-        Returns a ``string`` constant representing if the team won ('Win'),
+        """Return a ``string`` constant representing if the team won ('Win'),.
+
         drew ('Draw'), or lost ('Loss').
         """
         if self._result is None:
@@ -345,9 +339,7 @@ class Game:
 
     @int_property_decorator
     def goals_for(self):
-        """
-        Returns an ``int`` of the number of goals the team scored.
-        """
+        """Return an ``int`` of the number of goals the team scored."""
         # If the game went to a shootout, remove the penalties.
         goals_for_value = self._goals_for
         if goals_for_value and "(" in str(goals_for_value) and ")" in str(goals_for_value):
@@ -356,9 +348,7 @@ class Game:
 
     @int_property_decorator
     def goals_against(self):
-        """
-        Returns an ``int`` of the number of goals the team conceded.
-        """
+        """Return an ``int`` of the number of goals the team conceded."""
         # If the game went to a shootout, remove the penalties.
         goals_against_value = self._goals_against
         if (
@@ -371,8 +361,8 @@ class Game:
 
     @int_property_decorator
     def shootout_scored(self):
-        """
-        Returns an ``int`` of the number of penalties the team scored if the
+        """Return an ``int`` of the number of penalties the team scored if the.
+
         game went to a shootout after normal play.
         """
         goals_for_value = self._goals_for or ""
@@ -383,8 +373,8 @@ class Game:
 
     @int_property_decorator
     def shootout_against(self):
-        """
-        Returns an ``int`` of the number of penalties the team conceded if the
+        """Return an ``int`` of the number of penalties the team conceded if the.
+
         game went to a shootout after normal play.
         """
         goals_against_value = self._goals_against or ""
@@ -395,95 +385,88 @@ class Game:
 
     @property
     def opponent(self):
-        """
-        Returns a ``string`` of the opponents name, such as 'Arsenal'.
-        """
+        """Return a ``string`` of the opponents name, such as 'Arsenal'."""
         return self._opponent
 
     @property
     def opponent_id(self):
-        """
-        Returns a ``string`` of the opponents squad ID, such as '18bb7c10'
+        """Return a ``string`` of the opponents squad ID, such as '18bb7c10'.
+
         for Arsenal.
         """
         return self._opponent_id
 
     @float_property_decorator
     def expected_goals(self):
-        """
-        Returns a ``float`` of the number of goals the team was expected to
+        """Return a ``float`` of the number of goals the team was expected to.
+
         score based on the quality of shots taken.
         """
         return self._expected_goals
 
     @float_property_decorator
     def expected_goals_against(self):
-        """
-        Returns a ``float`` of the number of goals the team was expected to
+        """Return a ``float`` of the number of goals the team was expected to.
+
         concede based on the quality of shots taken.
         """
         return self._expected_goals_against
 
     @int_property_decorator
     def attendance(self):
-        """
-        Returns an ``int`` of the recorded attendance at the game.
-        """
+        """Return an ``int`` of the recorded attendance at the game."""
         if not self._attendance:
             return None
         return self._attendance.replace(",", "")
 
     @property
     def captain(self):
-        """
-        Returns a ``string`` representing the captain's name, such as
+        """Return a ``string`` representing the captain's name, such as.
+
         'Harry Kane'.
         """
         return self._captain
 
     @property
     def captain_id(self):
-        """
-        Returns a ``string`` of the captain's unique ID on fbref.com, such
+        """Return a ``string`` of the captain's unique ID on fbref.com, such.
+
         as '21a66f6a' for Harry Kane.
         """
         return self._captain_id
 
     @property
     def formation(self):
-        """
-        Returns a ``string`` of the formation the team started with during
+        """Return a ``string`` of the formation the team started with during.
+
         the game, such as '4-4-2'.
         """
         return self._formation
 
     @property
     def referee(self):
-        """
-        Returns a ``string`` of the first and last name of the referee for
+        """Return a ``string`` of the first and last name of the referee for.
+
         the match.
         """
         return self._referee
 
     @property
     def match_report(self):
-        """
-        Returns a ``string`` of the 8-digit match ID for the game.
-        """
+        """Return a ``string`` of the 8-digit match ID for the game."""
         return self._match_report
 
     @property
     def notes(self):
-        """
-        Returns a ``string`` of any notes that might be included with the
+        """Return a ``string`` of any notes that might be included with the.
+
         game.
         """
         return self._notes
 
 
 class Schedule:
-    """
-    An object of the given team's schedule.
+    """An object of the given team's schedule.
 
     Generates a team's schedule for the season including wins, losses, draws,
     and scores if applicable.
@@ -497,15 +480,16 @@ class Schedule:
         If passed to the class instantiation, this will be used to pull all
         information instead of making another request to the website. If the
         document is not provided, it will be pulled during a later step.
+
     """
 
     def __init__(self, team_id, doc=None):
+        """Initialize the class instance."""
         self._games = []
         self._pull_schedule(team_id, doc)
 
     def __getitem__(self, index):
-        """
-        Return a specified game.
+        """Return a specified game.
 
         Returns a specified game as requested by the index number in the array.
         The input index is 0-based and must be within the range of the schedule
@@ -525,12 +509,12 @@ class Schedule:
         ------
         IndexError
             If the requested index is not within the bounds of the schedule.
+
         """
         return self._games[index]
 
     def __call__(self, date):
-        """
-        Return a specified game.
+        """Return a specified game.
 
         Returns a specific game as requested by the passed datetime. The input
         datetime must have the same year, month, and day, but can have any time
@@ -552,6 +536,7 @@ class Schedule:
         ValueError
             If the requested date cannot be matched with a game in the
             schedule.
+
         """
         for game in self._games:
             if not game.datetime:
@@ -565,33 +550,24 @@ class Schedule:
         raise ValueError("No games found for requested date")
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         games = [f"{game.date} - {game.opponent}".strip() for game in self._games]
         return "\n".join(games)
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def __iter__(self):
-        """
-        Returns an iterator of all of the games scheduled for the given team.
-        """
+        """Return an iterator of all of the games scheduled for the given team."""
         return iter(self._games)
 
     def __len__(self):
-        """
-        Returns the number of scheduled games for the given team.
-        """
+        """Return the number of scheduled games for the given team."""
         return len(self._games)
 
     def _add_games_to_schedule(self, schedule):
-        """
-        Add game information to the list of games.
+        """Add game information to the list of games.
 
         Create a Game instance for the given game in the schedule and add it to
         the list of games the team has or will play during the season.
@@ -600,6 +576,7 @@ class Schedule:
         ----------
         schedule : PyQuery object
             A PyQuery object pertaining to a team's schedule table.
+
         """
         for item in schedule:
             if 'class="thead"' in str(item):
@@ -608,8 +585,7 @@ class Schedule:
             self._games.append(game)
 
     def _pull_schedule(self, team_id, doc):
-        """
-        Download and create objects for the team's schedule.
+        """Download and create objects for the team's schedule.
 
         Given the team's abbreviation, pull the squad page and parse all of the
         games on the list. If a document is already provided (occurs when
@@ -628,6 +604,7 @@ class Schedule:
             If passed to the class instantiation, this will be used to pull all
             information instead of making another request to the website. If
             the document is not provided, this value will be None.
+
         """
         if not doc:
             squad_id = _lookup_team(team_id)
