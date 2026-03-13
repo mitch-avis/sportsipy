@@ -1,5 +1,7 @@
 """Provide utilities for roster."""
 
+from __future__ import annotations
+
 import re
 from functools import wraps
 from urllib.error import HTTPError
@@ -104,7 +106,7 @@ class Player(AbstractPlayer):
 
     """
 
-    def __init__(self, player_id):
+    def __init__(self, player_id: str | None) -> None:
         """Initialize the class instance."""
         self._most_recent_season = ""
         self._index = None
@@ -629,7 +631,7 @@ class Roster:
 
     """
 
-    def __init__(self, team, year=None, slim=False):
+    def __init__(self, team: str | None, year: int | str | None = None, slim: bool = False) -> None:
         """Initialize the class instance."""
         self._team = team
         self._slim = slim
@@ -697,7 +699,8 @@ class Roster:
             and year.
 
         """
-        return ROSTER_URL % (self._team.lower(), year)
+        team = self._team.lower() if self._team else ""
+        return ROSTER_URL % (team, year)
 
     def _get_id(self, player):
         """Parse the player ID.
