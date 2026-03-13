@@ -1,13 +1,13 @@
+"""Provide utilities for nba utils."""
+
 from urllib.error import HTTPError
 
 from sportsipy import utils
-
-from .constants import PARSING_SCHEME, SEASON_PAGE_URL
+from sportsipy.nba.constants import PARSING_SCHEME, SEASON_PAGE_URL
 
 
 def _add_stats_data(teams_list, team_data_dict):
-    """
-    Add a team's stats row to a dictionary.
+    """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate all
     stats for each team in a single variable.
@@ -27,6 +27,7 @@ def _add_stats_data(teams_list, team_data_dict):
     dictionary
         An updated version of the team_data_dict with the passed table row
         information included.
+
     """
     # Teams are listed in terms of rank with the first team being #1
     rank = 1
@@ -45,8 +46,7 @@ def _add_stats_data(teams_list, team_data_dict):
 
 
 def _retrieve_all_teams(year, season_file=None):
-    """
-    Find and create Team instances for all teams in the given season.
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NBA stats table and finds all
     requested stats. Each team then has a Team instance created which includes
@@ -66,6 +66,7 @@ def _retrieve_all_teams(year, season_file=None):
         Returns a ``tuple`` of the team_data_dict and year which represent all
         stats for all teams, and the given year that should be used to pull
         stats from, respectively.
+
     """
     team_data_dict = {}
 
