@@ -70,7 +70,7 @@ docstring-code-format = true
 
 [tool.pyright]
 pythonVersion = "3.12"
-typeCheckingMode = "basic"
+typeCheckingMode = "standard"
 reportMissingImports = true
 reportMissingTypeStubs = false
 venvPath = "."
