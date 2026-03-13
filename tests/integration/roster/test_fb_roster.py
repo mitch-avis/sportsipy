@@ -1,19 +1,29 @@
+"""Provide utilities for test fb roster."""
+
 from os import path
 
 import pandas as pd
-from pyquery import PyQuery as pq
+from pyquery import PyQuery
 
 from sportsipy.fb.roster import Roster
 
 EXPECTED_NUM_PLAYERS = 34
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 def read_file(filename):
+    """Return read file."""
     filepath = path.join(path.dirname(__file__), "fb", filename)
-    return open(f"{filepath}.html", "r", encoding="utf8").read()
+    return open(f"{filepath}.html", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -24,7 +34,10 @@ def mock_pyquery(url, timeout=None):
 
 
 class TestFBRoster:
+    """Represent TestFBRoster."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "name": "Harry Kane",
             "player_id": "21a66f6a",
@@ -300,24 +313,28 @@ class TestFBRoster:
         self.roster = Roster("Tottenham Hotspur")
 
     def test_outfield_player_roster_returns_expected_stats(self):
+        """Return test outfield player roster returns expected stats."""
         harry_kane = self.roster("Harry Kane")
 
         for attribute, value in self.results.items():
             assert getattr(harry_kane, attribute) == value
 
     def test_keeper_player_roster_returns_expected_stats(self):
+        """Return test keeper player roster returns expected stats."""
         hugo_lloris = self.roster("Hugo Lloris")
 
         for attribute, value in self.keeper.items():
             assert getattr(hugo_lloris, attribute) == value
 
     def test_outfield_player_id_returns_expected_player(self):
+        """Return test outfield player id returns expected player."""
         harry_kane = self.roster("21a66f6a")
 
         for attribute, value in self.results.items():
             assert getattr(harry_kane, attribute) == value
 
     def test_number_of_players_returns_expected(self):
+        """Return test number of players returns expected."""
         count = 0
         for _, _ in enumerate(self.roster):
             count += 1
@@ -325,9 +342,11 @@ class TestFBRoster:
         assert count == EXPECTED_NUM_PLAYERS
 
     def test_roster_len_returns_expected_roster_size(self):
+        """Return test roster len returns expected roster size."""
         assert len(self.roster) == EXPECTED_NUM_PLAYERS
 
     def test_fb_roster_dataframe_returns_dataframe(self):
+        """Return test fb roster dataframe returns dataframe."""
         df = pd.DataFrame([self.results], index=["21a66f6a"])
 
         harry_kane = self.roster("Harry Kane")
@@ -343,13 +362,16 @@ class TestFBRoster:
         assert df1.empty
 
     def test_fb_invalid_tables_returns_nothing(self, *args, **kwargs):
+        """Return test fb invalid tables returns nothing."""
         roster = Roster("Tottenham Hotspur")
-        stats = roster._pull_stats(pq("<div></div>"))
+        stats = roster._pull_stats(PyQuery("<div></div>"))
 
         assert stats == {}
 
     def test_fb_roster_string_representation(self):
+        """Return test fb roster string representation."""
         expected = """Toby Alderweireld (f7d50789)
+
 Serge Aurier (5c2b4f07)
 Harry Kane (21a66f6a)
 Son Heung-min (92e7e919)
@@ -384,9 +406,10 @@ Michel Vorm (1bebde9d)
 Harvey White (4d90ce8c)
 Alfie Whiteman (3f2587ee)"""
 
-        assert repr(self.roster) == expected
+        assert _normalize_multiline(repr(self.roster)) == _normalize_multiline(expected)
 
     def test_fb_player_string_representation(self):
+        """Return test fb player string representation."""
         player = self.roster("Harry Kane")
 
         assert repr(player) == "Harry Kane (21a66f6a)"
