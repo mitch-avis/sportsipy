@@ -616,6 +616,7 @@ class Schedule:
                 if not page_source:
                     return None
                 doc = utils.pq(page_source)
+                doc = utils.pq(utils.remove_html_comment_tags(doc))
             except HTTPError:
                 return
         schedule = utils.get_stats_table(doc, "table#matchlogs_for")

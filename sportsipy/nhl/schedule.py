@@ -91,7 +91,7 @@ class Game:
             A PyQuery object containing the information specific to a game.
 
         """
-        name = game_data('td[data-stat="opp_name"]:first')
+        name = game_data('td[data-stat="opp_name"]:first, td[data-stat="opp_name_abbr"]:first')
         name = re.sub(r".*/teams/", "", str(name))
         name = re.sub("/.*", "", name)
         self._opponent_abbr = name
@@ -108,7 +108,7 @@ class Game:
             A PyQuery object containing the information specific to a game.
 
         """
-        boxscore = game_data('td[data-stat="date_game"]:first')
+        boxscore = game_data('td[data-stat="date_game"]:first, td[data-stat="date"]:first')
         boxscore = re.sub(r".*/boxscores/", "", str(boxscore))
         boxscore = re.sub(r"\.html.*", "", str(boxscore))
         self._boxscore = boxscore
@@ -607,6 +607,8 @@ class Schedule:
             return
         doc = utils.pq(page_source)
         schedule = utils.get_stats_table(doc, "table#tm_gamelog_rs")
+        if not schedule:
+            schedule = utils.get_stats_table(doc, "table#team_games")
         if not schedule:
             utils.no_data_found()
             return
