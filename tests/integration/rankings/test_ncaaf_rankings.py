@@ -1,3 +1,5 @@
+"""Provide utilities for test ncaaf rankings."""
+
 import json
 from os.path import dirname, join
 
@@ -15,11 +17,14 @@ YEAR = 2017
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = join(dirname(__file__), "ncaaf", filename)
-    return open(filepath, "r", encoding="utf8").read()
+    return open(filepath, encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status_code=200):
             self.url = url
@@ -39,6 +44,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -51,7 +58,10 @@ def mock_request(url, timeout=None):
 
 
 class TestNCAAFRankings:
+    """Represent TestNCAAFRankings."""
+
     def setup_method(self):
+        """Return setup method."""
         results_extended = [
             {
                 "abbreviation": "alabama",
@@ -767,6 +777,7 @@ class TestNCAAFRankings:
         self.results_complete = results_complete
 
     def test_rankings_integration(self, *args, **kwargs):
+        """Return test rankings integration."""
         flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
         rankings = Rankings()
@@ -778,10 +789,12 @@ class TestNCAAFRankings:
             assert rankings.complete[week] == data
 
     def test_rankings_integration_bad_url(self, *args, **kwargs):
+        """Return test rankings integration bad url."""
         with pytest.raises(ValueError):
             Rankings("BAD")
 
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         rankings = Rankings()
@@ -792,15 +805,19 @@ class TestNCAAFRankings:
             assert rankings.complete[week] == data
 
     def test_rankings_string_representation(self, *args, **kwargs):
+        """Return test rankings string representation."""
         rankings = Rankings()
 
         assert repr(rankings) == "NCAAF Rankings"
 
 
 class TestCFPNCAAFRankings:
+    """Represent TestCFPNCAAFRankings."""
+
     def setup_method(self):
+        """Return setup method."""
         fixture_path = join(dirname(__file__), "ncaaf", "cfp-2017.json")
-        with open(fixture_path, "r", encoding="utf8") as file_handle:
+        with open(fixture_path, encoding="utf8") as file_handle:
             fixture_data = json.load(file_handle)
         self.results_extended = fixture_data["extended"]
         self.results = fixture_data["results"]
@@ -809,6 +826,7 @@ class TestCFPNCAAFRankings:
         }
 
     def test_rankings_integration(self, *args, **kwargs):
+        """Return test rankings integration."""
         flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
         rankings = CFPRankings()
@@ -822,10 +840,12 @@ class TestCFPNCAAFRankings:
         )
 
     def test_rankings_integration_bad_url(self, *args, **kwargs):
+        """Return test rankings integration bad url."""
         with pytest.raises(ValueError):
             CFPRankings("BAD")
 
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         rankings = CFPRankings()
@@ -840,7 +860,10 @@ class TestCFPNCAAFRankings:
 
 
 class TestCoachesNCAAFRankings:
+    """Represent TestCoachesNCAAFRankings."""
+
     def setup_method(self):
+        """Return setup method."""
         results_extended = [
             {
                 "abbreviation": "clemson",
@@ -1556,6 +1579,7 @@ class TestCoachesNCAAFRankings:
         self.results_complete = results_complete
 
     def test_rankings_integration(self, *args, **kwargs):
+        """Return test rankings integration."""
         flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
         rankings = CoachesRankings()
@@ -1567,10 +1591,12 @@ class TestCoachesNCAAFRankings:
             assert rankings.complete[week] == data
 
     def test_rankings_integration_bad_url(self, *args, **kwargs):
+        """Return test rankings integration bad url."""
         with pytest.raises(ValueError):
             CoachesRankings("BAD")
 
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         rankings = CoachesRankings()
