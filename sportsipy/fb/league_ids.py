@@ -1,3 +1,5 @@
+"""Provide utilities for league ids."""
+
 LEAGUE_IDS = {
     "00032902": "3290",
     "0049d422": "10735",
