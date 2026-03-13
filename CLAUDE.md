@@ -47,23 +47,22 @@ pytest tests/unit/ tests/integration/ -v
 
 # Coverage
 pytest tests/unit/ tests/integration/ --cov=sportsipy --cov-report=term-missing
+
+# Iterative workflow
+# Run targeted tests for changed code paths during development;
+# run full unit + integration before merge/shared branch commits.
 ```
 
 ## Lint, Format, and Type Check
 
 ```bash
-# Format
-ruff format . --check
+# Required validation order for iterative work:
+# 1) format, 2) lint, 3) type check
 ruff format .
-
-# Lint — rules: B (bugbear), C4 (comprehensions), D (pydocstyle), E, F, I (isort),
-#         N (naming), S (bandit security), SIM (simplify), UP (pyupgrade),
-#         W, NPY, PGH — see pyproject.toml for full config
 ruff check .
-ruff check . --fix
+pyright .
 
-# Type check (as configured)
-pyright sportsipy/
+# If Ruff or Pyright report diagnostics, fix all errors/warnings before continuing.
 ```
 
 ## Repository Structure
