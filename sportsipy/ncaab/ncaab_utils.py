@@ -1,5 +1,9 @@
 """Provide utilities for ncaab utils."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from sportsipy import utils
 from sportsipy.ncaab.constants import (
     ADVANCED_OPPONENT_STATS_URL,
@@ -10,7 +14,10 @@ from sportsipy.ncaab.constants import (
 )
 
 
-def _add_stats_data(teams_list, team_data_dict):
+def _add_stats_data(
+    teams_list: Any,
+    team_data_dict: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
     """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate all
@@ -36,6 +43,8 @@ def _add_stats_data(teams_list, team_data_dict):
         if 'class="over_header thead"' in str(team_data) or 'class="thead"' in str(team_data):
             continue
         abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
+        if not isinstance(abbr, str):
+            continue
         row_html = str(team_data)
         try:
             team_data_dict[abbr]["data"] += row_html
@@ -45,8 +54,12 @@ def _add_stats_data(teams_list, team_data_dict):
 
 
 def _retrieve_all_teams(
-    year, basic_stats=None, basic_opp_stats=None, adv_stats=None, adv_opp_stats=None
-):
+    year: int | str | None,
+    basic_stats: str | None = None,
+    basic_opp_stats: str | None = None,
+    adv_stats: str | None = None,
+    adv_opp_stats: str | None = None,
+) -> tuple[dict[str, dict[str, Any]] | None, int | str | None]:
     """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NCAAB stats table and finds all
