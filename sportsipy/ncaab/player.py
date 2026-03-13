@@ -1,5 +1,7 @@
 """Provide utilities for player."""
 
+from __future__ import annotations
+
 import re
 from functools import wraps
 
@@ -82,7 +84,12 @@ class AbstractPlayer:
 
     """
 
-    def __init__(self, player_id, player_name, player_data):
+    def __init__(
+        self,
+        player_id: str | None,
+        player_name: str | None,
+        player_data: dict[str, dict[str, str]] | str | None,
+    ) -> None:
         """Initialize the class instance."""
         self._player_data = player_data
         self._player_id = player_id
