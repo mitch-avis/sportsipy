@@ -1,5 +1,7 @@
 """Provide utilities for constants."""
 
+from __future__ import annotations
+
 PARSING_SCHEME = {
     "defensive_simple_rating_system": 'td[data-stat="srs_defense"]:first',
     "first_downs_from_penalties": 'td[data-stat="pen_fd"]:first',
