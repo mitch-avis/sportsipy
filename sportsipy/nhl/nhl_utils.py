@@ -1,11 +1,11 @@
-from sportsipy import utils
+"""Provide utilities for nhl utils."""
 
-from .constants import SEASON_PAGE_URL
+from sportsipy import utils
+from sportsipy.nhl.constants import SEASON_PAGE_URL
 
 
 def _retrieve_all_teams(year, season_page=None):
-    """
-    Find and create Team instances for all teams in the given season.
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NHL stats table and finds all
     requested stats. Each team then has a Team instance created which includes
@@ -19,7 +19,7 @@ def _retrieve_all_teams(year, season_page=None):
     ----------
     year : string
         The requested year to pull stats from.
-    teams_file : string (optional)
+    season_page : string (optional)
         Link with filename to the local season page.
 
     Returns
@@ -28,6 +28,7 @@ def _retrieve_all_teams(year, season_page=None):
         Returns a ``tuple`` in the format of (teams_list, year) where the
         teams_list is the PyQuery data for every team in the given season, and
         the year is the request year for the season.
+
     """
     if not year:
         year = utils.find_year_for_season("nhl")
