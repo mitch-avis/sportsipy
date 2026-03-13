@@ -1,11 +1,11 @@
 [
   {
     "contains": "361ca564",
-    "path": "roster/fb/tottenham-hotspur-2019-2020.html"
+    "path": "schedule/fb_stats/tottenham-hotspur-2019-2020.html"
   },
   {
     "contains": "tottenham-hotspur-2019-2020",
-    "path": "roster/fb/tottenham-hotspur-2019-2020.html"
+    "path": "schedule/fb_stats/tottenham-hotspur-2019-2020.html"
   },
   {
     "contains": "/teams/HOU/2018.html",
@@ -46,6 +46,34 @@
   {
     "contains": "/teams/kan/2017/gamelog",
     "path": "teams/nfl_stats/2017_gamelog.html"
+  },
+  {
+    "contains": "/teams/nor/2018_roster.htm",
+    "path": "roster/nfl/2018_roster.htm"
+  },
+  {
+    "contains": "/players/B/BreeDr00.htm",
+    "path": "roster/nfl/BreeDr00.htm"
+  },
+  {
+    "contains": "/players/L/LewiTo00.htm",
+    "path": "roster/nfl/LewiTo00.htm"
+  },
+  {
+    "contains": "/players/L/LutzWi00.htm",
+    "path": "roster/nfl/LutzWi00.htm"
+  },
+  {
+    "contains": "/players/M/MorsTh00.htm",
+    "path": "roster/nfl/MorsTh00.htm"
+  },
+  {
+    "contains": "/players/D/DaviDe00.htm",
+    "path": "roster/nfl/DaviDe00.htm"
+  },
+  {
+    "contains": "/players/H/HatfDo00.htm",
+    "path": "roster/nfl/HatfDo00.htm"
   },
   {
     "contains": "/teams/NYR/2017_gamelog.html",
@@ -556,11 +584,15 @@
     "path": "teams/nhl_stats/NHL_2017.html"
   },
   {
+    "contains": "/teams/nwe/2017.htm",
+    "path": "schedule/nfl/gamelog.html"
+  },
+  {
     "contains": "playoff",
     "path": "schedule/nba/playoff.html"
   },
   {
     "contains": "gamelog",
-    "path": "schedule/nfl/gamelog"
+    "path": "schedule/nfl/gamelog.html"
   }
 ]
