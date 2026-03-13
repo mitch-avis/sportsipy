@@ -1,3 +1,5 @@
+"""Provide utilities for test nfl schedule."""
+
 from flexmock import flexmock
 
 from sportsipy.constants import (
@@ -17,90 +19,110 @@ YEAR = 2017
 
 
 class TestNFLSchedule:
+    """Represent TestNFLSchedule."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         flexmock(Game).should_receive("_parse_game_data").and_return(None)
 
         self.game = Game(None, REGULAR_SEASON, YEAR)
 
     def test_away_game_returns_away_location(self):
+        """Return test away game returns away location."""
         self.game._location = "@"
 
         assert self.game.location == AWAY
 
     def test_home_game_returns_home_location(self):
+        """Return test home game returns home location."""
         self.game._location = ""
 
         assert self.game.location == HOME
 
     def test_neutral_game_returns_neutral_location(self):
+        """Return test neutral game returns neutral location."""
         self.game._location = "N"
 
         assert self.game.location == NEUTRAL
 
     def test_winning_result_returns_win(self):
+        """Return test winning result returns win."""
         self.game._result = "W"
 
         assert self.game.result == WIN
 
     def test_losing_result_returns_loss(self):
+        """Return test losing result returns loss."""
         self.game._result = "L"
 
         assert self.game.result == LOSS
 
     def test_tied_result_returns_tie(self):
+        """Return test tied result returns tie."""
         self.game._result = "T"
 
         assert self.game.result == TIE
 
     def test_no_result_returns_none(self):
+        """Return test no result returns none."""
         self.game._result = ""
 
         assert self.game.result is None
 
     def test_overtime_returns_overtime(self):
+        """Return test overtime returns overtime."""
         self.game._overtime = "OT"
 
         assert self.game.overtime
 
     def test_no_overtime_returns_none(self):
+        """Return test no overtime returns none."""
         self.game._overtime = ""
 
         assert not self.game.overtime
 
     def test_regular_season_type(self):
+        """Return test regular season type."""
         assert self.game.type == REGULAR_SEASON
 
     def test_playoff_type(self):
+        """Return test playoff type."""
         game = Game(None, POST_SEASON, YEAR)
 
         assert game.type == POST_SEASON
 
     def test_wild_card_game_returns_wild_card(self):
+        """Return test wild card game returns wild card."""
         self.game._week = "Wild Card"
 
         assert self.game.week == WILD_CARD
 
     def test_division_playoff_game_returns_division(self):
+        """Return test division playoff game returns division."""
         self.game._week = "Division"
 
         assert self.game.week == DIVISION
 
     def test_conference_championship_returns_division(self):
+        """Return test conference championship returns division."""
         self.game._week = "Conf. Champ."
 
         assert self.game.week == CONF_CHAMPIONSHIP
 
     def test_super_bowl_returns_super_bowl(self):
+        """Return test super bowl returns super bowl."""
         self.game._week = "SuperBowl"
 
         assert self.game.week == SUPER_BOWL
 
     def test_empty_game_class_returns_dataframe_of_none(self):
+        """Return test empty game class returns dataframe of none."""
         assert self.game._points_scored is None
         assert self.game._points_allowed is None
         assert self.game.dataframe is None
 
     def test_no_dataframes_returns_none(self):
+        """Return test no dataframes returns none."""
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
         schedule = Schedule("DET")
 
@@ -110,6 +132,7 @@ class TestNFLSchedule:
         assert schedule.dataframe is None
 
     def test_no_dataframes_extended_returns_none(self):
+        """Return test no dataframes extended returns none."""
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
         schedule = Schedule("DET")
 
