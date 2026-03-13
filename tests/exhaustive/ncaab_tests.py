@@ -1,3 +1,5 @@
+"""Provide utilities for ncaab tests."""
+
 import os
 import sys
 
