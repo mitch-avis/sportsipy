@@ -1,3 +1,5 @@
+"""Provide utilities for conftest."""
+
 from pathlib import Path
 
 import pytest
@@ -7,9 +9,7 @@ from sportsipy import utils
 
 @pytest.fixture
 def offline_mode(monkeypatch):
-    """
-    Enable offline fixture mode for tests that opt in.
-    """
+    """Enable offline fixture mode for tests that opt in."""
     utils._FIXTURE_MAP = None
     fixtures_dir = Path(__file__).parent / "integration"
     monkeypatch.setenv("SPORTSIPY_OFFLINE", "1")
