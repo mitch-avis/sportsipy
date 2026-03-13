@@ -1,3 +1,5 @@
+"""Provide utilities for constants."""
+
 SQUAD_URL = "https://fbref.com/en/squads/%s"
 
 SCHEDULE_SCHEME = {
