@@ -1,11 +1,11 @@
-from sportsipy import utils
+"""Provide utilities for mlb utils."""
 
-from .constants import PARSING_SCHEME, STANDINGS_URL, TEAM_STATS_URL
+from sportsipy import utils
+from sportsipy.mlb.constants import PARSING_SCHEME, STANDINGS_URL, TEAM_STATS_URL
 
 
 def _add_stats_data(teams_list, team_data_dict):
-    """
-    Add a team's stats row to a dictionary.
+    """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate all
     stats for each team in a single variable.
@@ -25,6 +25,7 @@ def _add_stats_data(teams_list, team_data_dict):
     dictionary
         An updated version of the team_data_dict with the passed table row
         information included.
+
     """
     # Teams are listed in terms of rank with the first team being #1
     rank = 1
@@ -44,8 +45,7 @@ def _add_stats_data(teams_list, team_data_dict):
 
 
 def _retrieve_all_teams(year, standings_file=None, teams_file=None):
-    """
-    Find and create Team instances for all teams in the given season.
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified MLB stats table and finds all
     requested stats. Each team then has a Team instance created which includes
@@ -67,6 +67,7 @@ def _retrieve_all_teams(year, standings_file=None, teams_file=None):
         Returns a ``tuple`` of the team_data_dict and year which represent all
         stats for all teams, and the given year that should be used to pull
         stats from, respectively.
+
     """
     team_data_dict = {}
 
