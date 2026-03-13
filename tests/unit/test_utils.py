@@ -1,42 +1,59 @@
+"""Provide utilities for test utils."""
+
 from typing import Any, cast
+from unittest.mock import patch
 
 import pytest
 from flexmock import flexmock
-from mock import patch
 
 from sportsipy import utils
 
 
 class SeasonStarts:
+    """Represent SeasonStarts."""
+
     def __init__(self, league, month, expected_year):
+        """Initialize the class instance."""
         self.league = league
         self.month = month
         self.expected_year = expected_year
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, month, year):
+        """Initialize the class instance."""
         self.month = month
         self.year = year
 
 
 class Item:
+    """Represent Item."""
+
     def __init__(self, input_string):
+        """Initialize the class instance."""
         self.input_string = input_string
 
     def text(self):
+        """Return text."""
         return self.input_string
 
 
 class Html:
+    """Represent Html."""
+
     def __init__(self, html_string, item_list):
+        """Initialize the class instance."""
         self.html_string = html_string
         self.item_list = item_list
 
     def attr(self, attribute):
+        """Return attr."""
         return self.html_string
 
     def items(self):
+        """Return items."""
         items = []
         for item in self.item_list:
             items.append(Item(item))
@@ -44,15 +61,21 @@ class Html:
 
 
 class MockHtml:
+    """Represent MockHtml."""
+
     def __init__(self, html_string, item_list):
+        """Initialize the class instance."""
         self.html_string = html_string
         self.item_list = item_list
 
     def __call__(self, tag):
+        """Return   call  ."""
         return Html(self.html_string, self.item_list)
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -67,7 +90,10 @@ def mock_pyquery(url, timeout=None):
 
 
 class TestUtils:
+    """Represent TestUtils."""
+
     def test__find_year_for_season_returns_correct_year(self):
+        """Return test  find year for season returns correct year."""
         season_start_matrix = [
             # MLB Months
             SeasonStarts("mlb", 1, 2017),
@@ -157,12 +183,15 @@ class TestUtils:
             assert result == month.expected_year
 
     def test_remove_html_comment_tags_removes_comments(self):
+        """Return test remove html comment tags removes comments."""
         html_string = """<html>
+
     <body>
         <!--<p>This should be kept.</p>-->
     </body>
 </html>"""
         expected_output = """<html>
+
     <body>
         <p>This should be kept.</p>
     </body>
@@ -173,12 +202,15 @@ class TestUtils:
         assert result == expected_output
 
     def test_remove_html_comment_tags_without_comments_doesnt_change(self):
+        """Return test remove html comment tags without comments doesnt change."""
         html_string = """<html>
+
     <body>
         <p>This should be the same.</p>
     </body>
 </html>"""
         expected_output = """<html>
+
     <body>
         <p>This should be the same.</p>
     </body>
@@ -189,6 +221,7 @@ class TestUtils:
         assert result == expected_output
 
     def test_abbreviation_is_parsed_correctly(self):
+        """Return test abbreviation is parsed correctly."""
         test_abbreviations = {
             "/teams/ARI/2018.shtml": "ARI",
             "/teams/nwe/2017.htm": "NWE",
@@ -204,19 +237,24 @@ class TestUtils:
             assert result == abbreviation
 
     def test__parse_field_returns_abbreviation(self):
+        """Return test  parse field returns abbreviation."""
         parsing_scheme = {"abbreviation": "a"}
         input_abbreviation = "/teams/ARI/2018.shtml"
         expected = "ARI"
         flexmock(utils).should_receive("parse_abbreviation").and_return("ARI").once()
 
         result = utils.parse_field(
-            parsing_scheme, cast(Any, MockHtml(input_abbreviation, None)), "abbreviation"
+            parsing_scheme,
+            cast(Any, MockHtml(input_abbreviation, None)),
+            "abbreviation",
         )
         assert result == expected
 
     def test_parse_field_returns_none_on_index_error(self):
+        """Return test parse field returns none on index error."""
         parsing_scheme = {"batters_used": 'td[data-stat="batters_used"]:first'}
         html_string = """<td class="right " data-stat="batters_used">32</td>
+
 <td class="right " data-stat="age_bat">29.1</td>
 <td class="right " data-stat="runs_per_game">4.10</td>"""
         expected = None
@@ -230,8 +268,10 @@ class TestUtils:
         assert result == expected
 
     def test__parse_field_returns_value_for_non_abbreviation(self):
+        """Return test  parse field returns value for non abbreviation."""
         parsing_scheme = {"batters_used": 'td[data-stat="batters_used"]:first'}
         html_string = """<td class="right " data-stat="batters_used">32</td>
+
 <td class="right " data-stat="age_bat">29.1</td>
 <td class="right " data-stat="runs_per_game">4.10</td>"""
         expected = "32"
@@ -242,7 +282,9 @@ class TestUtils:
         assert result == expected
 
     def test__get_stats_table_returns_correct_table(self):
+        """Return test  get stats table returns correct table."""
         html_string = """<div>
+
     <table class="stats_table" id="all_stats">
         <tbody>
             <tr data-row="0">
@@ -272,33 +314,41 @@ class TestUtils:
 
     @patch("requests.head", side_effect=mock_pyquery)
     def test_valid_url_returns_true(self, *args, **kwargs):
+        """Return test valid url returns true."""
         response = utils.url_exists("http://www.good_url.com/this/is/valid")
 
         assert response
 
     @patch("requests.head", side_effect=mock_pyquery)
     def test_404_url_returns_false(self, *args, **kwargs):
+        """Return test 404 url returns false."""
         assert not utils.url_exists("http://www.404.com/doesnt/exist")
 
     @patch("requests.head", side_effect=mock_pyquery)
     def test_invalid_url_exception_returns_false(self, *args, **kwargs):
+        """Return test invalid url exception returns false."""
         assert not utils.url_exists("http://www.exception.com")
 
     def test_no_data_found_returns_safely(self, *args, **kwargs):
+        """Return test no data found returns safely."""
         assert not utils.no_data_found()
 
     def test_pulling_data_with_no_inputs(self, *args, **kwargs):
+        """Return test pulling data with no inputs."""
         with pytest.raises(ValueError):
             utils.pull_page()
 
     def test_pulling_local_file(self, *args, **kwargs):
+        """Return test pulling local file."""
         output = utils.pull_page(local_file="VERSION")
 
         assert output
 
     def test_secondary_index_pulling_values(self):
+        """Return test secondary index pulling values."""
         parsing_scheme = {"batters_used": 'td[data-stat="batters_used"]'}
         html_string = """<td class="right " data-stat="batters_used">32</td>
+
 <td class="right " data-stat="age_bat">29.1</td>
 <td class="right " data-stat="runs_per_game">4.10</td>
 <td class="right " data-stat="batters_used">31</td>
@@ -316,8 +366,10 @@ class TestUtils:
         assert result == expected
 
     def test_secondary_index_pulling_values_bad_secondary(self):
+        """Return test secondary index pulling values bad secondary."""
         parsing_scheme = {"batters_used": 'td[data-stat="batters_used"]'}
         html_string = """<td class="right " data-stat="batters_used">32</td>
+
 <td class="right " data-stat="age_bat">29.1</td>
 <td class="right " data-stat="runs_per_game">4.10</td>
 <td class="right " data-stat="batters_used">31</td>
@@ -334,11 +386,13 @@ class TestUtils:
         assert not result
 
     def test_title_matches_year_handles_ranges(self):
+        """Return test title matches year handles ranges."""
         assert utils._title_matches_year("2017-18 Season Summary", "2018")
         assert utils._title_matches_year("2017–18 Season Summary", "2018")
         assert not utils._title_matches_year("2016-17 Season Summary", "2018")
 
     def test_extract_canonical_url_prefers_link(self):
+        """Return test extract canonical url prefers link."""
         html = (
             '<link rel="canonical" href="https://example.com/teams/HOU/2017.html" />'
             '<meta property="og:url" content="https://example.com/teams/NYJ/2017.html" />'
@@ -346,6 +400,7 @@ class TestUtils:
         assert utils._extract_canonical_url(html) == "https://example.com/teams/HOU/2017.html"
 
     def test_slug_matches_content_uses_canonical_when_present(self):
+        """Return test slug matches content uses canonical when present."""
         html = (
             '<link rel="canonical" href="https://example.com/teams/NYJ/2017.html" />'
             '<a href="/teams/HOU/2017.html">Link</a>'
@@ -353,10 +408,13 @@ class TestUtils:
         assert not utils._slug_matches_content(html, "HOU")
 
     def test_slug_matches_content_scans_body_without_canonical(self):
+        """Return test slug matches content scans body without canonical."""
         html = '<a href="/teams/HOU/2017.html">Link</a>'
         assert utils._slug_matches_content(html, "HOU")
 
     def test_resolve_year_for_url_walks_backwards(self, monkeypatch):
+        """Return test resolve year for url walks backwards."""
+
         def fake_exists(url: str) -> bool:
             return url.endswith("/2017")
 
@@ -365,6 +423,8 @@ class TestUtils:
         assert result == "2017"
 
     def test_resolve_year_for_url_returns_input_when_unparseable(self, monkeypatch):
+        """Return test resolve year for url returns input when unparseable."""
+
         def fake_exists(url: str) -> bool:
             raise AssertionError("url_exists should not be called for non-numeric years")
 
