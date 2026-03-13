@@ -1,5 +1,7 @@
 """Provide utilities for rankings."""
 
+from __future__ import annotations
+
 import re
 from urllib.error import HTTPError
 
@@ -29,7 +31,7 @@ class Rankings:
 
     """
 
-    def __init__(self, year=None):
+    def __init__(self, year: int | str | None = None) -> None:
         """Initialize the class instance."""
         self._rankings = {}
 
@@ -258,7 +260,7 @@ class CFPRankings:
 
     """
 
-    def __init__(self, year=None):
+    def __init__(self, year: int | str | None = None) -> None:
         """Initialize the class instance."""
         self._rankings = {}
 
@@ -479,7 +481,7 @@ class CoachesRankings:
 
     """
 
-    def __init__(self, year=None):
+    def __init__(self, year: int | str | None = None) -> None:
         """Initialize the class instance."""
         self._rankings = {}
 
