@@ -1,11 +1,16 @@
+"""Provide utilities for test nhl roster."""
+
+from unittest.mock import patch
+
 from flexmock import flexmock
-from mock import patch
 
 from sportsipy.nhl.player import AbstractPlayer
 from sportsipy.nhl.roster import Player
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.url = url
@@ -19,13 +24,17 @@ def mock_pyquery(url, timeout=None):
 
 
 class TestNHLPlayer:
+    """Represent TestNHLPlayer."""
+
     def setup_method(self):
+        """Return setup method."""
         flexmock(AbstractPlayer).should_receive("_parse_player_data").and_return(None)
         flexmock(Player).should_receive("_pull_player_data").and_return(None)
         flexmock(Player).should_receive("find_initial_index").and_return(None)
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_invalid_url_returns_none(self, *args, **kwargs):
+        """Return test invalid url returns none."""
         player = Player(None)
         player._player_id = "BAD"
 
@@ -35,6 +44,7 @@ class TestNHLPlayer:
 
     @patch("requests.get", side_effect=mock_pyquery)
     def test_missing_weight_returns_none(self, *args, **kwargs):
+        """Return test missing weight returns none."""
         player = Player(None)
         player._weight = None
 
