@@ -1,3 +1,5 @@
+"""Provide utilities for test nfl boxscore."""
+
 import os
 from datetime import datetime
 
@@ -16,11 +18,14 @@ BOXSCORE = "202009100kan"
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nfl", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -36,13 +41,19 @@ def mock_pyquery(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNFLBoxscore:
+    """Represent TestNFLBoxscore."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "date": "Thursday Sep 10, 2020",
             "time": "8:20pm",
@@ -115,6 +126,7 @@ class TestNFLBoxscore:
         self.boxscore = Boxscore(BOXSCORE)
 
     def test_nfl_boxscore_returns_requested_boxscore(self):
+        """Return test nfl boxscore returns requested boxscore."""
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
         assert self.boxscore.summary == {
@@ -123,6 +135,7 @@ class TestNFLBoxscore:
         }
 
     def test_invalid_url_yields_empty_class(self):
+        """Return test invalid url yields empty class."""
         flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
 
         boxscore = Boxscore(BOXSCORE)
@@ -133,6 +146,7 @@ class TestNFLBoxscore:
             assert value is None
 
     def test_nfl_boxscore_dataframe_returns_dataframe_of_all_values(self):
+        """Return test nfl boxscore dataframe returns dataframe of all values."""
         df = pd.DataFrame([self.results], index=[BOXSCORE])
 
         # Pandas doesn't natively allow comparisons of DataFrames.
@@ -147,6 +161,7 @@ class TestNFLBoxscore:
         assert df1.empty
 
     def test_nfl_boxscore_players(self):
+        """Return test nfl boxscore players."""
         assert len(self.boxscore.home_players) == 33
         assert len(self.boxscore.away_players) == 28
 
@@ -156,13 +171,17 @@ class TestNFLBoxscore:
             assert not player.dataframe.empty
 
     def test_nfl_boxscore_string_representation(self):
+        """Return test nfl boxscore string representation."""
         expected = "Boxscore for Houston Texans at Kansas City Chiefs (Thursday Sep 10, 2020)"
 
         assert repr(self.boxscore) == expected
 
 
 class TestNFLBoxscores:
+    """Represent TestNFLBoxscores."""
+
     def setup_method(self):
+        """Return setup method."""
         self.expected = {
             "1-2020": [
                 {
@@ -377,16 +396,19 @@ class TestNFLBoxscores:
         }
 
     def test_boxscores_search(self, *args, **kwargs):
+        """Return test boxscores search."""
         result = Boxscores(1, 2020).games
 
         assert result == self.expected
 
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
+        """Return test boxscores search invalid end."""
         result = Boxscores(1, 2020, 0).games
 
         assert result == self.expected
 
     def test_boxscores_search_multiple_weeks(self, *args, **kwargs):
+        """Return test boxscores search multiple weeks."""
         expected = {
             "1-2020": [
                 {
@@ -814,11 +836,13 @@ class TestNFLBoxscores:
         assert result == expected
 
     def test_boxscores_search_string_representation(self, *args, **kwargs):
+        """Return test boxscores search string representation."""
         result = Boxscores(1, 2020)
 
         assert repr(result) == "NFL games for week 1"
 
     def test_boxscores_search_string_representation_multi_week(self, *args, **kwargs):
+        """Return test boxscores search string representation multi week."""
         result = Boxscores(1, 2020, 2)
 
         assert repr(result) == "NFL games for weeks 1, 2"
