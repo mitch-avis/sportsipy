@@ -1,3 +1,5 @@
+"""Provide utilities for test ncaab teams."""
+
 from typing import Any, cast
 
 from flexmock import flexmock
@@ -7,7 +9,10 @@ from sportsipy.ncaab.teams import Team
 
 
 class TestNCAABTeams:
+    """Represent TestNCAABTeams."""
+
     def test_ncaab_schedule_returns_schedule(self, *args, **kwargs):
+        """Return test ncaab schedule returns schedule."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
@@ -16,6 +21,7 @@ class TestNCAABTeams:
         assert len(team.schedule) == 0
 
     def test_two_point_field_goal_percentage_returns_default(self):
+        """Return test two point field goal percentage returns default."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
@@ -31,6 +37,7 @@ class TestNCAABTeams:
         assert result == 0.0
 
     def test_opp_two_point_field_goal_percentage_returns_default(self):
+        """Return test opp two point field goal percentage returns default."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
@@ -46,6 +53,7 @@ class TestNCAABTeams:
         assert result == 0.0
 
     def test_defensive_rebounds_with_missing_data_returns_default(self):
+        """Return test defensive rebounds with missing data returns default."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
@@ -57,6 +65,7 @@ class TestNCAABTeams:
         assert not result
 
     def test_opp_defensive_rebounds_with_missing_data_returns_default(self):
+        """Return test opp defensive rebounds with missing data returns default."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
@@ -68,6 +77,7 @@ class TestNCAABTeams:
         assert not result
 
     def test_net_rating_with_missing_data_returns_default(self):
+        """Return test net rating with missing data returns default."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
 
