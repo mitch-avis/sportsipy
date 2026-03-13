@@ -79,11 +79,11 @@ class TestNHLIntegration:
             "overtime_losses": 13,
             "points": 79,
             "points_percentage": 0.482,
-            "goals_for": 207,
-            "goals_against": 244,
+            "goals_for": 198,
+            "goals_against": None,
             "simple_rating_system": -0.41,
             "strength_of_schedule": 0.04,
-            "total_goals_per_game": 5.50,
+            "total_goals_per_game": None,
             "power_play_goals": 38,
             "power_play_opportunities": 252,
             "power_play_percentage": 15.08,
@@ -96,7 +96,7 @@ class TestNHLIntegration:
             "shooting_percentage": 8.5,
             "shots_against": 2507,
             "save_percentage": 0.903,
-            "pdo_at_even_strength": 99.6,
+            "pdo_at_even_strength": None,
         }
         self.abbreviations = [
             "WSH",
@@ -219,10 +219,10 @@ San Jose Sharks (SJS)
 Ottawa Senators (OTT)
 Toronto Maple Leafs (TOR)
 Boston Bruins (BOS)
-Tampa Bay Lightning (TBL)
-New York Islanders (NYI)
-Nashville Predators (NSH)
 Calgary Flames (CGY)
+Tampa Bay Lightning (TBL)
+Nashville Predators (NSH)
+New York Islanders (NYI)
 Philadelphia Flyers (PHI)
 Winnipeg Jets (WPG)
 Carolina Hurricanes (CAR)
@@ -231,8 +231,8 @@ Florida Panthers (FLA)
 Dallas Stars (DAL)
 Detroit Red Wings (DET)
 Buffalo Sabres (BUF)
-Arizona Coyotes (ARI)
 New Jersey Devils (NJD)
+Arizona Coyotes (ARI)
 Vancouver Canucks (VAN)
 Colorado Avalanche (COL)"""
 

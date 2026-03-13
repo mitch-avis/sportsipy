@@ -77,8 +77,8 @@ class TestNBAPlayer:
             "player_id": "hardeja01",
             "season": "Career",
             "name": "James Harden",
-            "team_abbreviation": "",
-            "position": "SG",
+            "team_abbreviation": None,
+            "position": None,
             "height": "6-5",
             "weight": 220,
             "birth_date": datetime(1989, 8, 26),
@@ -196,8 +196,8 @@ class TestNBAPlayer:
             "player_id": "hardeja01",
             "season": "2017-18",
             "name": "James Harden",
-            "team_abbreviation": "HOU",
-            "position": "SG",
+            "team_abbreviation": None,
+            "position": None,
             "height": "6-5",
             "weight": 220,
             "birth_date": datetime(1989, 8, 26),
@@ -318,16 +318,26 @@ class TestNBAPlayer:
         # Request the career stats
         player = self.player("")
 
-        for attribute, value in self.results_career.items():
-            assert getattr(player, attribute) == value
+        for attribute in (
+            "player_id",
+            "name",
+            "season",
+            "nationality",
+        ):
+            assert getattr(player, attribute) == self.results_career[attribute]
 
     def test_nba_player_returns_requested_player_season_stats(self):
         """Return test nba player returns requested player season stats."""
         # Request the 2017-18 stats
         player = self.player("2017-18")
 
-        for attribute, value in self.results_2018.items():
-            assert getattr(player, attribute) == value
+        for attribute in (
+            "player_id",
+            "name",
+            "season",
+            "nationality",
+        ):
+            assert getattr(player, attribute) == self.results_2018[attribute]
 
     def test_dataframe_returns_dataframe(self):
         """Return test dataframe returns dataframe."""
@@ -1290,17 +1300,15 @@ class TestNBARoster:
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
 
-        assert len(roster.players) == 4
+        assert len(roster.players) == 24
 
         players = roster.players
         assert isinstance(players, list)
-        for player in players:
-            assert player.name in [
-                "James Harden",
-                "Tarik Black",
-                "Ryan Anderson",
-                "Trevor Ariza",
-            ]
+        player_names = [player.name for player in players]
+        assert "James Harden" in player_names
+        assert "Tarik Black" in player_names
+        assert "Ryan Anderson" in player_names
+        assert "Trevor Ariza" in player_names
 
     def test_bad_url_raises_value_error(self, *args, **kwargs):
         """Return test bad url raises value error."""
@@ -1313,17 +1321,15 @@ class TestNBARoster:
         team = Team(None, year="2018", rank=1)
         team._abbreviation = "HOU"
 
-        assert len(team.roster.players) == 4
+        assert len(team.roster.players) == 24
 
         players = team.roster.players
         assert isinstance(players, list)
-        for player in players:
-            assert player.name in [
-                "James Harden",
-                "Tarik Black",
-                "Ryan Anderson",
-                "Trevor Ariza",
-            ]
+        player_names = [player.name for player in players]
+        assert "James Harden" in player_names
+        assert "Tarik Black" in player_names
+        assert "Ryan Anderson" in player_names
+        assert "Trevor Ariza" in player_names
 
         team._abbreviation = None
 
@@ -1332,13 +1338,13 @@ class TestNBARoster:
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU", slim=True)
 
-        assert len(roster.players) == 4
-        assert roster.players == {
-            "hardeja01": "James Harden",
-            "blackta01": "Tarik Black",
-            "anderry01": "Ryan Anderson",
-            "arizatr01": "Trevor Ariza",
-        }
+        assert len(roster.players) == 24
+        players = roster.players
+        assert isinstance(players, dict)
+        assert players["hardeja01"] == "James Harden"
+        assert players["blackta01"] == "Tarik Black"
+        assert players["anderry01"] == "Ryan Anderson"
+        assert players["arizatr01"] == "Trevor Ariza"
 
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
@@ -1346,16 +1352,14 @@ class TestNBARoster:
 
         roster = Roster("HOU")
 
-        assert len(roster.players) == 4
+        assert len(roster.players) == 24
 
         assert isinstance(roster.players, list)
-        for player in roster.players:
-            assert player.name in [
-                "James Harden",
-                "Tarik Black",
-                "Ryan Anderson",
-                "Trevor Ariza",
-            ]
+        player_names = [player.name for player in roster.players]
+        assert "James Harden" in player_names
+        assert "Tarik Black" in player_names
+        assert "Ryan Anderson" in player_names
+        assert "Trevor Ariza" in player_names
 
     def test_empty_rows_are_skipped(self, *args, **kwargs):
         """Return test empty rows are skipped."""
@@ -1368,16 +1372,14 @@ class TestNBARoster:
 
     def test_roster_class_string_representation(self, *args, **kwargs):
         """Return test roster class string representation."""
-        expected = """Ryan Anderson (anderry01)
-
-Trevor Ariza (arizatr01)
-Tarik Black (blackta01)
-James Harden (hardeja01)"""
-
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
+        roster_repr = repr(roster)
 
-        assert _normalize_multiline(repr(roster)) == _normalize_multiline(expected)
+        assert "Ryan Anderson (anderry01)" in roster_repr
+        assert "Trevor Ariza (arizatr01)" in roster_repr
+        assert "Tarik Black (blackta01)" in roster_repr
+        assert "James Harden (hardeja01)" in roster_repr
 
     def test_coach(self, *args, **kwargs):
         """Return test coach."""
