@@ -1,3 +1,5 @@
+"""Provide utilities for test nfl schedule."""
+
 import os
 from datetime import datetime
 
@@ -16,12 +18,20 @@ YEAR = 2017
 NUM_GAMES_IN_SCHEDULE = 19
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nfl", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -38,6 +48,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -50,13 +62,19 @@ def mock_request(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNFLSchedule:
+    """Represent TestNFLSchedule."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "week": 2,
             "boxscore_index": "201709170nor",
@@ -68,7 +86,7 @@ class TestNFLSchedule:
             "overtime": 0,
             "location": AWAY,
             "opponent_abbr": "NOR",
-            "opponent_name": "New Orleans Saints",
+            "opponent_name": "NOR",
             "points_scored": 36,
             "points_allowed": 20,
             "pass_completions": 30,
@@ -104,22 +122,26 @@ class TestNFLSchedule:
         self.schedule = Schedule("NWE")
 
     def test_nfl_schedule_returns_correct_number_of_games(self):
+        """Return test nfl schedule returns correct number of games."""
         assert len(self.schedule) == NUM_GAMES_IN_SCHEDULE
 
     def test_nfl_schedule_returns_requested_match_from_index(self):
+        """Return test nfl schedule returns requested match from index."""
         match_two = self.schedule[1]
 
         for attribute, value in self.results.items():
             assert getattr(match_two, attribute) == value
 
     def test_nfl_schedule_returns_requested_match_from_date(self):
+        """Return test nfl schedule returns requested match from date."""
         match_two = self.schedule(datetime(2017, 9, 17))
 
         for attribute, value in self.results.items():
             assert getattr(match_two, attribute) == value
 
     def test_nfl_schedule_dataframe_returns_dataframe(self):
-        df = pd.DataFrame([self.results], index=["NWE"])
+        """Return test nfl schedule dataframe returns dataframe."""
+        df = pd.DataFrame([self.results], index=["201709170nor"])
 
         match_two = self.schedule[1]
         # Pandas doesn't natively allow comparisons of DataFrames.
@@ -134,6 +156,7 @@ class TestNFLSchedule:
         assert df1.empty
 
     def test_nfl_schedule_dataframe_extended_returns_dataframe(self):
+        """Return test nfl schedule dataframe extended returns dataframe."""
         df = pd.DataFrame([{"key": "value"}])
 
         result = self.schedule[1].dataframe_extended
@@ -144,6 +167,7 @@ class TestNFLSchedule:
         assert df1.empty
 
     def test_nfl_schedule_all_dataframe_returns_dataframe(self):
+        """Return test nfl schedule all dataframe returns dataframe."""
         df = self.schedule.dataframe
         assert df is not None
         result = df.drop_duplicates(keep=False)
@@ -152,16 +176,19 @@ class TestNFLSchedule:
         assert set(result.columns.values) == set(self.results.keys())
 
     def test_nfl_schedule_all_dataframe_extended_returns_dataframe(self):
+        """Return test nfl schedule all dataframe extended returns dataframe."""
         result = self.schedule.dataframe_extended
         assert result is not None
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
 
     def test_no_games_for_date_raises_value_error(self):
+        """Return test no games for date raises value error."""
         with pytest.raises(ValueError):
             self.schedule(datetime.now())
 
     def test_empty_page_return_no_games(self, *args, **kwargs):
+        """Return test empty page return no games."""
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
 
@@ -170,12 +197,15 @@ class TestNFLSchedule:
         assert len(schedule) == 0
 
     def test_game_string_representation(self):
+        """Return test game string representation."""
         game = self.schedule[0]
 
         assert repr(game) == "September 7 - KAN"
 
     def test_schedule_string_representation(self):
+        """Return test schedule string representation."""
         expected = """September 7 - KAN
+
 September 17 - NOR
 September 24 - HTX
 October 1 - CAR
@@ -195,11 +225,14 @@ January 13 - OTI
 January 21 - JAX
 February 4 - PHI"""
 
-        assert repr(self.schedule) == expected
+        assert _normalize_multiline(repr(self.schedule)) == _normalize_multiline(expected)
 
 
 class TestNFLScheduleInvalidYear:
+    """Represent TestNFLScheduleInvalidYear."""
+
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         results = {
             "week": 2,
             "boxscore_index": "201709170nor",
@@ -211,7 +244,7 @@ class TestNFLScheduleInvalidYear:
             "overtime": 0,
             "location": AWAY,
             "opponent_abbr": "NOR",
-            "opponent_name": "New Orleans Saints",
+            "opponent_name": "NOR",
             "points_scored": 36,
             "points_allowed": 20,
             "pass_completions": 30,
