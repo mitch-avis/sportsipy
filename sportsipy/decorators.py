@@ -1,7 +1,10 @@
+"""Property decorator factories for coercing scraped values to int or float."""
+
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, overload
+from typing import Any, overload
 
 
 @overload
@@ -15,10 +18,34 @@ def int_property_decorator() -> Callable[[Callable[..., Any]], property]: ...
 def int_property_decorator(
     func: Callable[..., Any] | None = None,
 ) -> property | Callable[[Callable[..., Any]], property]:
+    """Decorate a property method to coerce its return value to ``int``.
+
+    When applied to a property, the decorator wraps the underlying method so
+    that its return value is converted to an ``int``.  If the conversion fails
+    (e.g. the raw value is ``None`` or a non-numeric string) the property
+    returns ``None`` instead of raising an exception.
+
+    Can be used either as ``@int_property_decorator`` or as
+    ``@int_property_decorator()`` (called with no arguments).
+
+    Parameters
+    ----------
+    func : callable, optional
+        The property function to wrap when the decorator is used without
+        parentheses.
+
+    Returns
+    -------
+    property or callable
+        A ``property`` object when *func* is provided directly, otherwise a
+        decorator callable that accepts the property function.
+
+    """
+
     def decorator(inner: Callable[..., Any]) -> property:
         @property
         @wraps(inner)
-        def wrapper(*args, **kwargs) -> Optional[int]:
+        def wrapper(*args, **kwargs) -> int | None:
             value = inner(*args, **kwargs)
             try:
                 return int(value)
@@ -51,10 +78,34 @@ def float_property_decorator() -> Callable[[Callable[..., Any]], property]: ...
 def float_property_decorator(
     func: Callable[..., Any] | None = None,
 ) -> property | Callable[[Callable[..., Any]], property]:
+    """Decorate a property method to coerce its return value to ``float``.
+
+    When applied to a property, the decorator wraps the underlying method so
+    that its return value is converted to a ``float``.  If the conversion fails
+    (e.g. the raw value is ``None`` or a non-numeric string) the property
+    returns ``None`` instead of raising an exception.
+
+    Can be used either as ``@float_property_decorator`` or as
+    ``@float_property_decorator()`` (called with no arguments).
+
+    Parameters
+    ----------
+    func : callable, optional
+        The property function to wrap when the decorator is used without
+        parentheses.
+
+    Returns
+    -------
+    property or callable
+        A ``property`` object when *func* is provided directly, otherwise a
+        decorator callable that accepts the property function.
+
+    """
+
     def decorator(inner: Callable[..., Any]) -> property:
         @property
         @wraps(inner)
-        def wrapper(*args, **kwargs) -> Optional[float]:
+        def wrapper(*args, **kwargs) -> float | None:
             value = inner(*args, **kwargs)
             try:
                 return float(value)
