@@ -1,5 +1,7 @@
 """Provide utilities for boxscore."""
 
+from __future__ import annotations
+
 import re
 from datetime import timedelta
 from typing import Any
@@ -57,7 +59,12 @@ class BoxscorePlayer(AbstractPlayer):
 
     """
 
-    def __init__(self, player_id, player_name, player_data):
+    def __init__(
+        self,
+        player_id: str | None,
+        player_name: str | None,
+        player_data: dict[str, dict[str, str]] | str | None,
+    ) -> None:
         """Initialize the class instance."""
         self._index = 0
         self._player_id = player_id
@@ -66,7 +73,7 @@ class BoxscorePlayer(AbstractPlayer):
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame:
         """Return a ``pandas DataFrame`` containing all other relevant class.
 
         properties and values for the specified game.
@@ -113,7 +120,7 @@ class BoxscorePlayer(AbstractPlayer):
         return pd.DataFrame([fields_to_include], index=[self._player_id])
 
     @property
-    def minutes_played(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def minutes_played(self) -> float | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a ``float`` of the number of game minutes the player was on the.
 
         court for.
@@ -137,7 +144,7 @@ class BoxscorePlayer(AbstractPlayer):
         return float(minutes_value)
 
     @property
-    def two_pointers(self):
+    def two_pointers(self) -> int | None:
         """Return an ``int`` of the total number of two point field goals the.
 
         player made.
@@ -156,7 +163,7 @@ class BoxscorePlayer(AbstractPlayer):
         return two_pointers
 
     @property
-    def two_point_attempts(self):
+    def two_point_attempts(self) -> int | None:
         """Return an ``int`` of the total number of two point field goals the.
 
         player attempted during the season.
@@ -175,7 +182,7 @@ class BoxscorePlayer(AbstractPlayer):
         return two_point_attempts
 
     @property
-    def two_point_percentage(self):
+    def two_point_percentage(self) -> float | None:
         """Return a ``float`` of the player's two point field goal percentage.
 
         during the season. Percentage ranges from 0-1.
@@ -222,7 +229,7 @@ class Boxscore:
 
     """
 
-    def __init__(self, uri):
+    def __init__(self, uri: str | None) -> None:
         """Initialize the class instance."""
         self._uri = uri
         self._date = None
@@ -691,7 +698,7 @@ class Boxscore:
         self._away_players, self._home_players = self._find_players(boxscore)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
@@ -786,7 +793,7 @@ class Boxscore:
         return pd.DataFrame([fields_to_include], index=[self._uri])
 
     @property
-    def away_players(self):
+    def away_players(self) -> list[BoxscorePlayer]:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the away team.
@@ -794,7 +801,7 @@ class Boxscore:
         return self._away_players
 
     @property
-    def home_players(self):
+    def home_players(self) -> list[BoxscorePlayer]:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the home team.
@@ -802,12 +809,12 @@ class Boxscore:
         return self._home_players
 
     @property
-    def date(self):
+    def date(self) -> str | None:
         """Return a ``string`` of the date the game took place."""
         return self._date
 
     @property
-    def location(self):
+    def location(self) -> str | None:
         """Return a ``string`` of the name of the venue where the game was.
 
         played.
@@ -815,7 +822,7 @@ class Boxscore:
         return self._location
 
     @property
-    def summary(self):
+    def summary(self) -> dict[str, list[int | None]] | None:
         """Return a ``dictionary`` with two keys, 'away' and 'home'. The value of.
 
         each key will be a list for each respective team's score by order of
@@ -830,7 +837,7 @@ class Boxscore:
         return self._summary
 
     @property
-    def winner(self):
+    def winner(self) -> str | None:
         """Return a ``string`` constant indicating whether the home or away team.
 
         won.
@@ -844,7 +851,7 @@ class Boxscore:
         return AWAY
 
     @property
-    def winning_name(self):
+    def winning_name(self) -> str:
         """Return a ``string`` of the winning team's name, such as 'Detroit.
 
         Pistons'.
@@ -858,7 +865,7 @@ class Boxscore:
         return ""
 
     @property
-    def winning_abbr(self):
+    def winning_abbr(self) -> str:
         """Return a ``string`` of the winning team's abbreviation, such as 'DET'.
 
         for the Detroit Pistons.
@@ -870,7 +877,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_name(self):
+    def losing_name(self) -> str:
         """Return a ``string`` of the losing team's name, such as 'Phoenix Suns'."""
         home_name = self._home_name.text() if self._home_name is not None else ""
         away_name = self._away_name.text() if self._away_name is not None else ""
@@ -881,7 +888,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_abbr(self):
+    def losing_abbr(self) -> str:
         """Return a ``string`` of the losing team's abbreviation, such as 'PHO'.
 
         for the Phoenix Suns.
@@ -1531,7 +1538,7 @@ class Boxscores:
 
     """
 
-    def __init__(self, date, end_date=None):
+    def __init__(self, date: Any, end_date: Any | None = None) -> None:
         """Initialize the class instance."""
         self._boxscores = {}
 
@@ -1546,7 +1553,7 @@ class Boxscores:
         return self.__str__()
 
     @property
-    def games(self):
+    def games(self) -> dict[str, list[dict[str, Any]]]:
         """Return a ``dictionary`` object representing all of the games played on.
 
         the requested day. Dictionary is in the following format::
