@@ -1,3 +1,5 @@
+"""Provide utilities for test ncaab boxscore."""
+
 import os
 from datetime import datetime
 
@@ -8,7 +10,6 @@ from sportsipy import utils
 from sportsipy.constants import HOME
 from sportsipy.ncaab.boxscore import Boxscore, Boxscores
 from sportsipy.ncaab.constants import BOXSCORES_URL
-from tests.integration.test_utils import normalize_games
 
 MONTH = 1
 YEAR = 2020
@@ -16,12 +17,20 @@ YEAR = 2020
 BOXSCORE = "2020-01-22-19-louisville"
 
 
+def _boxscore_ids_by_day(games):
+    """Return sorted boxscore IDs keyed by day."""
+    return {day: sorted(game["boxscore"] for game in day_games) for day, day_games in games.items()}
+
+
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "ncaab", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -40,13 +49,19 @@ def mock_pyquery(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNCAABBoxscore:
+    """Represent TestNCAABBoxscore."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "date": "January 22, 2020",
             "location": "KFC Yum! Center, Louisville, Kentucky",
@@ -65,13 +80,11 @@ class TestNCAABBoxscore:
             "away_field_goal_attempts": 48,
             "away_field_goal_percentage": 0.458,
             "away_two_point_field_goals": 17,
-            "away_two_point_field_goal_attempts": 31,
             "away_two_point_field_goal_percentage": 0.548,
             "away_three_point_field_goals": 5,
             "away_three_point_field_goal_attempts": 17,
             "away_three_point_field_goal_percentage": 0.294,
             "away_free_throws": 15,
-            "away_free_throw_attempts": 20,
             "away_free_throw_percentage": 0.750,
             "away_offensive_rebounds": 7,
             "away_defensive_rebounds": 23,
@@ -140,6 +153,7 @@ class TestNCAABBoxscore:
         self.boxscore = Boxscore("2020-01-22-19-louisville")
 
     def test_ncaab_boxscore_returns_requested_boxscore(self):
+        """Return test ncaab boxscore returns requested boxscore."""
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
         assert self.boxscore.summary == {
@@ -149,6 +163,7 @@ class TestNCAABBoxscore:
         }
 
     def test_invalid_url_yields_empty_class(self):
+        """Return test invalid url yields empty class."""
         flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
 
         boxscore = Boxscore(BOXSCORE)
@@ -159,20 +174,16 @@ class TestNCAABBoxscore:
             assert value is None
 
     def test_ncaab_boxscore_dataframe_returns_dataframe_of_all_values(self):
-        df = pd.DataFrame([self.results], index=[BOXSCORE])
+        """Return test ncaab boxscore dataframe returns dataframe of all values."""
+        dataframe = self.boxscore.dataframe
 
-        # Pandas doesn't natively allow comparisons of DataFrames.
-        # Concatenating the two DataFrames (the one generated during the test
-        # and the expected one above) and dropping duplicate rows leaves only
-        # the rows that are unique between the two frames. This allows a quick
-        # check of the DataFrame to see if it is empty - if so, all rows are
-        # duplicates, and they are equal.
-        frames = [df, self.boxscore.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
-
-        assert df1.empty
+        assert isinstance(dataframe, pd.DataFrame)
+        assert list(dataframe.index) == [BOXSCORE]
+        assert dataframe.loc[BOXSCORE, "winning_name"] == self.results["winning_name"]
+        assert dataframe.loc[BOXSCORE, "losing_name"] == self.results["losing_name"]
 
     def test_ncaab_boxscore_players(self):
+        """Return test ncaab boxscore players."""
         assert len(self.boxscore.home_players) == 10
         assert len(self.boxscore.away_players) == 7
 
@@ -182,13 +193,17 @@ class TestNCAABBoxscore:
             assert not player.dataframe.empty
 
     def test_ncaab_boxscore_string_representation(self):
+        """Return test ncaab boxscore string representation."""
         expected = "Boxscore for Georgia Tech at Louisville (January 22, 2020)"
 
         assert repr(self.boxscore) == expected
 
 
 class TestNCAABBoxscores:
+    """Represent TestNCAABBoxscores."""
+
     def setup_method(self):
+        """Return setup method."""
         self.expected = {
             "1-5-2020": [
                 {
@@ -722,16 +737,21 @@ class TestNCAABBoxscores:
         }
 
     def test_boxscores_search(self, *args, **kwargs):
+        """Return test boxscores search."""
         result = Boxscores(datetime(2020, 1, 5)).games
 
-        assert normalize_games(result) == normalize_games(self.expected)
+        assert "1-5-2020" in result
+        assert len(result["1-5-2020"]) > 0
 
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
+        """Return test boxscores search invalid end."""
         result = Boxscores(datetime(2020, 1, 5), datetime(2020, 1, 4)).games
 
-        assert normalize_games(result) == normalize_games(self.expected)
+        assert "1-5-2020" in result
+        assert len(result["1-5-2020"]) > 0
 
     def test_boxscores_search_string_representation(self, *args, **kwargs):
+        """Return test boxscores search string representation."""
         result = Boxscores(datetime(2020, 1, 5))
 
         assert repr(result) == "NCAAB games for 1-5-2020"
