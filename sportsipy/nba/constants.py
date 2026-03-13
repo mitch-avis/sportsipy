@@ -1,5 +1,7 @@
 """Provide utilities for constants."""
 
+from __future__ import annotations
+
 PARSING_SCHEME = {
     "assists": 'td[data-stat="ast"]:first',
     "blocks": 'td[data-stat="blk"]:first',
