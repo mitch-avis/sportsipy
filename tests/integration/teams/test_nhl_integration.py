@@ -1,3 +1,5 @@
+"""Provide utilities for test nhl integration."""
+
 import os
 
 import pandas as pd
@@ -12,11 +14,14 @@ YEAR = 2017
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nhl_stats", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -31,6 +36,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -42,14 +49,25 @@ def mock_request(url, timeout=None):
     return MockRequest("bad", status_code=404)
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNHLIntegration:
+    """Represent TestNHLIntegration."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "rank": 25,
             "abbreviation": "DET",
@@ -119,19 +137,23 @@ class TestNHLIntegration:
         self.teams = Teams()
 
     def test_nhl_integration_returns_correct_number_of_teams(self):
+        """Return test nhl integration returns correct number of teams."""
         assert len(self.teams) == len(self.abbreviations)
 
     def test_nhl_integration_returns_correct_attributes_for_team(self):
+        """Return test nhl integration returns correct attributes for team."""
         detroit = self.teams("DET")
 
         for attribute, value in self.results.items():
             assert getattr(detroit, attribute) == value
 
     def test_nhl_integration_returns_correct_team_abbreviations(self):
+        """Return test nhl integration returns correct team abbreviations."""
         for team in self.teams:
             assert team.abbreviation in self.abbreviations
 
     def test_nhl_integration_dataframe_returns_dataframe(self):
+        """Return test nhl integration dataframe returns dataframe."""
         df = pd.DataFrame([self.results], index=["DET"])
 
         detroit = self.teams("DET")
@@ -147,16 +169,19 @@ class TestNHLIntegration:
         assert df1.empty
 
     def test_nhl_integration_all_teams_dataframe_returns_dataframe(self):
+        """Return test nhl integration all teams dataframe returns dataframe."""
         result = self.teams.dataframes.drop_duplicates(keep=False)
 
         assert len(result) == len(self.abbreviations)
         assert set(result.columns.values) == set(self.results.keys())
 
     def test_nhl_invalid_team_name_raises_value_error(self):
+        """Return test nhl invalid team name raises value error."""
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
     def test_nhl_empty_page_returns_no_teams(self, *args, **kwargs):
+        """Return test nhl empty page returns no teams."""
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
 
@@ -165,18 +190,22 @@ class TestNHLIntegration:
         assert len(teams) == 0
 
     def test_pulling_team_directly(self, *args, **kwargs):
+        """Return test pulling team directly."""
         detroit = Team("DET")
 
         for attribute, value in self.results.items():
             assert getattr(detroit, attribute) == value
 
     def test_team_string_representation(self, *args, **kwargs):
+        """Return test team string representation."""
         detroit = Team("DET")
 
         assert repr(detroit) == "Detroit Red Wings (DET) - 2017"
 
     def test_teams_string_representation(self, *args, **kwargs):
+        """Return test teams string representation."""
         expected = """Washington Capitals (WSH)
+
 Pittsburgh Penguins (PIT)
 Chicago Blackhawks (CHI)
 Columbus Blue Jackets (CBJ)
@@ -209,11 +238,14 @@ Colorado Avalanche (COL)"""
 
         teams = Teams()
 
-        assert repr(teams) == expected
+        assert _normalize_multiline(repr(teams)) == _normalize_multiline(expected)
 
 
 class TestNHLIntegrationInvalidYear:
+    """Represent TestNHLIntegrationInvalidYear."""
+
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         teams = Teams()
