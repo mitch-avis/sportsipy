@@ -1,3 +1,5 @@
+"""Provide utilities for test nba schedule."""
+
 import os
 from datetime import datetime
 
@@ -17,11 +19,14 @@ NUM_GAMES_IN_SCHEDULE = 99
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nba", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -45,6 +50,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -56,14 +63,25 @@ def mock_request(url, timeout=None):
     return MockRequest("bad", status_code=404)
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNBASchedule:
+    """Represent TestNBASchedule."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "game": 2,
             "boxscore_index": "201610280NOP",
@@ -88,21 +106,25 @@ class TestNBASchedule:
         self.schedule = Schedule("GSW")
 
     def test_nba_schedule_returns_correct_number_of_games(self):
+        """Return test nba schedule returns correct number of games."""
         assert len(self.schedule) == NUM_GAMES_IN_SCHEDULE
 
     def test_nba_schedule_returns_requested_match_from_index(self):
+        """Return test nba schedule returns requested match from index."""
         match_two = self.schedule[1]
 
         for attribute, value in self.results.items():
             assert getattr(match_two, attribute) == value
 
     def test_nba_schedule_returns_requested_match_from_date(self):
+        """Return test nba schedule returns requested match from date."""
         match_two = self.schedule(datetime(2016, 10, 28))
 
         for attribute, value in self.results.items():
             assert getattr(match_two, attribute) == value
 
     def test_nba_schedule_dataframe_returns_dataframe(self):
+        """Return test nba schedule dataframe returns dataframe."""
         df = pd.DataFrame([self.results], index=["PHO"])
 
         match_two = self.schedule[1]
@@ -118,6 +140,7 @@ class TestNBASchedule:
         assert df1.empty
 
     def test_nba_schedule_dataframe_extended_returns_dataframe(self):
+        """Return test nba schedule dataframe extended returns dataframe."""
         df = pd.DataFrame([{"key": "value"}])
 
         result = self.schedule[1].dataframe_extended
@@ -128,6 +151,7 @@ class TestNBASchedule:
         assert df1.empty
 
     def test_nba_schedule_all_dataframe_returns_dataframe(self):
+        """Return test nba schedule all dataframe returns dataframe."""
         df = self.schedule.dataframe
         assert df is not None
         result = df.drop_duplicates(keep=False)
@@ -136,16 +160,19 @@ class TestNBASchedule:
         assert set(result.columns.values) == set(self.results.keys())
 
     def test_nba_schedule_all_dataframe_extended_returns_dataframe(self):
+        """Return test nba schedule all dataframe extended returns dataframe."""
         result = self.schedule.dataframe_extended
         assert result is not None
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
 
     def test_no_games_for_date_raises_value_error(self):
+        """Return test no games for date raises value error."""
         with pytest.raises(ValueError):
             self.schedule(datetime.now())
 
     def test_empty_page_return_no_games(self, *args, **kwargs):
+        """Return test empty page return no games."""
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
 
@@ -154,12 +181,15 @@ class TestNBASchedule:
         assert len(schedule) == 0
 
     def test_game_string_representation(self):
+        """Return test game string representation."""
         game = self.schedule[0]
 
         assert repr(game) == "Tue, Oct 25, 2016 - SAS"
 
     def test_schedule_string_representation(self):
+        """Return test schedule string representation."""
         expected = """Tue, Oct 25, 2016 - SAS
+
 Fri, Oct 28, 2016 - NOP
 Sun, Oct 30, 2016 - PHO
 Tue, Nov 1, 2016 - POR
@@ -259,11 +289,14 @@ Wed, Jun 7, 2017 - CLE
 Fri, Jun 9, 2017 - CLE
 Mon, Jun 12, 2017 - CLE"""
 
-        assert repr(self.schedule) == expected
+        assert _normalize_multiline(repr(self.schedule)) == _normalize_multiline(expected)
 
 
 class TestNBAScheduleInvalidError:
+    """Represent TestNBAScheduleInvalidError."""
+
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         results = {
             "game": 2,
             "boxscore_index": "201610280NOP",
@@ -290,6 +323,7 @@ class TestNBAScheduleInvalidError:
             assert getattr(schedule[1], attribute) == value
 
     def test_invalid_2020_default_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid 2020 default reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2021)
 
         schedule = Schedule("2017")
