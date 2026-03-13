@@ -1,3 +1,5 @@
+"""Provide utilities for nhl tests."""
+
 import os
 import sys
 
