@@ -1,16 +1,17 @@
+"""Provide utilities for teams."""
+
 import pandas as pd
 
-from .. import utils
-from ..decorators import float_property_decorator, int_property_decorator
-from .constants import PARSING_SCHEME
-from .nhl_utils import _retrieve_all_teams
-from .roster import Roster
-from .schedule import Schedule
+from sportsipy import utils
+from sportsipy.decorators import float_property_decorator, int_property_decorator
+from sportsipy.nhl.constants import PARSING_SCHEME
+from sportsipy.nhl.nhl_utils import _retrieve_all_teams
+from sportsipy.nhl.roster import Roster
+from sportsipy.nhl.schedule import Schedule
 
 
 class Team:
-    """
-    An object containing all of a team's season information.
+    """An object containing all of a team's season information.
 
     Finds and parses all team stat information and identifiers, such as rank,
     name, and abbreviation, and sets them as properties which can be directly
@@ -39,9 +40,11 @@ class Team:
         Optionally specify the filename of a local file to use to pull data
         instead of downloading from sports-reference.com. This file should be
         of the Season page for the designated year.
+
     """
 
     def __init__(self, team_name=None, team_data=None, rank=None, year=None, season_page=None):
+        """Initialize the class instance."""
         self._year = year
         self._rank = rank
         self._abbreviation: str | None = None
@@ -77,20 +80,15 @@ class Team:
         self._parse_team_data(team_data)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return f"{self.name} ({self.abbreviation}) - {self._year}"
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def _retrieve_team_data(self, year, team_name, season_page):
-        """
-        Pull all stats for a specific team.
+        """Pull all stats for a specific team.
 
         By first retrieving a dictionary containing all information for all
         teams in the league, only select the desired team for a specific year
@@ -107,6 +105,7 @@ class Team:
             Optionally specify the filename of a local file to use to pull data
             instead of downloading from sports-reference.com. This file should
             be of the Season page for the designated year.
+
         """
         teams_list, year = _retrieve_all_teams(year, season_page)
         if teams_list is None:
@@ -123,8 +122,7 @@ class Team:
         return None
 
     def _parse_team_data(self, team_data):
-        """
-        Parses a value for every attribute.
+        """Parse a value for every attribute.
 
         This function looks through every attribute with the exception of
         '_rank' and retrieves the value according to the parsing scheme and
@@ -140,6 +138,7 @@ class Team:
             A string containing all of the rows of stats for a given team. If
             multiple tables are being referenced, this will be comprised of
             multiple rows in a single string.
+
         """
         for field in self.__dict__:
             # The rank attribute is passed directly to the class during
@@ -151,8 +150,8 @@ class Team:
 
     @property
     def dataframe(self):
-        """
-        Returns a pandas DataFrame containing all other class properties and
+        """Return a pandas DataFrame containing all other class properties and.
+
         values. The index for the DataFrame is the string abbreviation of the
         team, such as 'DET'.
         """
@@ -190,96 +189,96 @@ class Team:
 
     @int_property_decorator
     def rank(self):
-        """
-        Returns an ``int`` of the team's rank based on the number of points
+        """Return an ``int`` of the team's rank based on the number of points.
+
         they obtained in the season.
         """
         return self._rank
 
     @property
     def abbreviation(self):
-        """
-        Returns a ``string`` of the team's abbreviation, such as 'DET' for the
+        """Return a ``string`` of the team's abbreviation, such as 'DET' for the.
+
         Detroit Red Wings.
         """
         return self._abbreviation
 
     @property
     def schedule(self):
-        """
-        Returns an instance of the Schedule class containing the team's
+        """Return an instance of the Schedule class containing the team's.
+
         complete schedule for the season.
         """
         return Schedule(self._abbreviation, self._year)
 
     @property
     def roster(self):
-        """
-        Returns an instance of the Roster class containing all players for the
+        """Return an instance of the Roster class containing all players for the.
+
         team during the season with all career stats.
         """
         return Roster(self._abbreviation, self._year)
 
     @property
     def name(self):
-        """
-        Returns a ``string`` of the team's full name, such as 'Detroit Red
+        """Return a ``string`` of the team's full name, such as 'Detroit Red.
+
         Wings'.
         """
         return self._name
 
     @float_property_decorator
     def average_age(self):
-        """
-        Returns a ``float`` of the average age of all players on the team,
+        """Return a ``float`` of the average age of all players on the team,.
+
         weighted by their time on ice.
         """
         return self._average_age
 
     @int_property_decorator
     def games_played(self):
-        """
-        Returns an ``int`` of the total number of games the team has played in
+        """Return an ``int`` of the total number of games the team has played in.
+
         the season.
         """
         return self._games_played
 
     @int_property_decorator
     def wins(self):
-        """
-        Returns an ``int`` of the total number of wins the team had in the
+        """Return an ``int`` of the total number of wins the team had in the.
+
         season.
         """
         return self._wins
 
     @int_property_decorator
     def losses(self):
-        """
-        Returns an ``int`` of the total number of losses the team had in the
+        """Return an ``int`` of the total number of losses the team had in the.
+
         season.
         """
         return self._losses
 
     @int_property_decorator
     def overtime_losses(self):
-        """
-        Returns an ``int`` of the total number of overtime losses the team had
+        """Return an ``int`` of the total number of overtime losses the team had.
+
         in the season.
         """
         return self._overtime_losses
 
     @int_property_decorator
     def points(self):
-        """
-        Returns an ``int`` of the total number of points the team gained in the
+        """Return an ``int`` of the total number of points the team gained in the.
+
         season.
         """
         return self._points
 
     @float_property_decorator
     def points_percentage(self):
-        """
-        Returns a ``float`` denoting the percentage of points gained divided by
+        """Return a ``float`` denoting the percentage of points gained divided by.
+
         the maximum possible points available during the season. Percentage
         ranges from 0-1.
         """
@@ -287,24 +286,24 @@ class Team:
 
     @int_property_decorator
     def goals_for(self):
-        """
-        Returns an ``int`` of the total number of goals a team scored during
+        """Return an ``int`` of the total number of goals a team scored during.
+
         the season.
         """
         return self._goals_for
 
     @int_property_decorator
     def goals_against(self):
-        """
-        Returns an ``int`` of the total number of goals opponents scored
+        """Return an ``int`` of the total number of goals opponents scored.
+
         against the team during the season.
         """
         return self._goals_against
 
     @float_property_decorator
     def simple_rating_system(self):
-        """
-        Returns a ``float`` which takes into account the average goal
+        """Return a ``float`` which takes into account the average goal.
+
         differential vs a team's strength of schedule. The league average
         evaluates to 0.0. Teams which have a positive score are comparatively
         stronger than average while teams with a negative score are weaker.
@@ -313,8 +312,8 @@ class Team:
 
     @float_property_decorator
     def strength_of_schedule(self):
-        """
-        Returns a ``float`` denoting a team's strength of schedule, based on
+        """Return a ``float`` denoting a team's strength of schedule, based on.
+
         goals scores and conceded. Higher values result in more challenging
         schedules while 0.0 is an average schedule.
         """
@@ -322,53 +321,47 @@ class Team:
 
     @float_property_decorator
     def total_goals_per_game(self):
-        """
-        Returns a ``float`` for the average number of goals scored per game.
-        """
+        """Return a ``float`` for the average number of goals scored per game."""
         return self._total_goals_per_game
 
     @int_property_decorator
     def power_play_goals(self):
-        """
-        Returns an ``int`` of the total number of power play goals scored.
-        """
+        """Return an ``int`` of the total number of power play goals scored."""
         return self._power_play_goals
 
     @int_property_decorator
     def power_play_opportunities(self):
-        """
-        Returns an ``int`` of the total number of power play opportunities for
+        """Return an ``int`` of the total number of power play opportunities for.
+
         a team during the season.
         """
         return self._power_play_opportunities
 
     @float_property_decorator
     def power_play_percentage(self):
-        """
-        Returns a ``float`` denoting the percentage of power play opportunities
+        """Return a ``float`` denoting the percentage of power play opportunities.
+
         where the team has scored. Percentage ranges from 0-100.
         """
         return self._power_play_percentage
 
     @int_property_decorator
     def power_play_goals_against(self):
-        """
-        Returns an ``int`` of the total number of power play goals conceded.
-        """
+        """Return an ``int`` of the total number of power play goals conceded."""
         return self._power_play_goals_against
 
     @int_property_decorator
     def power_play_opportunities_against(self):
-        """
-        Returns an ``int`` of the total number of power play opportunities for
+        """Return an ``int`` of the total number of power play opportunities for.
+
         the opponents during the season.
         """
         return self._power_play_opportunities_against
 
     @float_property_decorator
     def penalty_killing_percentage(self):
-        """
-        Returns a ``float`` denoting the percentage of power plays that have
+        """Return a ``float`` denoting the percentage of power plays that have.
+
         been successfully defended without a goal being conceded. Percentage
         ranges from 0-100.
         """
@@ -376,64 +369,63 @@ class Team:
 
     @int_property_decorator
     def short_handed_goals(self):
-        """
-        Returns an ``int`` of the number of short handed goals the team has
+        """Return an ``int`` of the number of short handed goals the team has.
+
         scored during the season.
         """
         return self._short_handed_goals
 
     @int_property_decorator
     def short_handed_goals_against(self):
-        """
-        Returns an ``int`` of the number of short handed goals the team has
+        """Return an ``int`` of the number of short handed goals the team has.
+
         conceded during the season.
         """
         return self._short_handed_goals_against
 
     @int_property_decorator
     def shots_on_goal(self):
-        """
-        Returns an ``int`` of the total number of shots on goal the team made
+        """Return an ``int`` of the total number of shots on goal the team made.
+
         during the season.
         """
         return self._shots_on_goal
 
     @float_property_decorator
     def shooting_percentage(self):
-        """
-        Returns a ``float`` denoting the percentage of shots to goals during
+        """Return a ``float`` denoting the percentage of shots to goals during.
+
         the season. Percentage ranges from 0-100.
         """
         return self._shooting_percentage
 
     @int_property_decorator
     def shots_against(self):
-        """
-        Returns an ``int`` of the total number of shots on goal the team's
+        """Return an ``int`` of the total number of shots on goal the team's.
+
         opponents made during the season.
         """
         return self._shots_against
 
     @float_property_decorator
     def save_percentage(self):
-        """
-        Returns a ``float`` denoting the percentage of shots the team has saved
+        """Return a ``float`` denoting the percentage of shots the team has saved.
+
         during the season. Percentage ranges from 0-1.
         """
         return self._save_percentage
 
     @float_property_decorator
     def pdo_at_even_strength(self):
-        """
-        Returns a ``float`` of the PDO at even strength which equates to the
+        """Return a ``float`` of the PDO at even strength which equates to the.
+
         shooting percentage plus the save percentage.
         """
         return self._pdo_at_even_strength
 
 
 class Teams:
-    """
-    A list of all NHL teams and their stats in a given year.
+    """A list of all NHL teams and their stats in a given year.
 
     Finds and retrieves a list of all NHL teams from www.hockey-reference.com
     and creates a Team instance for every team that participated in the league
@@ -448,17 +440,18 @@ class Teams:
         Optionally specify the filename of a local file to use to pull data
         instead of downloading from sports-reference.com. This file should be
         of the Season page for the designated year.
+
     """
 
     def __init__(self, year=None, season_page=None):
+        """Initialize the class instance."""
         self._teams = []
 
         teams_list, year = _retrieve_all_teams(year, season_page)
         self._instantiate_teams(teams_list, year)
 
     def __getitem__(self, abbreviation):
-        """
-        Return a specified team.
+        """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
         abbreviation.
@@ -478,6 +471,7 @@ class Teams:
         ------
         ValueError
             If the requested team is not present within the Teams list.
+
         """
         for team in self._teams:
             if team.abbreviation.upper() == abbreviation.upper():
@@ -485,8 +479,7 @@ class Teams:
         raise ValueError(f"Team abbreviation {abbreviation} not found")
 
     def __call__(self, abbreviation):
-        """
-        Return a specified team.
+        """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
         abbreviation. This method is a wrapper for __getitem__.
@@ -501,36 +494,34 @@ class Teams:
         -------
         Team instance
             If the requested team can be found, its Team instance is returned.
+
         """
         return self.__getitem__(abbreviation)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         teams = [f"{team.name} ({team.abbreviation})".strip() for team in self._teams]
         return "\n".join(teams)
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def __iter__(self):
-        """Returns an iterator of all of the NHL teams for a given season."""
+        """Return an iterator of all of the NHL teams for a given season."""
         return iter(self._teams)
 
     def __len__(self):
-        """Returns the number of NHL teams for a given season."""
+        """Return the number of NHL teams for a given season."""
         return len(self._teams)
 
     def _instantiate_teams(self, teams_list, year):
-        """
-        Create a Team instance for all teams.
+        """Create a Team instance for all teams.
+
         Once all team information has been pulled from the various webpages,
         create a Team instance for each team and append it to a larger list of
         team instances for later use.
+
         Parameters
         ----------
         teams_list : list
@@ -538,6 +529,7 @@ class Teams:
             NHL teams.
         year : string
             A ``string`` of the requested year to pull stats from.
+
         """
         # Teams are listed in terms of rank with the first team being #1
         rank = 1
@@ -550,8 +542,8 @@ class Teams:
 
     @property
     def dataframes(self):
-        """
-        Returns a pandas DataFrame where each row is a representation of the
+        """Return a pandas DataFrame where each row is a representation of the.
+
         Team class. Rows are indexed by the team abbreviation.
         """
         frames = []
