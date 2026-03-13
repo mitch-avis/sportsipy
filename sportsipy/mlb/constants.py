@@ -1,5 +1,7 @@
 """Provide utilities for constants."""
 
+from __future__ import annotations
+
 PARSING_SCHEME = {
     "at_bats": 'td[data-stat="AB"]:first',
     "average_batter_age": 'td[data-stat="age_bat"]:first',
