@@ -1,5 +1,7 @@
 """Provide utilities for league ids."""
 
+from __future__ import annotations
+
 LEAGUE_IDS = {
     "00032902": "3290",
     "0049d422": "10735",
