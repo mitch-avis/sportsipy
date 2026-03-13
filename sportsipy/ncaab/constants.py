@@ -1,3 +1,5 @@
+"""Provide utilities for constants."""
+
 PARSING_SCHEME = {
     "assist_percentage": 'td[data-stat="ast_pct"]:first',
     "assists": 'td[data-stat="ast"]:first',
@@ -302,18 +304,20 @@ PLAYER_SCHEME = {
     "win_shares": 'td[data-stat="ws"]',
 }
 
-BASIC_STATS_URL = "https://www.sports-reference.com/cbb/seasons/%s-school-stats.html"
-BASIC_OPPONENT_STATS_URL = "https://www.sports-reference.com/cbb/seasons/%s-opponent-stats.html"
-ADVANCED_STATS_URL = "https://www.sports-reference.com/cbb/seasons/%s-advanced-school-stats.html"
+BASIC_STATS_URL = "https://www.sports-reference.com/cbb/seasons/men/%s-school-stats.html"
+BASIC_OPPONENT_STATS_URL = "https://www.sports-reference.com/cbb/seasons/men/%s-opponent-stats.html"
+ADVANCED_STATS_URL = (
+    "https://www.sports-reference.com/cbb/seasons/men/%s-advanced-school-stats.html"
+)
 ADVANCED_OPPONENT_STATS_URL = (
-    "https://www.sports-reference.com/cbb/seasons/%s-advanced-opponent-stats.html"
+    "https://www.sports-reference.com/cbb/seasons/men/%s-advanced-opponent-stats.html"
 )
 
 SCHEDULE_URL = "https://www.sports-reference.com/cbb/schools/%s/%s-schedule.html"
 BOXSCORE_URL = "https://www.sports-reference.com/cbb/boxscores/%s.html"
 BOXSCORES_URL = "https://www.sports-reference.com/cbb/boxscores/index.cgi?month=%s&day=%s&year=%s"
-RANKINGS_URL = "https://www.sports-reference.com/cbb/seasons/%s-polls-old.html"
-CONFERENCES_URL = "https://www.sports-reference.com/cbb/seasons/%s.html"
+RANKINGS_URL = "https://www.sports-reference.com/cbb/seasons/men/%s-polls-old.html"
+CONFERENCES_URL = "https://www.sports-reference.com/cbb/seasons/men/%s.html"
 CONFERENCE_URL = "https://www.sports-reference.com/cbb/conferences/%s/%s.html"
 PLAYER_URL = "https://www.sports-reference.com/cbb/players/%s.html"
 ROSTER_URL = "https://www.sports-reference.com/cbb/schools/%s/%s.html"
