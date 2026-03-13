@@ -1,11 +1,11 @@
-from sportsipy import utils
+"""Provide utilities for nfl utils."""
 
-from .constants import PARSING_SCHEME, SEASON_PAGE_URL
+from sportsipy import utils
+from sportsipy.nfl.constants import PARSING_SCHEME, SEASON_PAGE_URL
 
 
 def _add_stats_data(teams_list, team_data_dict):
-    """
-    Add a team's stats row to a dictionary.
+    """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate
     all stats for each team in a single variable.
@@ -25,13 +25,17 @@ def _add_stats_data(teams_list, team_data_dict):
     dictionary
         An updated version of the team_data_dict with the passed table row
         information included.
+
     """
     # Teams are listed in terms of rank with the first team being #1
     rank = 1
     for team_data in teams_list:
-        if 'class="thead onecell"' in str(team_data):
+        row_html = str(team_data)
+        if 'class="thead' in row_html:
             continue
         abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
+        if not abbr:
+            continue
         try:
             team_data_dict[abbr]["data"] += team_data
         except KeyError:
@@ -41,8 +45,7 @@ def _add_stats_data(teams_list, team_data_dict):
 
 
 def _retrieve_all_teams(year, season_page=None):
-    """
-    Find and create Team instances for all teams in the given season.
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NFL stats table and finds all
     requested stats. Each team then has a Team instance created which
@@ -66,6 +69,7 @@ def _retrieve_all_teams(year, season_page=None):
         Returns a ``tuple`` of the team_data_dict and year which represent all
         stats for all teams, and the given year that should be used to pull
         stats from, respectively.
+
     """
     team_data_dict = {}
 
@@ -80,5 +84,7 @@ def _retrieve_all_teams(year, season_page=None):
         utils.no_data_found()
         return None, None
     for stats_list in [teams_list, afc_list, nfc_list]:
+        if not stats_list:
+            continue
         team_data_dict = _add_stats_data(stats_list, team_data_dict)
     return team_data_dict, year
