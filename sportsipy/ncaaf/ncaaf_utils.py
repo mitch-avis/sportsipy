@@ -1,6 +1,7 @@
-from sportsipy import utils
+"""Provide utilities for ncaaf utils."""
 
-from .constants import (
+from sportsipy import utils
+from sportsipy.ncaaf.constants import (
     DEFENSIVE_STATS_URL,
     OFFENSIVE_STATS_URL,
     PARSING_SCHEME,
@@ -9,8 +10,7 @@ from .constants import (
 
 
 def _add_stats_data(teams_list, team_data_dict):
-    """
-    Add a team's stats row to a dictionary.
+    """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate all
     stats for each team in a single variable.
@@ -29,6 +29,7 @@ def _add_stats_data(teams_list, team_data_dict):
     dictionary
         An updated version of the team_data_dict with the passed table row
         information included.
+
     """
     if not teams_list:
         return team_data_dict
@@ -45,8 +46,7 @@ def _add_stats_data(teams_list, team_data_dict):
 
 
 def _retrieve_all_teams(year, season_page, offensive_stats, defensive_stats):
-    """
-    Find and create Team instances for all teams in the given season.
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NCAAF stats table and finds
     all requested stats. Each team then has a Team instance created which
@@ -74,6 +74,7 @@ def _retrieve_all_teams(year, season_page, offensive_stats, defensive_stats):
         Returns a ``tuple`` of the team_data_dict and year which represent all
         stats for all teams, and the given year that should be used to pull
         stats from, respectively.
+
     """
     team_data_dict = {}
 
