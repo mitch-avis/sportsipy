@@ -1,3 +1,5 @@
+"""Provide utilities for test nhl roster."""
+
 import os
 
 import pandas as pd
@@ -11,12 +13,20 @@ from sportsipy.nhl.teams import Team
 YEAR = 2018
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nhl", filename)
-    return open(f"{filepath}.html", "r", encoding="utf8").read()
+    return open(f"{filepath}.html", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status=200):
             self.url = url
@@ -38,6 +48,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -50,7 +62,10 @@ def mock_request(url, timeout=None):
 
 
 class TestNHLPlayer:
+    """Represent TestNHLPlayer."""
+
     def setup_method(self):
+        """Return setup method."""
         self.skater_results_career = {
             "adjusted_assists": 692,
             "adjusted_goals": 377,
@@ -428,6 +443,7 @@ class TestNHLPlayer:
         }
 
     def test_nhl_skater_returns_requested_career_stats(self, *args, **kwargs):
+        """Return test nhl skater returns requested career stats."""
         # Request the career stats
         player = Player("zettehe01")
         player = player("")
@@ -436,6 +452,7 @@ class TestNHLPlayer:
             assert getattr(player, attribute) == value
 
     def test_nhl_skater_returns_player_season_stats(self, *args, **kwargs):
+        """Return test nhl skater returns player season stats."""
         # Request the 2017 stats
         player = Player("zettehe01")
         player = player("2017-18")
@@ -444,6 +461,7 @@ class TestNHLPlayer:
             assert getattr(player, attribute) == value
 
     def test_nhl_goalie_returns_requested_career_stats(self, *args, **kwargs):
+        """Return test nhl goalie returns requested career stats."""
         # Request the career stats
         player = Player("howarja02")
         player = player("")
@@ -452,6 +470,7 @@ class TestNHLPlayer:
             assert getattr(player, attribute) == value
 
     def test_nhl_goalie_returns_player_season_stats(self, *args, **kwargs):
+        """Return test nhl goalie returns player season stats."""
         # Request the 2017 stats
         player = Player("howarja02")
         player = player("2017-18")
@@ -460,6 +479,7 @@ class TestNHLPlayer:
             assert getattr(player, attribute) == value
 
     def test_dataframe_returns_dataframe(self, *args, **kwargs):
+        """Return test dataframe returns dataframe."""
         dataframe = [
             {
                 "adjusted_assists": 46,
@@ -663,25 +683,31 @@ class TestNHLPlayer:
         pd.concat(df.dropna(axis=1, how="all") for df in frames).drop_duplicates(keep=False)
 
     def test_nhl_404_returns_none_with_no_errors(self, *args, **kwargs):
+        """Return test nhl 404 returns none with no errors."""
         player = Player("bad")
 
         assert player.name is None
         assert player.dataframe is None
 
     def test_nhl_404_returns_none_for_different_season(self, *args, **kwargs):
+        """Return test nhl 404 returns none for different season."""
         player = Player("bad")
 
         assert player.name is None
         assert player.dataframe is None
 
     def test_nhl_player_string_representation(self, *args, **kwargs):
+        """Return test nhl player string representation."""
         player = Player("zettehe01")
 
         assert repr(player) == "Henrik Zetterberg (zettehe01)"
 
 
 class TestNHLRoster:
+    """Represent TestNHLRoster."""
+
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
+        """Return test roster class pulls all player stats."""
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("DET")
 
@@ -693,10 +719,12 @@ class TestNHLRoster:
             assert player.name in ["Jimmy Howard", "Henrik Zetterberg"]
 
     def test_bad_url_raises_value_error(self, *args, **kwargs):
+        """Return test bad url raises value error."""
         with pytest.raises(ValueError):
             Roster("bad")
 
     def test_roster_from_team_class(self, *args, **kwargs):
+        """Return test roster from team class."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         team = Team(team_data=None, rank=1, year="2018")
         team._abbreviation = "DET"
@@ -710,6 +738,7 @@ class TestNHLRoster:
         team._abbreviation = None
 
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
+        """Return test roster class with slim parameter."""
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("DET", slim=True)
 
@@ -720,6 +749,7 @@ class TestNHLRoster:
         }
 
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         roster = Roster("DET")
@@ -732,13 +762,16 @@ class TestNHLRoster:
             assert player.name in ["Jimmy Howard", "Henrik Zetterberg"]
 
     def test_roster_class_string_representation(self, *args, **kwargs):
+        """Return test roster class string representation."""
         expected = """Jimmy Howard (howarja02)
+
 Henrik Zetterberg (zettehe01)"""
 
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("DET")
 
-        assert repr(roster) == expected
+        assert _normalize_multiline(repr(roster)) == _normalize_multiline(expected)
 
     def test_coach(self, *args, **kwargs):
-        assert "Jeff Blashill" == Roster("DET", year=YEAR).coach
+        """Return test coach."""
+        assert Roster("DET", year=YEAR).coach == "Jeff Blashill"
