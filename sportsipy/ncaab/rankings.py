@@ -1,13 +1,14 @@
+"""Provide utilities for rankings."""
+
 import re
 from urllib.error import HTTPError
 
-from .. import utils
-from .constants import RANKINGS_URL
+from sportsipy import utils
+from sportsipy.ncaab.constants import RANKINGS_URL
 
 
 class Rankings:
-    """
-    Get all Associated Press (AP) rankings on a week-by-week basis.
+    """Get all Associated Press (AP) rankings on a week-by-week basis.
 
     Grab a list of the rankings published by the Associated Press to easily
     query the hierarchy of teams each week. The results expose the current and
@@ -18,28 +19,25 @@ class Rankings:
     year : string (optional)
         A string of the requested year to pull rankings from. Defaults to the
         most recent season.
+
     """
 
     def __init__(self, year=None):
+        """Initialize the class instance."""
         self._rankings = {}
 
         self._find_rankings(year)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return "NCAAB Rankings"
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def _pull_rankings_page(self, year):
-        """
-        Download the rankings page.
+        """Download the rankings page.
 
         Download the rankings page for the requested year and create a PyQuery
         object.
@@ -53,6 +51,7 @@ class Rankings:
         -------
         PyQuery object
             Returns a PyQuery object of the rankings HTML page.
+
         """
         try:
             page_source = utils.get_page_source(url=RANKINGS_URL % year)
@@ -63,9 +62,7 @@ class Rankings:
             return None
 
     def _parse_table_columns(self, page):
-        """
-        Build metadata for each week column in the rankings table.
-        """
+        """Build metadata for each week column in the rankings table."""
         header_rows = page("table#ap-polls thead tr")
         collapsed_header = header_rows.eq(2)
         columns = {}
@@ -140,8 +137,7 @@ class Rankings:
         }
 
     def _find_rankings(self, year):
-        """
-        Retrieve the rankings for each week.
+        """Retrieve the rankings for each week.
 
         Find and retrieve all AP rankings for the requested year and combine
         them on a per-week basis. Each week contains information about the
@@ -152,6 +148,7 @@ class Rankings:
         ----------
         year : string
             A string of the requested year to pull rankings from.
+
         """
         if not year:
             year = utils.find_year_for_season("ncaab")
@@ -187,8 +184,8 @@ class Rankings:
 
     @property
     def current_extended(self):
-        """
-        Returns a ``list`` of ``dictionaries`` of the most recent AP rankings.
+        """Return a ``list`` of ``dictionaries`` of the most recent AP rankings.
+
         The list is ordered in terms of the ranking so the #1 team will be in
         the first element and the #25 team will be the last element. Each
         dictionary has the following structure::
@@ -214,8 +211,8 @@ class Rankings:
 
     @property
     def current(self):
-        """
-        Returns a ``dictionary`` of the most recent rankings from the
+        """Return a ``dictionary`` of the most recent rankings from the.
+
         Associated Press where each key is a ``string`` of the team's
         abbreviation and each value is an ``int`` of the team's rank for the
         current week.
@@ -228,8 +225,8 @@ class Rankings:
 
     @property
     def complete(self):
-        """
-        Returns a ``dictionary`` where each key is a week number as an ``int``
+        """Return a ``dictionary`` where each key is a week number as an ``int``.
+
         and each value is a ``list`` of ``dictionaries`` containing the AP
         rankings for each week. Within each list is a dictionary of team
         information such as name, abbreviation, rank, and more. Note that the
