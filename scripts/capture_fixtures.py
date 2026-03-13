@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Provide utilities for capture fixtures."""
+
 import argparse
 import json
 import os
@@ -22,6 +24,7 @@ def _save_map(path: Path, data) -> None:
 
 
 def main() -> int:
+    """Return main."""
     parser = argparse.ArgumentParser(
         description="Capture a fixture from a live URL and update the fixture map."
     )
