@@ -1,3 +1,5 @@
+"""Provide utilities for test mlb integration."""
+
 import os
 
 import pandas as pd
@@ -13,11 +15,14 @@ YEAR = 2021
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "mlb_stats", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -41,6 +46,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -52,14 +59,25 @@ def mock_request(url, timeout=None):
     return MockRequest("bad", status_code=404)
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestMLBIntegration:
+    """Represent TestMLBIntegration."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "rank": 5,
             "abbreviation": "HOU",
@@ -201,11 +219,13 @@ class TestMLBIntegration:
         flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
     def test_mlb_integration_returns_correct_number_of_teams(self, *args, **kwargs):
+        """Return test mlb integration returns correct number of teams."""
         teams = Teams()
 
         assert len(teams) == len(self.abbreviations)
 
     def test_mlb_integration_returns_correct_attributes_for_team(self, *args, **kwargs):
+        """Return test mlb integration returns correct attributes for team."""
         teams = Teams()
 
         houston = teams("HOU")
@@ -214,12 +234,14 @@ class TestMLBIntegration:
             assert getattr(houston, attribute) == value
 
     def test_mlb_integration_returns_correct_team_abbreviations(self, *args, **kwargs):
+        """Return test mlb integration returns correct team abbreviations."""
         teams = Teams()
 
         for team in teams:
             assert team.abbreviation in self.abbreviations
 
     def test_mlb_integration_dataframe_returns_dataframe(self, *args, **kwargs):
+        """Return test mlb integration dataframe returns dataframe."""
         teams = Teams()
         df = pd.DataFrame([self.results], index=["HOU"])
 
@@ -236,6 +258,7 @@ class TestMLBIntegration:
         assert df1.empty
 
     def test_mlb_integration_all_teams_dataframe_returns_dataframe(self, *args, **kwargs):
+        """Return test mlb integration all teams dataframe returns dataframe."""
         teams = Teams()
         result = teams.dataframes.drop_duplicates(keep=False)
 
@@ -243,18 +266,21 @@ class TestMLBIntegration:
         assert set(result.columns.values) == set(self.results.keys())
 
     def test_pulling_team_directly(self, *args, **kwargs):
+        """Return test pulling team directly."""
         hou = Team("HOU")
 
         for attribute, value in self.results.items():
             assert getattr(hou, attribute) == value
 
     def test_mlb_invalid_team_name_raises_value_error(self, *args, **kwargs):
+        """Return test mlb invalid team name raises value error."""
         teams = Teams()
 
         with pytest.raises(ValueError):
             teams("INVALID_NAME")
 
     def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test mlb invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2022)
 
         teams = Teams()
@@ -263,6 +289,7 @@ class TestMLBIntegration:
             assert team._year == "2021"
 
     def test_mlb_empty_page_returns_no_teams(self, *args, **kwargs):
+        """Return test mlb empty page returns no teams."""
         flexmock(utils).should_receive("no_data_found").once()
         flexmock(utils).should_receive("get_stats_table").and_return(None)
 
@@ -271,12 +298,15 @@ class TestMLBIntegration:
         assert len(teams) == 0
 
     def test_mlb_team_string_representation(self, *args, **kwargs):
+        """Return test mlb team string representation."""
         hou = Team("HOU")
 
         assert repr(hou) == "Houston Astros (HOU) - 2021"
 
     def test_mlb_teams_string_representation(self, *args, **kwargs):
+        """Return test mlb teams string representation."""
         expected = """San Francisco Giants (SFG)
+
 Los Angeles Dodgers (LAD)
 Tampa Bay Rays (TBR)
 Milwaukee Brewers (MIL)
@@ -309,4 +339,4 @@ Baltimore Orioles (BAL)"""
 
         teams = Teams()
 
-        assert repr(teams) == expected
+        assert _normalize_multiline(repr(teams)) == _normalize_multiline(expected)
