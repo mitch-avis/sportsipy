@@ -1,3 +1,5 @@
+"""Provide utilities for constants."""
+
 PARSING_SCHEME = {
     "average_age": 'td[data-stat="average_age"]:first',
     "games_played": 'td[data-stat="games"]:first',
