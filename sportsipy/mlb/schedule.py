@@ -1,7 +1,10 @@
 """Provide utilities for schedule."""
 
+from __future__ import annotations
+
 import re
 from datetime import datetime
+from typing import Any
 
 import pandas as pd
 
@@ -27,7 +30,7 @@ class Game:
 
     """
 
-    def __init__(self, game_data, year):
+    def __init__(self, game_data: Any, year: int | str | None) -> None:
         """Initialize the class instance."""
         self._game = None
         self._date: str | None = None
@@ -49,7 +52,7 @@ class Game:
         self._day_or_night: str | None = None
         self._attendance: str | None = None
         self._streak: str | None = None
-        self._year: str | None = year
+        self._year: int | str | None = year
 
         self._parse_game_data(game_data)
 
@@ -367,7 +370,7 @@ class Schedule:
 
     """
 
-    def __init__(self, abbreviation, year=None):
+    def __init__(self, abbreviation: str | None, year: int | str | None = None) -> None:
         """Initialize the class instance."""
         self._games = []
         self._pull_schedule(abbreviation, year)
