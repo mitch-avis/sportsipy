@@ -1,17 +1,21 @@
+"""Provide utilities for teams."""
+
 import re
 from functools import wraps
 
 import pandas as pd
 
-from .. import utils
-from ..decorators import float_property_decorator, int_property_decorator
-from .constants import ELEMENT_INDEX, PARSING_SCHEME, TEAM_ELEMENT
-from .mlb_utils import _retrieve_all_teams
-from .roster import Roster
-from .schedule import Schedule
+from sportsipy import utils
+from sportsipy.decorators import float_property_decorator, int_property_decorator
+from sportsipy.mlb.constants import ELEMENT_INDEX, PARSING_SCHEME, TEAM_ELEMENT
+from sportsipy.mlb.mlb_utils import _retrieve_all_teams
+from sportsipy.mlb.roster import Roster
+from sportsipy.mlb.schedule import Schedule
 
 
 def mlb_int_property_decorator(func):
+    """Return mlb int property decorator."""
+
     @property
     @wraps(func)
     def wrapper(*args):
@@ -31,8 +35,7 @@ def mlb_int_property_decorator(func):
 
 
 class Team:
-    """
-    An object containing all of a team's season information.
+    """An object containing all of a team's season information.
 
     Finds and parses all team stat information and identifiers, such as rank,
     name, and abbreviation, and sets them as properties which can be directly
@@ -64,6 +67,7 @@ class Team:
         Optionally specify the filename of a local file to use to pull data
         instead of downloading from sports-reference.com. This file should be
         of the League page for the designated year.
+
     """
 
     def __init__(
@@ -75,6 +79,7 @@ class Team:
         standings_file=None,
         teams_file=None,
     ):
+        """Initialize the class instance."""
         self._year = year
         self._rank = rank
         self._abbreviation: str | None = None
@@ -164,20 +169,15 @@ class Team:
         self._parse_team_data(team_data)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return f"{self.name} ({self.abbreviation}) - {self._year}"
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def _retrieve_team_data(self, year, team_name, standings_file=None, teams_file=None):
-        """
-        Pull all stats for a specific team.
+        """Pull all stats for a specific team.
 
         By first retrieving a dictionary containing all information for all
         teams in the league, only select the desired team for a specific year
@@ -204,6 +204,7 @@ class Team:
         PyQuery object
             Returns a PyQuery object containing all stats and information for
             the specified team.
+
         """
         team_data_dict, year = _retrieve_all_teams(year, standings_file, teams_file)
         if team_data_dict is None:
@@ -214,8 +215,7 @@ class Team:
         return team_data
 
     def _parse_name(self, team_data):
-        """
-        Parses the team's name.
+        """Parse the team's name.
 
         On the pages being parsed, the team's name doesn't follow the standard
         parsing algorithm that we use for the fields, and requires a special
@@ -230,6 +230,7 @@ class Team:
             A string containing all of the rows of stats for a given team. If
             multiple tables are being referenced, this will be comprised of
             multiple rows in a single string.
+
         """
         name = team_data("a")[0].text
         name = re.sub(r'.*title="', "", str(name))
@@ -237,8 +238,7 @@ class Team:
         self._name = name
 
     def _parse_team_data(self, team_data):
-        """
-        Parses a value for every attribute.
+        """Parse a value for every attribute.
 
         This function looks through every attribute with the exception of
         '_rank' and retrieves the value according to the parsing scheme and
@@ -254,6 +254,7 @@ class Team:
             A string containing all of the rows of stats for a given team. If
             multiple tables are being referenced, this will be comprised of
             multiple rows in a single string.
+
         """
         for field in self.__dict__:
             # The short field truncates the leading '_' in the attribute name.
@@ -275,8 +276,8 @@ class Team:
 
     @property
     def dataframe(self):
-        """
-        Returns a pandas DataFrame containing all other class properties and
+        """Return a pandas DataFrame containing all other class properties and.
+
         values. The index for the DataFrame is the string abbreviation of the
         team, such as 'HOU'.
         """
@@ -389,110 +390,106 @@ class Team:
 
     @int_property_decorator
     def rank(self):
-        """
-        Returns an ``int`` of the team's rank based on their win percentage.
-        """
+        """Return an ``int`` of the team's rank based on their win percentage."""
         return self._rank
 
     @property
     def abbreviation(self):
-        """
-        Returns a ``string`` of the team's abbreviation, such as 'HOU' for the
+        """Return a ``string`` of the team's abbreviation, such as 'HOU' for the.
+
         Houston Astros.
         """
         return self._abbreviation
 
     @property
     def schedule(self):
-        """
-        Returns an instance of the Schedule class containing the team's
+        """Return an instance of the Schedule class containing the team's.
+
         complete schedule for the season.
         """
         return Schedule(self._abbreviation, self._year)
 
     @property
     def roster(self):
-        """
-        Returns an instance of the Roster class containing all players for the
+        """Return an instance of the Roster class containing all players for the.
+
         team during the season with all career stats.
         """
         return Roster(self._abbreviation, self._year)
 
     @property
     def name(self):
-        """
-        Returns a ``string`` of the team's full name, such as 'Houston Astros'.
-        """
+        """Return a ``string`` of the team's full name, such as 'Houston Astros'."""
         return self._name
 
     @property
     def league(self):
-        """
-        Returns a ``string`` of the two letter abbreviation of the league, such
+        """Return a ``string`` of the two letter abbreviation of the league, such.
+
         as 'AL' for the American League.
         """
         return self._league
 
     @int_property_decorator
     def games(self):
-        """
-        Returns an ``int`` of the number of games the team has played during
+        """Return an ``int`` of the number of games the team has played during.
+
         the season.
         """
         return self._games
 
     @int_property_decorator
     def wins(self):
-        """
-        Returns an ``int`` of the total number of games the team won during the
+        """Return an ``int`` of the total number of games the team won during the.
+
         season.
         """
         return self._wins
 
     @int_property_decorator
     def losses(self):
-        """
-        Returns an ``int`` of the total number of games the team lost during
+        """Return an ``int`` of the total number of games the team lost during.
+
         the season.
         """
         return self._losses
 
     @float_property_decorator
     def win_percentage(self):
-        """
-        Returns a ``float`` of the number of wins divided by the number of
+        """Return a ``float`` of the number of wins divided by the number of.
+
         games played during the season. Percentage ranges from 0-1.
         """
         return self._win_percentage
 
     @property
     def streak(self):
-        """
-        Returns a ``string`` of the team's current winning or losing streak,
+        """Return a ``string`` of the team's current winning or losing streak,.
+
         such as 'W 3' for a team on a 3-game winning streak.
         """
         return self._streak
 
     @float_property_decorator
     def runs(self):
-        """
-        Returns a ``float`` of the average number of runs scored per game by
+        """Return a ``float`` of the average number of runs scored per game by.
+
         the team.
         """
         return self._runs
 
     @float_property_decorator
     def runs_against(self):
-        """
-        Returns a ``float`` of the average number of runs scored per game by
+        """Return a ``float`` of the average number of runs scored per game by.
+
         the opponent.
         """
         return self._runs_against
 
     @float_property_decorator
     def run_difference(self):
-        """
-        Returns a ``float`` of the difference between the number of runs scored
+        """Return a ``float`` of the difference between the number of runs scored.
+
         and the number of runs given up per game. Positive numbers indicate
         the team scores more per game than they are scored on.
         """
@@ -500,8 +497,8 @@ class Team:
 
     @float_property_decorator
     def strength_of_schedule(self):
-        """
-        Returns a ``float`` denoting a team's strength of schedule, based on
+        """Return a ``float`` denoting a team's strength of schedule, based on.
+
         runs scores and conceded. Higher values result in more challenging
         schedules while 0.0 is an average schedule.
         """
@@ -509,132 +506,124 @@ class Team:
 
     @float_property_decorator
     def simple_rating_system(self):
-        """
-        Returns a ``float`` of the average number of runs per game a team
+        """Return a ``float`` of the average number of runs per game a team.
+
         scores compared to average.
         """
         return self._simple_rating_system
 
     @property
     def pythagorean_win_loss(self):
-        """
-        Returns a ``string`` of the team's expected win-loss record based on
+        """Return a ``string`` of the team's expected win-loss record based on.
+
         the runs scored and allowed. Record is in the format 'W-L'.
         """
         return self._pythagorean_win_loss
 
     @int_property_decorator
     def luck(self):
-        """
-        Returns an ``int`` of the difference between the current wins and
+        """Return an ``int`` of the difference between the current wins and.
+
         losses compared to the pythagorean wins and losses.
         """
         return self._luck
 
     @property
     def interleague_record(self):
-        """
-        Returns a ``string`` of the team's interleague record. Record is in the
+        """Return a ``string`` of the team's interleague record. Record is in the.
+
         format 'W-L'.
         """
         return self._interleague_record
 
     @property
     def home_record(self):
-        """
-        Returns a ``string`` of the team's home record. Record is in the format
+        """Return a ``string`` of the team's home record. Record is in the format.
+
         'W-L'.
         """
         return self._home_record
 
     @mlb_int_property_decorator
     def home_wins(self):
-        """
-        Returns an ``int`` of the number of wins at home during the season.
-        """
+        """Return an ``int`` of the number of wins at home during the season."""
         return self._home_record
 
     @mlb_int_property_decorator
     def home_losses(self):
-        """
-        Returns an ``int`` of the number of losses at home during the season.
-        """
+        """Return an ``int`` of the number of losses at home during the season."""
         return self._home_record
 
     @property
     def away_record(self):
-        """
-        Returns a ``string`` of the team's away record. Record is in the format
+        """Return a ``string`` of the team's away record. Record is in the format.
+
         'W-L'.
         """
         return self._away_record
 
     @mlb_int_property_decorator
     def away_wins(self):
-        """
-        Returns an ``int`` of the number of away wins during the season.
-        """
+        """Return an ``int`` of the number of away wins during the season."""
         return self._away_record
 
     @mlb_int_property_decorator
     def away_losses(self):
-        """
-        Returns an ``int`` of the number of away losses during the season.
-        """
+        """Return an ``int`` of the number of away losses during the season."""
         return self._away_record
 
     @property
     def extra_inning_record(self):
-        """
-        Returns a ``string`` of the team's record when the game has gone to
+        """Return a ``string`` of the team's record when the game has gone to.
+
         extra innings. Record is in the format 'W-L'.
         """
         return self._extra_inning_record
 
     @mlb_int_property_decorator
     def extra_inning_wins(self):
-        """
-        Returns an ``int`` of the number of wins the team has when the game has
+        """Return an ``int`` of the number of wins the team has when the game has.
+
         gone to extra innings.
         """
         return self._extra_inning_record
 
     @mlb_int_property_decorator
     def extra_inning_losses(self):
-        """
-        Returns an ``int`` of the number of losses the team has when the game
+        """Return an ``int`` of the number of losses the team has when the game.
+
         has gone to extra innings.
         """
         return self._extra_inning_record
 
     @property
     def single_run_record(self):
-        """
-        Returns a ``string`` of the team's record when only one run is scored.
+        """Return a ``string`` of the team's record when only one run is scored.
+
         Record is in the format 'W-L'.
         """
         return self._single_run_record
 
     @mlb_int_property_decorator
     def single_run_wins(self):
-        """
-        Returns an ``int`` of the number of wins the team has when only one run
+        """Return an ``int`` of the number of wins the team has when only one run.
+
         is scored.
         """
         return self._single_run_record
 
     @mlb_int_property_decorator
     def single_run_losses(self):
-        """
-        Returns an ``int`` of the number of losses the team has when only one
+        """Return an ``int`` of the number of losses the team has when only one.
+
         run is scored.
         """
         return self._single_run_record
 
     @property
     def record_vs_right_handed_pitchers(self):
-        """
-        Returns a ``string`` of the team's record against right-handed
+        """Return a ``string`` of the team's record against right-handed.
+
         pitchers.
         Record is in the format 'W-L'.
         """
@@ -642,384 +631,336 @@ class Team:
 
     @mlb_int_property_decorator
     def wins_vs_right_handed_pitchers(self):
-        """
-        Returns an ``int`` of the number of wins against right-handed pitchers.
-        """
+        """Return an ``int`` of the number of wins against right-handed pitchers."""
         return self._record_vs_right_handed_pitchers
 
     @mlb_int_property_decorator
     def losses_vs_right_handed_pitchers(self):
-        """
-        Returns an ``int`` of the number of losses against right-handed
+        """Return an ``int`` of the number of losses against right-handed.
+
         pitchers.
         """
         return self._record_vs_right_handed_pitchers
 
     @property
     def record_vs_left_handed_pitchers(self):
-        """
-        Returns a ``string`` of the team's record against left-handed pitchers.
+        """Return a ``string`` of the team's record against left-handed pitchers.
+
         Record is in the format 'W-L'.
         """
         return self._record_vs_left_handed_pitchers
 
     @mlb_int_property_decorator
     def wins_vs_left_handed_pitchers(self):
-        """
-        Returns an ``int`` of number of wins against left-handed pitchers.
-        """
+        """Return an ``int`` of number of wins against left-handed pitchers."""
         return self._record_vs_left_handed_pitchers
 
     @mlb_int_property_decorator
     def losses_vs_left_handed_pitchers(self):
-        """
-        Returns an ``int`` of number of losses against left-handed pitchers.
-        """
+        """Return an ``int`` of number of losses against left-handed pitchers."""
         return self._record_vs_left_handed_pitchers
 
     @property
     def record_vs_teams_over_500(self):
-        """
-        Returns a ``string`` of the team's record against teams with a win
+        """Return a ``string`` of the team's record against teams with a win.
+
         percentage over 500. Record is in the format 'W-L'.
         """
         return self._record_vs_teams_over_500
 
     @mlb_int_property_decorator
     def wins_vs_teams_over_500(self):
-        """
-        Returns an ``int`` of the number of wins against teams over 500.
-        """
+        """Return an ``int`` of the number of wins against teams over 500."""
         return self._record_vs_teams_over_500
 
     @mlb_int_property_decorator
     def losses_vs_teams_over_500(self):
-        """
-        Returns an ``int`` of the number of losses against teams over 500.
-        """
+        """Return an ``int`` of the number of losses against teams over 500."""
         return self._record_vs_teams_over_500
 
     @property
     def record_vs_teams_under_500(self):
-        """
-        Returns a ``string`` of the team's record against teams with a win
+        """Return a ``string`` of the team's record against teams with a win.
+
         percentage under 500. Record is in the format 'W-L'.
         """
         return self._record_vs_teams_under_500
 
     @mlb_int_property_decorator
     def wins_vs_teams_under_500(self):
-        """
-        Returns an ``int`` of the number of wins against teams under 500.
-        """
+        """Return an ``int`` of the number of wins against teams under 500."""
         return self._record_vs_teams_under_500
 
     @mlb_int_property_decorator
     def losses_vs_teams_under_500(self):
-        """
-        Returns an ``int`` of the number of losses against teams under 500.
-        """
+        """Return an ``int`` of the number of losses against teams under 500."""
         return self._record_vs_teams_under_500
 
     @property
     def last_ten_games_record(self):
-        """
-        Returns a ``string`` of the team's record over the last ten games.
+        """Return a ``string`` of the team's record over the last ten games.
+
         Record is in the format 'W-L'.
         """
         return self._last_ten_games_record
 
     @mlb_int_property_decorator
     def wins_last_ten_games(self):
-        """
-        Returns an ``int`` of the number of wins in the last 10 games.
-        """
+        """Return an ``int`` of the number of wins in the last 10 games."""
         return self._last_ten_games_record
 
     @mlb_int_property_decorator
     def losses_last_ten_games(self):
-        """
-        Returns an ``int`` of the number of losses in the last 10 games.
-        """
+        """Return an ``int`` of the number of losses in the last 10 games."""
         return self._last_ten_games_record
 
     @property
     def last_twenty_games_record(self):
-        """
-        Returns a ``string`` of the team's record over the last twenty games.
+        """Return a ``string`` of the team's record over the last twenty games.
+
         Record is in the format 'W-L'.
         """
         return self._last_twenty_games_record
 
     @mlb_int_property_decorator
     def wins_last_twenty_games(self):
-        """
-        Returns an ``int`` of the number of wins in the last 20 games.
-        """
+        """Return an ``int`` of the number of wins in the last 20 games."""
         return self._last_twenty_games_record
 
     @mlb_int_property_decorator
     def losses_last_twenty_games(self):
-        """
-        Returns an ``int`` of the number of losses in the last 20 games.
-        """
+        """Return an ``int`` of the number of losses in the last 20 games."""
         return self._last_twenty_games_record
 
     @property
     def last_thirty_games_record(self):
-        """
-        Returns a ``string`` of the team's record over the last thirty games.
+        """Return a ``string`` of the team's record over the last thirty games.
+
         Record is in the format 'W-L'.
         """
         return self._last_thirty_games_record
 
     @mlb_int_property_decorator
     def wins_last_thirty_games(self):
-        """
-        Returns an ``int`` of the number of wins in the last 30 games.
-        """
+        """Return an ``int`` of the number of wins in the last 30 games."""
         return self._last_thirty_games_record
 
     @mlb_int_property_decorator
     def losses_last_thirty_games(self):
-        """
-        Returns an ``int`` of the number of losses in the last 30 games.
-        """
+        """Return an ``int`` of the number of losses in the last 30 games."""
         return self._last_thirty_games_record
 
     @int_property_decorator
     def number_players_used(self):
-        """
-        Returns an ``int`` of the number of different players used during the
+        """Return an ``int`` of the number of different players used during the.
+
         season.
         """
         return self._number_players_used
 
     @float_property_decorator
     def average_batter_age(self):
-        """
-        Returns a ``float`` of the average batter age weighted by their number
+        """Return a ``float`` of the average batter age weighted by their number.
+
         of at bats plus the number of games participated in.
         """
         return self._average_batter_age
 
     @int_property_decorator
     def plate_appearances(self):
-        """
-        Returns an ``int`` of the total number of plate appearances for the
+        """Return an ``int`` of the total number of plate appearances for the.
+
         team.
         """
         return self._plate_appearances
 
     @int_property_decorator
     def at_bats(self):
-        """
-        Returns an ``int`` of the total number of at bats for the team.
-        """
+        """Return an ``int`` of the total number of at bats for the team."""
         return self._at_bats
 
     @int_property_decorator
     def total_runs(self):
-        """
-        Returns an ``int`` of the total number of runs scored during the
+        """Return an ``int`` of the total number of runs scored during the.
+
         season.
         """
         return self._total_runs
 
     @int_property_decorator
     def hits(self):
-        """
-        Returns an ``int`` of the total number of hits during the season.
-        """
+        """Return an ``int`` of the total number of hits during the season."""
         return self._hits
 
     @int_property_decorator
     def doubles(self):
-        """
-        Returns an ``int`` of the total number of doubles hit by the team.
-        """
+        """Return an ``int`` of the total number of doubles hit by the team."""
         return self._doubles
 
     @int_property_decorator
     def triples(self):
-        """
-        Returns an ``int`` of the total number of tripes hit by the team.
-        """
+        """Return an ``int`` of the total number of tripes hit by the team."""
         return self._triples
 
     @int_property_decorator
     def home_runs(self):
-        """
-        Returns an ``int`` of the total number of home runs hit by the team.
-        """
+        """Return an ``int`` of the total number of home runs hit by the team."""
         return self._home_runs
 
     @int_property_decorator
     def runs_batted_in(self):
-        """
-        Returns an ``int`` of the total number of runs batted in by the team.
-        """
+        """Return an ``int`` of the total number of runs batted in by the team."""
         return self._runs_batted_in
 
     @int_property_decorator
     def stolen_bases(self):
-        """
-        Returns an ``int`` of the total number of bases stolen by the team.
-        """
+        """Return an ``int`` of the total number of bases stolen by the team."""
         return self._stolen_bases
 
     @int_property_decorator
     def times_caught_stealing(self):
-        """
-        Returns an ``int`` of the number of times a player was caught stealing.
-        """
+        """Return an ``int`` of the number of times a player was caught stealing."""
         return self._times_caught_stealing
 
     @int_property_decorator
     def bases_on_balls(self):
-        """
-        Returns an ``int`` of the number of bases on walks.
-        """
+        """Return an ``int`` of the number of bases on walks."""
         return self._bases_on_balls
 
     @int_property_decorator
     def times_struck_out(self):
-        """
-        Returns an ``int`` of the total number of times the team struck out.
-        """
+        """Return an ``int`` of the total number of times the team struck out."""
         return self._times_struck_out
 
     @float_property_decorator
     def batting_average(self):
-        """
-        Returns a ``float`` of the batting average for the team. Percentage
+        """Return a ``float`` of the batting average for the team. Percentage.
+
         ranges from 0-1.
         """
         return self._batting_average
 
     @float_property_decorator
     def on_base_percentage(self):
-        """
-        Returns a ``float`` of the percentage of at bats that result in a
+        """Return a ``float`` of the percentage of at bats that result in a.
+
         player taking a base. Percentage ranges from 0-1.
         """
         return self._on_base_percentage
 
     @float_property_decorator
     def slugging_percentage(self):
-        """
-        Returns a ``float`` of the ratio of total bases gained per at bat.
-        """
+        """Return a ``float`` of the ratio of total bases gained per at bat."""
         return self._slugging_percentage
 
     @float_property_decorator
     def on_base_plus_slugging_percentage(self):
-        """
-        Returns a ``float`` of the sum of the on base percentage plus the
+        """Return a ``float`` of the sum of the on base percentage plus the.
+
         slugging percentage.
         """
         return self._on_base_plus_slugging_percentage
 
     @int_property_decorator
     def on_base_plus_slugging_percentage_plus(self):
-        """
-        Returns an ``int`` of the on base percentage plus the slugging
+        """Return an ``int`` of the on base percentage plus the slugging.
+
         percentage, adjusted to the team's home ballpark.
         """
         return self._on_base_plus_slugging_percentage_plus
 
     @int_property_decorator
     def total_bases(self):
-        """
-        Returns an ``int`` of the total number of bases a team has gained
+        """Return an ``int`` of the total number of bases a team has gained.
+
         during the season.
         """
         return self._total_bases
 
     @int_property_decorator
     def grounded_into_double_plays(self):
-        """
-        Returns an ``int`` of the total number double plays grounded into by
+        """Return an ``int`` of the total number double plays grounded into by.
+
         the team.
         """
         return self._grounded_into_double_plays
 
     @int_property_decorator
     def times_hit_by_pitch(self):
-        """
-        Returns an ``int`` of the total number of times a batter was hit by an
+        """Return an ``int`` of the total number of times a batter was hit by an.
+
         opponent's pitch.
         """
         return self._times_hit_by_pitch
 
     @int_property_decorator
     def sacrifice_hits(self):
-        """
-        Returns an ``int`` of the total number of sacrifice hits the team made
+        """Return an ``int`` of the total number of sacrifice hits the team made.
+
         during the season.
         """
         return self._sacrifice_hits
 
     @int_property_decorator
     def sacrifice_flies(self):
-        """
-        Returns an ``int`` of the total number of sacrifice flies the team made
+        """Return an ``int`` of the total number of sacrifice flies the team made.
+
         during the season.
         """
         return self._sacrifice_flies
 
     @int_property_decorator
     def intentional_bases_on_balls(self):
-        """
-        Returns an ``int`` of the total number of times a player took a base
+        """Return an ``int`` of the total number of times a player took a base.
+
         from an intentional walk.
         """
         return self._intentional_bases_on_balls
 
     @int_property_decorator
     def runners_left_on_base(self):
-        """
-        Returns an ``int`` of the total number of runners left on base at the
+        """Return an ``int`` of the total number of runners left on base at the.
+
         end of an inning.
         """
         return self._runners_left_on_base
 
     @int_property_decorator
     def number_of_pitchers(self):
-        """
-        Returns an ``int`` of the total number of pitchers used during a
+        """Return an ``int`` of the total number of pitchers used during a.
+
         season.
         """
         return self._number_of_pitchers
 
     @float_property_decorator
     def average_pitcher_age(self):
-        """
-        Returns a ``float`` of the average pitcher age weighted by the number
+        """Return a ``float`` of the average pitcher age weighted by the number.
+
         of games started, followed by the number of games played and saves.
         """
         return self._average_pitcher_age
 
     @float_property_decorator
     def runs_allowed_per_game(self):
-        """
-        Returns a ``float`` of the average number of runs a team has allowed
+        """Return a ``float`` of the average number of runs a team has allowed.
+
         per game.
         """
         return self._runs_allowed_per_game
 
     @float_property_decorator
     def earned_runs_against(self):
-        """
-        Returns a ``float`` of the average number of earned runs against for a
+        """Return a ``float`` of the average number of earned runs against for a.
+
         team.
         """
         return self._earned_runs_against
 
     @int_property_decorator
     def games_finished(self):
-        """
-        Returns an ``int`` of the number of games finished which is equivalent
+        """Return an ``int`` of the number of games finished which is equivalent.
+
         to the number of games played minus the number of complete games during
         the season.
         """
@@ -1027,183 +968,180 @@ class Team:
 
     @int_property_decorator
     def complete_games(self):
-        """
-        Returns an ``int`` of the total number of complete games a team has
+        """Return an ``int`` of the total number of complete games a team has.
+
         accumulated during the season.
         """
         return self._complete_games
 
     @int_property_decorator
     def shutouts(self):
-        """
-        Returns an ``int`` of the total number of shutouts a team has
+        """Return an ``int`` of the total number of shutouts a team has.
+
         accumulated during the season.
         """
         return self._shutouts
 
     @int_property_decorator
     def complete_game_shutouts(self):
-        """
-        Returns an ``int`` of the total number of complete games where the
+        """Return an ``int`` of the total number of complete games where the.
+
         opponent scored zero runs.
         """
         return self._complete_game_shutouts
 
     @int_property_decorator
     def saves(self):
-        """
-        Returns an ``int`` of the total number of saves a team has accumulated
+        """Return an ``int`` of the total number of saves a team has accumulated.
+
         during the season.
         """
         return self._saves
 
     @float_property_decorator
     def innings_pitched(self):
-        """
-        Returns a ``float`` of the total number of innings pitched by a team
+        """Return a ``float`` of the total number of innings pitched by a team.
+
         during the season.
         """
         return self._innings_pitched
 
     @int_property_decorator
     def hits_allowed(self):
-        """
-        Returns an ``int`` of the total number of hits allowed during the
+        """Return an ``int`` of the total number of hits allowed during the.
+
         season.
         """
         return self._hits_allowed
 
     @int_property_decorator
     def home_runs_against(self):
-        """
-        Returns an ``int`` of the total number of home runs given up during the
+        """Return an ``int`` of the total number of home runs given up during the.
+
         season.
         """
         return self._home_runs_against
 
     @int_property_decorator
     def bases_on_walks_given(self):
-        """
-        Returns an ``int`` of the total number of bases from walks given up by
+        """Return an ``int`` of the total number of bases from walks given up by.
+
         a team during the season.
         """
         return self._bases_on_walks_given
 
     @int_property_decorator
     def strikeouts(self):
-        """
-        Returns an ``int`` of the total number of times a team has struck out
+        """Return an ``int`` of the total number of times a team has struck out.
+
         an opponent.
         """
         return self._strikeouts
 
     @int_property_decorator
     def hit_pitcher(self):
-        """
-        Returns an ``int`` of the total number of times a pitcher has hit an
+        """Return an ``int`` of the total number of times a pitcher has hit an.
+
         opposing batter.
         """
         return self._hit_pitcher
 
     @int_property_decorator
     def balks(self):
-        """
-        Returns an ``int`` of the total number of times a pitcher has balked.
-        """
+        """Return an ``int`` of the total number of times a pitcher has balked."""
         return self._balks
 
     @int_property_decorator
     def wild_pitches(self):
-        """
-        Returns an ``int`` of the total number of wild pitches thrown by a team
+        """Return an ``int`` of the total number of wild pitches thrown by a team.
+
         during a season.
         """
         return self._wild_pitches
 
     @int_property_decorator
     def batters_faced(self):
-        """
-        Returns an ``int`` of the total number of batters all pitchers have
+        """Return an ``int`` of the total number of batters all pitchers have.
+
         faced during a season.
         """
         return self._batters_faced
 
     @int_property_decorator
     def earned_runs_against_plus(self):
-        """
-        Returns an ``int`` of the team's average earned runs against, adjusted
+        """Return an ``int`` of the team's average earned runs against, adjusted.
+
         for the home ballpark.
         """
         return self._earned_runs_against_plus
 
     @float_property_decorator
     def fielding_independent_pitching(self):
-        """
-        Returns a ``float`` of the team's effectiveness at preventing home
+        """Return a ``float`` of the team's effectiveness at preventing home.
+
         runs, walks, batters being hit by pitches, and strikeouts.
         """
         return self._fielding_independent_pitching
 
     @float_property_decorator
     def whip(self):
-        """
-        Returns a ``float`` of the average number of walks plus hits by the
+        """Return a ``float`` of the average number of walks plus hits by the.
+
         opponent per inning.
         """
         return self._whip
 
     @float_property_decorator
     def hits_per_nine_innings(self):
-        """
-        Returns a ``float`` of the average number of hits per nine innings by
+        """Return a ``float`` of the average number of hits per nine innings by.
+
         the opponent.
         """
         return self._hits_per_nine_innings
 
     @float_property_decorator
     def home_runs_per_nine_innings(self):
-        """
-        Returns a ``float`` of the average number of home runs per nine innings
+        """Return a ``float`` of the average number of home runs per nine innings.
+
         by the opponent.
         """
         return self._home_runs_per_nine_innings
 
     @float_property_decorator
     def bases_on_walks_given_per_nine_innings(self):
-        """
-        Returns a ``float`` of the average number of walks conceded per nine
+        """Return a ``float`` of the average number of walks conceded per nine.
+
         innings.
         """
         return self._bases_on_walks_given_per_nine_innings
 
     @float_property_decorator
     def strikeouts_per_nine_innings(self):
-        """
-        Returns a ``float`` of the average number of strikeouts a team throws
+        """Return a ``float`` of the average number of strikeouts a team throws.
+
         per nine innings.
         """
         return self._strikeouts_per_nine_innings
 
     @float_property_decorator
     def strikeouts_per_base_on_balls(self):
-        """
-        Returns a ``float`` of the average number of strikeouts per walk thrown
+        """Return a ``float`` of the average number of strikeouts per walk thrown.
+
         by a team.
         """
         return self._strikeouts_per_base_on_balls
 
     @int_property_decorator
     def opposing_runners_left_on_base(self):
-        """
-        Returns an ``int`` of the total number of opponents a team has left on
+        """Return an ``int`` of the total number of opponents a team has left on.
+
         bases at the end of an inning.
         """
         return self._opposing_runners_left_on_base
 
 
 class Teams:
-    """
-    A list of all MLB teams and their stats in a given year.
+    """A list of all MLB teams and their stats in a given year.
 
     Finds and retrieves a list of all MLB teams from www.baseball-reference.com
     and creates a Team instance for every team that participated in the league
@@ -1222,9 +1160,11 @@ class Teams:
         Optionally specify the filename of a local file to use to pull data
         instead of downloading from sports-reference.com. This file should be
         of the League page for the designated year.
+
     """
 
     def __init__(self, year=None, standings_file=None, teams_file=None):
+        """Initialize the class instance."""
         self._teams = []
 
         team_data_dict, year = _retrieve_all_teams(year, standings_file, teams_file)
@@ -1233,21 +1173,16 @@ class Teams:
         self._instantiate_teams(team_data_dict, year)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         teams = [f"{team.name} ({team.abbreviation})".strip() for team in self._teams]
         return "\n".join(teams)
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def __getitem__(self, abbreviation):
-        """
-        Return a specified team.
+        """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
         abbreviation.
@@ -1267,6 +1202,7 @@ class Teams:
         ------
         ValueError
             If the requested team is not present within the Teams list.
+
         """
         for team in self._teams:
             if team.abbreviation.upper() == abbreviation.upper():
@@ -1274,8 +1210,7 @@ class Teams:
         raise ValueError(f"Team abbreviation {abbreviation} not found")
 
     def __call__(self, abbreviation):
-        """
-        Return a specified team.
+        """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
         abbreviation. This method is a wrapper for __getitem__.
@@ -1290,20 +1225,20 @@ class Teams:
         -------
         Team instance
             If the requested team can be found, its Team instance is returned.
+
         """
         return self.__getitem__(abbreviation)
 
     def __iter__(self):
-        """Returns an iterator of all of the MLB teams for a given season."""
+        """Return an iterator of all of the MLB teams for a given season."""
         return iter(self._teams)
 
     def __len__(self):
-        """Returns the number of MLB teams for a given season."""
+        """Return the number of MLB teams for a given season."""
         return len(self._teams)
 
     def _instantiate_teams(self, team_data_dict, year):
-        """
-        Create a Team instance for all teams.
+        """Create a Team instance for all teams.
 
         Once all team information has been pulled from the various webpages,
         create a Team instance for each team and append it to a larger list of
@@ -1316,6 +1251,7 @@ class Teams:
             well as team rankings, indexed by team abbreviation.
         year : string
             A ``string`` of the requested year to pull stats from.
+
         """
         if not team_data_dict:
             return
@@ -1325,8 +1261,8 @@ class Teams:
 
     @property
     def dataframes(self):
-        """
-        Returns a pandas DataFrame where each row is a representation of the
+        """Return a pandas DataFrame where each row is a representation of the.
+
         Team class. Rows are indexed by the team abbreviation.
         """
         frames = []
