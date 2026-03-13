@@ -1109,10 +1109,12 @@ class TestMLBRoster:
         """Return test roster class pulls all player stats."""
         flexmock(utils).should_receive("find_year_for_season").and_return("2017")
         roster = Roster("HOU")
+        players = roster.players
 
-        assert len(roster.players) == 3
+        assert isinstance(players, list)
+        assert len(players) == 3
 
-        for player in roster.players:
+        for player in players:
             assert player.name in ["José Altuve", "Justin Verlander", "Charlie Morton"]
 
     def test_bad_url_raises_value_error(self, *args, **kwargs):
@@ -1125,10 +1127,12 @@ class TestMLBRoster:
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         team = Team(None, 1, "2018")
         team._abbreviation = "HOU"
+        players = team.roster.players
 
-        assert len(team.roster.players) == 3
+        assert isinstance(players, list)
+        assert len(players) == 3
 
-        for player in team.roster.players:
+        for player in players:
             assert player.name in ["José Altuve", "Justin Verlander", "Charlie Morton"]
         team._abbreviation = None
 
@@ -1149,10 +1153,12 @@ class TestMLBRoster:
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         roster = Roster("HOU")
+        players = roster.players
 
-        assert len(roster.players) == 3
+        assert isinstance(players, list)
+        assert len(players) == 3
 
-        for player in roster.players:
+        for player in players:
             assert player.name in ["José Altuve", "Justin Verlander", "Charlie Morton"]
 
     def test_roster_class_string_representation(self, *args, **kwargs):
