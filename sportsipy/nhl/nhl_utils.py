@@ -1,10 +1,17 @@
 """Provide utilities for nhl utils."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from sportsipy import utils
 from sportsipy.nhl.constants import SEASON_PAGE_URL
 
 
-def _retrieve_all_teams(year, season_page=None):
+def _retrieve_all_teams(
+    year: int | str | None,
+    season_page: str | None = None,
+) -> tuple[Any | None, int | str | None]:
     """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NHL stats table and finds all
