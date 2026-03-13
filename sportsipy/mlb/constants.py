@@ -1,3 +1,5 @@
+"""Provide utilities for constants."""
+
 PARSING_SCHEME = {
     "at_bats": 'td[data-stat="AB"]:first',
     "average_batter_age": 'td[data-stat="age_bat"]:first',
