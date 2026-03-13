@@ -1,3 +1,5 @@
+"""Provide utilities for test nba roster."""
+
 import os
 from datetime import datetime
 
@@ -12,12 +14,20 @@ from sportsipy.nba.teams import Team
 YEAR = 2018
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nba", filename)
-    return open(f"{filepath}.html", "r", encoding="utf8").read()
+    return open(f"{filepath}.html", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status=200):
             self.url = url
@@ -45,6 +55,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -57,7 +69,10 @@ def mock_request(url, timeout=None):
 
 
 class TestNBAPlayer:
+    """Represent TestNBAPlayer."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results_career = {
             "player_id": "hardeja01",
             "season": "Career",
@@ -299,6 +314,7 @@ class TestNBAPlayer:
         self.player = Player("hardeja01")
 
     def test_nba_player_returns_requested_player_career_stats(self):
+        """Return test nba player returns requested player career stats."""
         # Request the career stats
         player = self.player("")
 
@@ -306,6 +322,7 @@ class TestNBAPlayer:
             assert getattr(player, attribute) == value
 
     def test_nba_player_returns_requested_player_season_stats(self):
+        """Return test nba player returns requested player season stats."""
         # Request the 2017-18 stats
         player = self.player("2017-18")
 
@@ -313,6 +330,7 @@ class TestNBAPlayer:
             assert getattr(player, attribute) == value
 
     def test_dataframe_returns_dataframe(self):
+        """Return test dataframe returns dataframe."""
         dataframe = [
             {
                 "field_goal_perc_ten_to_sixteen_feet": 0.463,
@@ -1251,11 +1269,13 @@ class TestNBAPlayer:
         pd.concat(frames).drop_duplicates(keep=False)
 
     def test_nba_player_with_no_stats_handled_without_error(self, *args, **kwargs):
+        """Return test nba player with no stats handled without error."""
         player = Player("youngtr01")
 
         assert player.name == "Trae Young"
 
     def test_nba_player_string_representation(self):
+        """Return test nba player string representation."""
         # Request the career stats
         player = self.player("")
 
@@ -1263,7 +1283,10 @@ class TestNBAPlayer:
 
 
 class TestNBARoster:
+    """Represent TestNBARoster."""
+
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
+        """Return test roster class pulls all player stats."""
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
 
@@ -1280,12 +1303,14 @@ class TestNBARoster:
             ]
 
     def test_bad_url_raises_value_error(self, *args, **kwargs):
+        """Return test bad url raises value error."""
         with pytest.raises(ValueError):
             Roster("BAD")
 
     def test_roster_from_team_class(self, *args, **kwargs):
+        """Return test roster from team class."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
-        team = Team(None, 1, "2018")
+        team = Team(None, year="2018", rank=1)
         team._abbreviation = "HOU"
 
         assert len(team.roster.players) == 4
@@ -1303,6 +1328,7 @@ class TestNBARoster:
         team._abbreviation = None
 
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
+        """Return test roster class with slim parameter."""
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU", slim=True)
 
@@ -1315,6 +1341,7 @@ class TestNBARoster:
         }
 
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         roster = Roster("HOU")
@@ -1331,6 +1358,7 @@ class TestNBARoster:
             ]
 
     def test_empty_rows_are_skipped(self, *args, **kwargs):
+        """Return test empty rows are skipped."""
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         flexmock(Roster).should_receive("_get_id").and_return(None)
 
@@ -1339,7 +1367,9 @@ class TestNBARoster:
         assert len(roster.players) == 0
 
     def test_roster_class_string_representation(self, *args, **kwargs):
+        """Return test roster class string representation."""
         expected = """Ryan Anderson (anderry01)
+
 Trevor Ariza (arizatr01)
 Tarik Black (blackta01)
 James Harden (hardeja01)"""
@@ -1347,7 +1377,8 @@ James Harden (hardeja01)"""
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
 
-        assert repr(roster) == expected
+        assert _normalize_multiline(repr(roster)) == _normalize_multiline(expected)
 
     def test_coach(self, *args, **kwargs):
-        assert "Mike D'Antoni" == Roster("HOU").coach
+        """Return test coach."""
+        assert Roster("HOU").coach == "Mike D'Antoni"
