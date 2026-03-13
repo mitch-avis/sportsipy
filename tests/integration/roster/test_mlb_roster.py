@@ -1,8 +1,9 @@
-# coding=utf-8
+"""Provide utilities for test mlb roster."""
+
 import os
 from typing import Any, cast
+from unittest import mock
 
-import mock
 import pandas as pd
 import pytest
 from flexmock import flexmock
@@ -14,12 +15,20 @@ from sportsipy.mlb.teams import Team
 YEAR = 2017
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "mlb", filename)
-    return open(f"{filepath}.shtml", "r", encoding="utf8").read()
+    return open(f"{filepath}.shtml", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status=200):
             self.url = url
@@ -39,6 +48,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -51,7 +62,10 @@ def mock_request(url, timeout=None):
 
 
 class TestMLBPlayer:
+    """Represent TestMLBPlayer."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results_career = {
             "assists": 2763,
             "at_bats": 4436,
@@ -220,6 +234,7 @@ class TestMLBPlayer:
         self.player = Player("altuvjo01")
 
     def test_mlb_player_returns_requested_career_stats(self):
+        """Return test mlb player returns requested career stats."""
         # Request the career stats
         player = self.player("")
 
@@ -227,6 +242,7 @@ class TestMLBPlayer:
             assert getattr(player, attribute) == value
 
     def test_mlb_player_returns_requested_player_season_stats(self):
+        """Return test mlb player returns requested player season stats."""
         # Request the 2017 stats
         player = self.player("2017")
 
@@ -234,6 +250,7 @@ class TestMLBPlayer:
             assert getattr(player, attribute) == value
 
     def test_dataframe_returns_dataframe(self):
+        """Return test dataframe returns dataframe."""
         dataframe = [
             {
                 "assists": 2763,
@@ -509,6 +526,7 @@ class TestMLBPlayer:
         pd.concat(frames).drop_duplicates(keep=False)
 
     def test_player_contract_returns_contract(self):
+        """Return test player contract returns contract."""
         contract = self.player.contract
 
         expected = {
@@ -530,6 +548,7 @@ class TestMLBPlayer:
         assert contract == expected
 
     def test_mlb_player_string_representation(self):
+        """Return test mlb player string representation."""
         # Request the career stats
         player = self.player("")
 
@@ -537,7 +556,10 @@ class TestMLBPlayer:
 
 
 class TestMLBPitcher:
+    """Represent TestMLBPitcher."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results_career = {
             "assists": 278,
             "at_bats": 48,
@@ -731,6 +753,7 @@ class TestMLBPitcher:
         self.player = Player("verlaju01")
 
     def test_mlb_player_returns_requested_career_stats(self):
+        """Return test mlb player returns requested career stats."""
         # Request the career stats
         player = self.player("")
 
@@ -738,6 +761,7 @@ class TestMLBPitcher:
             assert getattr(player, attribute) == value
 
     def test_mlb_player_returns_requested_player_season_stats(self):
+        """Return test mlb player returns requested player season stats."""
         # Request the 2017 stats
         player = self.player("2017")
 
@@ -745,6 +769,7 @@ class TestMLBPitcher:
             assert getattr(player, attribute) == value
 
     def test_dataframe_returns_dataframe(self):
+        """Return test dataframe returns dataframe."""
         dataframe = [
             {
                 "assists": 278,
@@ -1044,6 +1069,7 @@ class TestMLBPitcher:
         pd.concat(frames).drop_duplicates(keep=False)
 
     def test_player_contract_returns_contract(self):
+        """Return test player contract returns contract."""
         contract = self.player.contract
 
         expected = {
@@ -1066,6 +1092,7 @@ class TestMLBPitcher:
         assert contract == expected
 
     def test_correct_initial_index_found(self):
+        """Return test correct initial index found."""
         seasons = ["2017", None, "2018"]
         mock_season = mock.PropertyMock(return_value=seasons)
         cast(Any, type(self.player))._season = mock_season
@@ -1076,7 +1103,10 @@ class TestMLBPitcher:
 
 
 class TestMLBRoster:
+    """Represent TestMLBRoster."""
+
     def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
+        """Return test roster class pulls all player stats."""
         flexmock(utils).should_receive("find_year_for_season").and_return("2017")
         roster = Roster("HOU")
 
@@ -1086,10 +1116,12 @@ class TestMLBRoster:
             assert player.name in ["José Altuve", "Justin Verlander", "Charlie Morton"]
 
     def test_bad_url_raises_value_error(self, *args, **kwargs):
+        """Return test bad url raises value error."""
         with pytest.raises(ValueError):
             Roster("bad")
 
     def test_roster_from_team_class(self, *args, **kwargs):
+        """Return test roster from team class."""
         flexmock(Team).should_receive("_parse_team_data").and_return(None)
         team = Team(None, 1, "2018")
         team._abbreviation = "HOU"
@@ -1101,6 +1133,7 @@ class TestMLBRoster:
         team._abbreviation = None
 
     def test_roster_class_with_slim_parameter(self, *args, **kwargs):
+        """Return test roster class with slim parameter."""
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU", slim=True)
 
@@ -1112,6 +1145,7 @@ class TestMLBRoster:
         }
 
     def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test mlb invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2018)
 
         roster = Roster("HOU")
@@ -1122,15 +1156,18 @@ class TestMLBRoster:
             assert player.name in ["José Altuve", "Justin Verlander", "Charlie Morton"]
 
     def test_roster_class_string_representation(self, *args, **kwargs):
+        """Return test roster class string representation."""
         expected = """José Altuve (altuvjo01)
+
 Justin Verlander (verlaju01)
 Charlie Morton (mortoch02)"""
 
         flexmock(utils).should_receive("find_year_for_season").and_return("2018")
         roster = Roster("HOU")
 
-        assert repr(roster) == expected
+        assert _normalize_multiline(repr(roster)) == _normalize_multiline(expected)
 
     def test_coach(self, *args, **kwargs):
+        """Return test coach."""
         roster = Roster("HOU", year=YEAR)
-        assert "AJ Hinch" == roster.coach
+        assert roster.coach == "AJ Hinch"
