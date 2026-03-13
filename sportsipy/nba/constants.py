@@ -285,7 +285,7 @@ PLAYER_SCHEME = {
     "steals": 'td[data-stat="stl"]',
     "summary": '[data-template="Partials/Teams/Summary"]',
     "take_fouls": 'td[data-stat="fouls_take"]',
-    "team_abbreviation": 'td[data-stat="team_id"]',
+    "team_abbreviation": 'td[data-stat="team_name_abbr"], td[data-stat="team_id"]',
     "three_point_attempt_rate": 'td[data-stat="fg3a_per_fga_pct"]',
     "three_point_attempts_per_poss": 'td[data-stat="fg3a_per_poss"]',
     "three_point_attempts": 'td[data-stat="fg3a"]',
