@@ -1,3 +1,5 @@
+"""Shared constants used across all sportsipy sport modules."""
+
 WIN = "Win"
 LOSS = "Loss"
 DRAW = "Draw"
