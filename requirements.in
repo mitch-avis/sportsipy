@@ -2,10 +2,13 @@ certifi
 charset-normalizer
 cssselect
 idna
+jinja2
 lxml
+markupsafe
 numpy
 pandas
 playwright
+py-cpuinfo
 pyquery
 python-dateutil
 pytz
