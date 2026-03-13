@@ -1,3 +1,5 @@
+"""Provide utilities for test nhl boxscore."""
+
 import os
 from datetime import datetime
 
@@ -17,11 +19,14 @@ BOXSCORE = "202003040VAN"
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nhl", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -37,13 +42,19 @@ def mock_pyquery(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNHLBoxscore:
+    """Represent TestNHLBoxscore."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "date": "March 4, 2020",
             "time": "10:30 PM",
@@ -94,10 +105,12 @@ class TestNHLBoxscore:
         self.boxscore = Boxscore(BOXSCORE)
 
     def test_nhl_boxscore_returns_requested_boxscore(self):
+        """Return test nhl boxscore returns requested boxscore."""
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
 
     def test_invalid_url_yields_empty_class(self):
+        """Return test invalid url yields empty class."""
         flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
 
         boxscore = Boxscore(BOXSCORE)
@@ -108,6 +121,7 @@ class TestNHLBoxscore:
             assert value is None
 
     def test_nhl_boxscore_dataframe_returns_dataframe_of_all_values(self):
+        """Return test nhl boxscore dataframe returns dataframe of all values."""
         df = pd.DataFrame([self.results], index=[BOXSCORE])
 
         # Pandas doesn't natively allow comparisons of DataFrames.
@@ -122,6 +136,7 @@ class TestNHLBoxscore:
         assert df1.empty
 
     def test_nhl_boxscore_player(self):
+        """Return test nhl boxscore player."""
         assert len(self.boxscore.home_players) == 19
         assert len(self.boxscore.away_players) == 19
 
@@ -131,13 +146,17 @@ class TestNHLBoxscore:
             assert not player.dataframe.empty
 
     def test_nhl_boxscore_string_representation(self):
+        """Return test nhl boxscore string representation."""
         expected = "Boxscore for Arizona Coyotes at Vancouver Canucks (March 4, 2020)"
 
         assert repr(self.boxscore) == expected
 
 
 class TestNHLBoxscores:
+    """Represent TestNHLBoxscores."""
+
     def setup_method(self):
+        """Return setup method."""
         self.expected = {
             "3-4-2020": [
                 {
@@ -196,16 +215,19 @@ class TestNHLBoxscores:
         }
 
     def test_boxscores_search(self, *args, **kwargs):
+        """Return test boxscores search."""
         result = Boxscores(datetime(2020, 3, 4)).games
 
         assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
+        """Return test boxscores search invalid end."""
         result = Boxscores(datetime(2020, 3, 4), datetime(2020, 3, 3)).games
 
         assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_multiple_days(self, *args, **kwargs):
+        """Return test boxscores search multiple days."""
         expected = {
             "3-4-2020": [
                 {
@@ -399,6 +421,7 @@ class TestNHLBoxscores:
         assert normalize_games(result) == normalize_games(expected)
 
     def test_boxscores_search_string_representation(self, *args, **kwargs):
+        """Return test boxscores search string representation."""
         result = Boxscores(datetime(2020, 3, 4))
 
         assert repr(result) == "NHL games for 3-4-2020"
