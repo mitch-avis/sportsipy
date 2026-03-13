@@ -1,3 +1,5 @@
+"""Provide utilities for test ncaab conferences."""
+
 from os.path import dirname, join
 
 import pytest
@@ -10,11 +12,14 @@ YEAR = 2018
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = join(dirname(__file__), "ncaab", filename)
-    return open(filepath, "r", encoding="utf8").read()
+    return open(filepath, encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status_code=200):
             self.url = url
@@ -40,6 +45,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -52,7 +59,10 @@ def mock_request(url, timeout=None):
 
 
 class TestNCAABConferences:
+    """Represent TestNCAABConferences."""
+
     def setup_method(self):
+        """Return setup method."""
         team_conference = {
             "kansas": "big-12",
             "texas-tech": "big-12",
@@ -111,6 +121,7 @@ class TestNCAABConferences:
         self.conferences_result = conferences_result
 
     def test_conferences_integration(self, *args, **kwargs):
+        """Return test conferences integration."""
         flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
 
         conferences = Conferences()
@@ -119,14 +130,17 @@ class TestNCAABConferences:
         assert conferences.conferences == self.conferences_result
 
     def test_conferences_integration_bad_url(self, *args, **kwargs):
+        """Return test conferences integration bad url."""
         with pytest.raises(ValueError):
             _ = Conferences("BAD")
 
     def test_conference_integration_bad_url(self, *args, **kwargs):
+        """Return test conference integration bad url."""
         with pytest.raises(ValueError):
             _ = Conference("BAD")
 
     def test_conference_with_no_names_is_empty(self, *args, **kwargs):
+        """Return test conference with no names is empty."""
         flexmock(Conference).should_receive("_get_team_abbreviation").and_return("")
 
         conference = Conference("big-12")
@@ -134,6 +148,7 @@ class TestNCAABConferences:
         assert len(conference._teams) == 0
 
     def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         conferences = Conferences()
@@ -142,6 +157,7 @@ class TestNCAABConferences:
         assert conferences.conferences == self.conferences_result
 
     def test_invalid_conference_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test invalid conference year reverts to previous year."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2019)
 
         conference = Conference("big-12")
@@ -149,11 +165,13 @@ class TestNCAABConferences:
         assert len(conference._teams) == 10
 
     def test_conferences_string_representation(self, *args, **kwargs):
+        """Return test conferences string representation."""
         conferences = Conferences()
 
         assert repr(conferences) == "NCAAB Conferences"
 
     def test_conference_string_representation(self, *args, **kwargs):
+        """Return test conference string representation."""
         conference = Conference("big-12")
 
         assert repr(conference) == "big-12 - NCAAB"
