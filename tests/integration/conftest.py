@@ -1,3 +1,5 @@
+"""Provide utilities for conftest."""
+
 import os
 
 import pytest
