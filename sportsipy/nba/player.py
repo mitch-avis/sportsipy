@@ -1,5 +1,7 @@
 """Provide utilities for player."""
 
+from __future__ import annotations
+
 from functools import wraps
 
 from pyquery import PyQuery
@@ -85,7 +87,12 @@ class AbstractPlayer:
 
     """
 
-    def __init__(self, player_id, player_name, player_data):
+    def __init__(
+        self,
+        player_id: str | None,
+        player_name: str | None,
+        player_data: dict[str, dict[str, str]] | str | None,
+    ) -> None:
         """Initialize the class instance."""
         self._player_id = player_id
         self._name = player_name
@@ -199,7 +206,7 @@ class AbstractPlayer:
             setattr(self, field, field_stats)
 
     @property
-    def player_id(self):
+    def player_id(self) -> str | None:
         """Return a ``string`` of the player's ID on sports-reference, such as.
 
         'hardeja01' for James Harden.
@@ -207,7 +214,7 @@ class AbstractPlayer:
         return self._player_id
 
     @property
-    def name(self):
+    def name(self) -> str | None:
         """Return a ``string`` of the players name, such as 'James Harden'."""
         return self._name
 
