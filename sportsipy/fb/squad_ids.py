@@ -1,3 +1,5 @@
+"""Provide utilities for squad ids."""
+
 SQUAD_IDS = {
     "08 homburg": "89a86c55",
     "08 villingen": "f554f7de",
