@@ -1,10 +1,12 @@
+"""Provide utilities for rankings."""
+
 import re
 from urllib.error import HTTPError
 
-from pyquery import PyQuery as pq
+from pyquery import PyQuery
 
-from .. import utils
-from .constants import (
+from sportsipy import utils
+from sportsipy.ncaaf.constants import (
     CFP_RANKINGS_URL,
     COACHES_RANKINGS_URL,
     RANKINGS_SCHEME,
@@ -13,8 +15,7 @@ from .constants import (
 
 
 class Rankings:
-    """
-    Get all Associated Press (AP) rankings on a week-by-week basis.
+    """Get all Associated Press (AP) rankings on a week-by-week basis.
 
     Grab a list of the rankings published by the Associated Press to easily
     query the hierarchy of teams each week. The results expose the current and
@@ -25,28 +26,25 @@ class Rankings:
     year : string (optional)
         A string of the requested year to pull rankings from. Defaults to the
         most recent season.
+
     """
 
     def __init__(self, year=None):
+        """Initialize the class instance."""
         self._rankings = {}
 
         self._find_rankings(year)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return "NCAAF Rankings"
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def _pull_rankings_page(self, year):
-        """
-        Download the rankings page.
+        """Download the rankings page.
 
         Download the rankings page for the requested year and create a PyQuery
         object.
@@ -60,19 +58,19 @@ class Rankings:
         -------
         PyQuery object
             Returns a PyQuery object of the rankings HTML page.
+
         """
         try:
             page_source = utils.get_page_source(url=RANKINGS_URL % year)
             if not page_source:
                 return None
             url_data = utils.pq(page_source)
-            return pq(utils.remove_html_comment_tags(url_data))
+            return PyQuery(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None
 
     def _get_team(self, team):
-        """
-        Retrieve team's name and abbreviation.
+        """Retrieve team's name and abbreviation.
 
         The team's name and abbreviation are embedded within the 'school_name'
         tag and, in the case of the abbreviation, require special parsing as it
@@ -91,6 +89,7 @@ class Rankings:
             Returns a tuple of two strings where the first string is the team's
             abbreviation, such as 'PURDUE' and the second string is the team's
             name, such as 'Purdue'.
+
         """
         link = team('td[data-stat="school_name"] a')
         href = link.attr("href") or ""
@@ -100,8 +99,7 @@ class Rankings:
         return abbreviation, name
 
     def _find_rankings(self, year):
-        """
-        Retrieve the rankings for each week.
+        """Retrieve the rankings for each week.
 
         Find and retrieve all AP rankings for the requested year and combine
         them on a per-week basis. Each week contains information about the
@@ -112,6 +110,7 @@ class Rankings:
         ----------
         year : string
             A string of the requested year to pull rankings from.
+
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
@@ -166,8 +165,8 @@ class Rankings:
 
     @property
     def current_extended(self):
-        """
-        Returns a ``list`` of ``dictionaries`` of the most recent AP rankings.
+        """Return a ``list`` of ``dictionaries`` of the most recent AP rankings.
+
         The list is ordered in terms of the ranking so the #1 team will be in
         the first element and the #25 team will be the last element. Each
         dictionary has the following structure::
@@ -193,8 +192,8 @@ class Rankings:
 
     @property
     def current(self):
-        """
-        Returns a ``dictionary`` of the most recent rankings from the
+        """Return a ``dictionary`` of the most recent rankings from the.
+
         Associated Press where each key is a ``string`` of the team's
         abbreviation and each value is an ``int`` of the team's rank for the
         current week.
@@ -207,8 +206,8 @@ class Rankings:
 
     @property
     def complete(self):
-        """
-        Returns a ``dictionary`` where each key is a week number as an ``int``
+        """Return a ``dictionary`` where each key is a week number as an ``int``.
+
         and each value is a ``list`` of ``dictionaries`` containing the AP
         rankings for each week. Within each list is a dictionary of team
         information such as name, abbreviation, rank, and more. Note that the
@@ -244,8 +243,7 @@ class Rankings:
 
 
 class CFPRankings:
-    """
-    Get all College Football Playoff (CFP) rankings on a week-by-week basis.
+    """Get all College Football Playoff (CFP) rankings on a week-by-week basis.
 
     Grab a list of the official College Football Playoff rankings once
     available to easily determine the latest standings in the race to the
@@ -257,16 +255,17 @@ class CFPRankings:
     year : string (optional)
         A string of the requested year to pull rankings from. Defaults to the
         most recent season.
+
     """
 
     def __init__(self, year=None):
+        """Initialize the class instance."""
         self._rankings = {}
 
         self._find_rankings(year)
 
     def _pull_rankings_page(self, year):
-        """
-        Download the rankings page.
+        """Download the rankings page.
 
         Download the rankings page for the requested year and create a PyQuery
         object.
@@ -280,19 +279,19 @@ class CFPRankings:
         -------
         PyQuery object
             Returns a PyQuery object of the rankings HTML page.
+
         """
         try:
             page_source = utils.get_page_source(url=CFP_RANKINGS_URL % year)
             if not page_source:
                 return None
             url_data = utils.pq(page_source)
-            return pq(utils.remove_html_comment_tags(url_data))
+            return PyQuery(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None
 
     def _get_team(self, team):
-        """
-        Retrieve team's name and abbreviation.
+        """Retrieve team's name and abbreviation.
 
         The team's name and abbreviation are embedded within the 'school_name'
         tag and, in the case of the abbreviation, require special parsing as it
@@ -311,6 +310,7 @@ class CFPRankings:
             Returns a tuple of two strings where the first string is the team's
             abbreviation, such as 'PURDUE' and the second string is the team's
             name, such as 'Purdue'.
+
         """
         link = team('td[data-stat="school_name"] a')
         href = link.attr("href") or ""
@@ -320,8 +320,7 @@ class CFPRankings:
         return abbreviation, name
 
     def _find_rankings(self, year):
-        """
-        Retrieve the rankings for each week.
+        """Retrieve the rankings for each week.
 
         Find and retrieve all CFP rankings for the requested year and combine
         them on a per-week basis. Each week contains information about the
@@ -332,6 +331,7 @@ class CFPRankings:
         ----------
         year : string
             A string of the requested year to pull rankings from.
+
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
@@ -388,8 +388,8 @@ class CFPRankings:
 
     @property
     def current_extended(self):
-        """
-        Returns a ``list`` of ``dictionaries`` of the most recent CFP rankings.
+        """Return a ``list`` of ``dictionaries`` of the most recent CFP rankings.
+
         The list is ordered in terms of the ranking so the #1 team will be in
         the first element and the #25 team will be the last element. Each
         dictionary has the following structure::
@@ -415,8 +415,8 @@ class CFPRankings:
 
     @property
     def current(self):
-        """
-        Returns a ``dictionary`` of the most recent CFP rankings where
+        """Return a ``dictionary`` of the most recent CFP rankings where.
+
         each key is a ``string`` of the team's abbreviation and each
         value is an ``int`` of the team's rank for the current week.
         """
@@ -428,8 +428,8 @@ class CFPRankings:
 
     @property
     def complete(self):
-        """
-        Returns a ``dictionary`` where each key is a week number as an ``int``
+        """Return a ``dictionary`` where each key is a week number as an ``int``.
+
         and each value is a ``list`` of ``dictionaries`` containing the CFP
         rankings for each week. Within each list is a dictionary of team
         information such as name, abbreviation, rank, and more. Note that the
@@ -465,8 +465,7 @@ class CFPRankings:
 
 
 class CoachesRankings:
-    """
-    Get all Coaches Poll (USA Today) rankings on a week-by-week basis.
+    """Get all Coaches Poll (USA Today) rankings on a week-by-week basis.
 
     Grab a list of the rankings published by USA Today to easily query
     the hierarchy of teams each week. The results expose the current and
@@ -477,16 +476,17 @@ class CoachesRankings:
     year : string (optional)
         A string of the requested year to pull rankings from. Defaults to the
         most recent season.
+
     """
 
     def __init__(self, year=None):
+        """Initialize the class instance."""
         self._rankings = {}
 
         self._find_rankings(year)
 
     def _pull_rankings_page(self, year):
-        """
-        Download the rankings page.
+        """Download the rankings page.
 
         Download the rankings page for the requested year and create a PyQuery
         object.
@@ -500,19 +500,19 @@ class CoachesRankings:
         -------
         PyQuery object
             Returns a PyQuery object of the rankings HTML page.
+
         """
         try:
             page_source = utils.get_page_source(url=COACHES_RANKINGS_URL % year)
             if not page_source:
                 return None
             url_data = utils.pq(page_source)
-            return pq(utils.remove_html_comment_tags(url_data))
+            return PyQuery(utils.remove_html_comment_tags(url_data))
         except HTTPError:
             return None
 
     def _get_team(self, team):
-        """
-        Retrieve team's name and abbreviation.
+        """Retrieve team's name and abbreviation.
 
         The team's name and abbreviation are embedded within the 'school_name'
         tag and, in the case of the abbreviation, require special parsing as it
@@ -531,6 +531,7 @@ class CoachesRankings:
             Returns a tuple of two strings where the first string is the team's
             abbreviation, such as 'PURDUE' and the second string is the team's
             name, such as 'Purdue'.
+
         """
         link = team('td[data-stat="school_name"] a')
         href = link.attr("href") or ""
@@ -540,8 +541,7 @@ class CoachesRankings:
         return abbreviation, name
 
     def _find_rankings(self, year):
-        """
-        Retrieve the rankings for each week.
+        """Retrieve the rankings for each week.
 
         Find and retrieve all Coaches Poll rankings for the requested year and
         combine them on a per-week basis. Each week contains information about
@@ -552,6 +552,7 @@ class CoachesRankings:
         ----------
         year : string
             A string of the requested year to pull rankings from.
+
         """
         if not year:
             year = utils.find_year_for_season("ncaaf")
@@ -608,8 +609,8 @@ class CoachesRankings:
 
     @property
     def current_extended(self):
-        """
-        Returns a ``list`` of ``dictionaries`` of the most recent Coaches Poll
+        """Return a ``list`` of ``dictionaries`` of the most recent Coaches Poll.
+
         rankings. The list is ordered in terms of the ranking so the #1 team
         will be in the first element and the #25 team will be the last element.
         Each dictionary has the following structure::
@@ -635,8 +636,8 @@ class CoachesRankings:
 
     @property
     def current(self):
-        """
-        Returns a ``dictionary`` of the most recent Coaches Poll
+        """Return a ``dictionary`` of the most recent Coaches Poll.
+
         rankings where each key is a ``string`` of the team's
         abbreviation and each value is an ``int`` of the team's
         rank for the current week.
@@ -649,8 +650,8 @@ class CoachesRankings:
 
     @property
     def complete(self):
-        """
-        Returns a ``dictionary`` where each key is a week number as an ``int``
+        """Return a ``dictionary`` where each key is a week number as an ``int``.
+
         and each value is a ``list`` of ``dictionaries`` containing the Coaches
         Poll rankings for each week. Within each list is a dictionary of team
         information such as name, abbreviation, rank, and more. Note that the
