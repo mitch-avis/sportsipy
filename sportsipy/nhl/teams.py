@@ -1,5 +1,9 @@
 """Provide utilities for teams."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import pandas as pd
 
 from sportsipy import utils
@@ -43,7 +47,14 @@ class Team:
 
     """
 
-    def __init__(self, team_name=None, team_data=None, rank=None, year=None, season_page=None):
+    def __init__(
+        self,
+        team_name: str | None = None,
+        team_data: Any = None,
+        rank: int | str | None = None,
+        year: int | str | None = None,
+        season_page: str | None = None,
+    ) -> None:
         """Initialize the class instance."""
         self._year = year
         self._rank = rank
@@ -443,7 +454,7 @@ class Teams:
 
     """
 
-    def __init__(self, year=None, season_page=None):
+    def __init__(self, year: int | str | None = None, season_page: str | None = None) -> None:
         """Initialize the class instance."""
         self._teams = []
 
