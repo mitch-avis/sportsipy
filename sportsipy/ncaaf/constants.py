@@ -1,5 +1,7 @@
 """Provide utilities for constants."""
 
+from __future__ import annotations
+
 PARSING_SCHEME = {
     "conference_losses": 'td[data-stat="losses_conf"]:first',
     "conference_win_percentage": 'td[data-stat="win_loss_pct_conf"]:first',
