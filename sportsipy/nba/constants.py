@@ -1,3 +1,5 @@
+"""Provide utilities for constants."""
+
 PARSING_SCHEME = {
     "assists": 'td[data-stat="ast"]:first',
     "blocks": 'td[data-stat="blk"]:first',
