@@ -1,3 +1,5 @@
+"""Provide utilities for test mlb boxscore."""
+
 import os
 from datetime import datetime
 
@@ -17,11 +19,14 @@ BOXSCORE = "ANA/ANA202008170"
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "mlb", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -38,13 +43,19 @@ def mock_pyquery(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestMLBBoxscore:
+    """Represent TestMLBBoxscore."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "away_assists": 5,
             "away_at_bats": 35,
@@ -133,6 +144,7 @@ class TestMLBBoxscore:
         self.boxscore = Boxscore(BOXSCORE)
 
     def test_mlb_boxscore_returns_requested_boxscore(self):
+        """Return test mlb boxscore returns requested boxscore."""
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
         assert self.boxscore.summary == {
@@ -141,6 +153,7 @@ class TestMLBBoxscore:
         }
 
     def test_invalid_url_yields_empty_class(self):
+        """Return test invalid url yields empty class."""
         flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
 
         boxscore = Boxscore(BOXSCORE)
@@ -151,6 +164,7 @@ class TestMLBBoxscore:
             assert value is None
 
     def test_mlb_boxscore_dataframe_returns_dataframe_of_all_values(self):
+        """Return test mlb boxscore dataframe returns dataframe of all values."""
         df = pd.DataFrame([self.results], index=[BOXSCORE])
 
         # Pandas doesn't natively allow comparisons of DataFrames.
@@ -165,6 +179,7 @@ class TestMLBBoxscore:
         assert df1.empty
 
     def test_mlb_boxscore_player(self):
+        """Return test mlb boxscore player."""
         home_players = self.boxscore.home_players
         away_players = self.boxscore.away_players
         assert home_players is not None
@@ -178,13 +193,17 @@ class TestMLBBoxscore:
             assert not player.dataframe.empty
 
     def test_mlb_boxscore_string_representation(self):
+        """Return test mlb boxscore string representation."""
         expected = "Boxscore for  at  (Monday, August 17, 2020)"
 
         assert repr(self.boxscore) == expected
 
 
 class TestMLBBoxscores:
+    """Represent TestMLBBoxscores."""
+
     def setup_method(self):
+        """Return setup method."""
         self.expected = {
             "8-17-2020": [
                 {
@@ -360,16 +379,19 @@ class TestMLBBoxscores:
         }
 
     def test_boxscores_search(self, *args, **kwargs):
+        """Return test boxscores search."""
         result = Boxscores(datetime(2020, 8, 17)).games
 
         assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
+        """Return test boxscores search invalid end."""
         result = Boxscores(datetime(2020, 8, 17), datetime(2020, 8, 16)).games
 
         assert normalize_games(result) == normalize_games(self.expected)
 
     def test_boxscores_search_multiple_days(self, *args, **kwargs):
+        """Return test boxscores search multiple days."""
         expected = {
             "8-17-2020": [
                 {
@@ -732,6 +754,7 @@ class TestMLBBoxscores:
         assert normalize_games(result) == normalize_games(expected)
 
     def test_boxscores_search_string_representation(self, *args, **kwargs):
+        """Return test boxscores search string representation."""
         result = Boxscores(datetime(2020, 8, 17))
 
         assert repr(result) == "MLB games for 8-17-2020"
