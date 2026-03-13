@@ -1,5 +1,9 @@
 """Provide utilities for teams."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import pandas as pd
 
 from sportsipy import utils
@@ -54,15 +58,15 @@ class Team:
 
     def __init__(
         self,
-        team_name=None,
-        team_data=None,
-        team_conference=None,
-        year=None,
-        basic_stats=None,
-        basic_opp_stats=None,
-        adv_stats=None,
-        adv_opp_stats=None,
-    ):
+        team_name: str | None = None,
+        team_data: Any = None,
+        team_conference: str | None = None,
+        year: int | str | None = None,
+        basic_stats: str | None = None,
+        basic_opp_stats: str | None = None,
+        adv_stats: str | None = None,
+        adv_opp_stats: str | None = None,
+    ) -> None:
         """Initialize the class instance."""
         self._team_conference = team_conference
         self._year = year
@@ -1109,12 +1113,12 @@ class Teams:
 
     def __init__(
         self,
-        year=None,
-        basic_stats=None,
-        basic_opp_stats=None,
-        adv_stats=None,
-        adv_opp_stats=None,
-    ):
+        year: int | str | None = None,
+        basic_stats: str | None = None,
+        basic_opp_stats: str | None = None,
+        adv_stats: str | None = None,
+        adv_opp_stats: str | None = None,
+    ) -> None:
         """Initialize the class instance."""
         self._teams = []
         self._conferences_dict = Conferences(year).team_conference
