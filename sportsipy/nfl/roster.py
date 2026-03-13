@@ -1,5 +1,7 @@
 """Provide utilities for roster."""
 
+from __future__ import annotations
+
 import re
 from functools import wraps
 from urllib.error import HTTPError
@@ -90,7 +92,7 @@ class Player(AbstractPlayer):
 
     """
 
-    def __init__(self, player_id):
+    def __init__(self, player_id: str | None) -> None:
         """Initialize the class instance."""
         self._most_recent_season = ""
         self._detailed_stats_seasons = None
@@ -726,7 +728,7 @@ class Player(AbstractPlayer):
         return fields_to_include
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame | None:
         """Return a ``pandas DataFrame`` containing all other relevant class.
 
         properties and values where each index is a different season plus the
@@ -746,7 +748,7 @@ class Player(AbstractPlayer):
         return pd.DataFrame(rows, index=[indices])
 
     @property
-    def season(self):
+    def season(self) -> str | None:
         """Return a ``string`` of the season in the format 'YYYY', such as.
 
         '2017'. If no season was requested, the career stats will be returned
@@ -757,7 +759,7 @@ class Player(AbstractPlayer):
         return None
 
     @property
-    def team_abbreviation(self):
+    def team_abbreviation(self) -> str | None:
         """Return a ``string`` of the team's abbreviation, such as 'NOR' for the.
 
         New Orleans Saints.
@@ -767,14 +769,14 @@ class Player(AbstractPlayer):
         return None
 
     @property
-    def position(self):
+    def position(self) -> str | None:
         """Return a ``string`` of the player's primary position."""
         if self._position is not None and self._index is not None:
             return self._position[self._index]
         return None
 
     @property
-    def height(self):
+    def height(self) -> str | None:
         """Return a ``string`` of the player's height in the format.
 
         "feet-inches".
@@ -782,7 +784,7 @@ class Player(AbstractPlayer):
         return self._height
 
     @property
-    def weight(self):
+    def weight(self) -> int | None:
         """Return an ``int`` of the player's weight in pounds."""
         if not self._weight:
             return None
@@ -792,7 +794,7 @@ class Player(AbstractPlayer):
             return None
 
     @property
-    def birth_date(self):
+    def birth_date(self) -> str | None:
         """Return a ``datetime`` object of the day and year the player was born."""
         return self._birth_date
 
@@ -816,7 +818,7 @@ class Player(AbstractPlayer):
         return self._approximate_value
 
     @property
-    def qb_record(self):
+    def qb_record(self) -> str | None:
         """Return a ``string`` of the player's quarterback record as a starter in.
 
         the format 'W-L-T'.
@@ -1688,7 +1690,7 @@ class Roster:
 
     """
 
-    def __init__(self, team, year=None, slim=False):
+    def __init__(self, team: str | None, year: int | str | None = None, slim: bool = False) -> None:
         """Initialize the class instance."""
         self._team = team
         self._slim = slim
@@ -1759,7 +1761,8 @@ class Roster:
             and year.
 
         """
-        return ROSTER_URL % (self._team.lower(), year)
+        team = self._team.lower() if self._team else ""
+        return ROSTER_URL % (team, year)
 
     def _get_id(self, player):
         """Parse the player ID.
@@ -1881,7 +1884,7 @@ class Roster:
         self._coach = self._parse_coach(page)
 
     @property
-    def players(self):
+    def players(self) -> dict[str, str] | list[Player]:
         """Return a ``list`` of player instances for each player on the requested.
 
         team's roster if the ``slim`` property is False when calling the Roster
@@ -1892,6 +1895,6 @@ class Roster:
         return self._players
 
     @property
-    def coach(self):
+    def coach(self) -> str | None:
         """Return a ``string`` of the coach's name, such as 'Sean Payton'."""
         return self._coach
