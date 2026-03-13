@@ -1,3 +1,5 @@
+"""Provide utilities for constants."""
+
 PARSING_SCHEME = {
     "defensive_simple_rating_system": 'td[data-stat="srs_defense"]:first',
     "first_downs_from_penalties": 'td[data-stat="pen_fd"]:first',
@@ -39,7 +41,7 @@ PARSING_SCHEME = {
 }
 
 SCHEDULE_SCHEME = {
-    "date": 'td[data-stat="game_date"]:first',
+    "date": 'td[data-stat="game_date"]:first, td[data-stat="date"]:first',
     "day": 'td[data-stat="game_day_of_week"]:first',
     "extra_points_attempted": 'td[data-stat="xpa"]:first',
     "extra_points_made": 'td[data-stat="xpm"]:first',
@@ -49,20 +51,22 @@ SCHEDULE_SCHEME = {
     "fourth_down_conversions": 'td[data-stat="fourth_down_success"]:first',
     "interceptions": 'td[data-stat="pass_int"]:first',
     "location": 'td[data-stat="game_location"]:first',
-    "opponent_name": 'td[data-stat="opp"]:first',
-    "overtime": 'td[data-stat="overtime"]:first',
+    "opponent_name": 'td[data-stat="opp"]:first, td[data-stat="opp_name_abbr"]:first',
+    "overtime": 'td[data-stat="overtime"]:first, td[data-stat="overtimes"]:first',
     "pass_attempts": 'td[data-stat="pass_att"]:first',
-    "pass_completion_rate": 'td[data-stat="pass_cmp_perc"]:first',
+    "pass_completion_rate": (
+        'td[data-stat="pass_cmp_perc"]:first, td[data-stat="pass_cmp_pct"]:first'
+    ),
     "pass_completions": 'td[data-stat="pass_cmp"]:first',
     "pass_touchdowns": 'td[data-stat="pass_td"]:first',
     "pass_yards_per_attempt": 'td[data-stat="pass_yds_per_att"]:first',
     "pass_yards": 'td[data-stat="pass_yds"]:first',
-    "points_allowed": 'td[data-stat="pts_def"]:first',
-    "points_scored": 'td[data-stat="pts_off"]:first',
+    "points_allowed": 'td[data-stat="pts_def"]:first, td[data-stat="points_opp"]:first',
+    "points_scored": 'td[data-stat="pts_off"]:first, td[data-stat="points"]:first',
     "punt_yards": 'td[data-stat="punt_yds"]:first',
     "punts": 'td[data-stat="punt"]:first',
     "quarterback_rating": 'td[data-stat="pass_rating"]:first',
-    "result": 'td[data-stat="game_outcome"]:first',
+    "result": 'td[data-stat="game_outcome"]:first, td[data-stat="team_game_result"]:first',
     "rush_attempts": 'td[data-stat="rush_att"]:first',
     "rush_touchdowns": 'td[data-stat="rush_td"]:first',
     "rush_yards_per_attempt": 'td[data-stat="rush_yds_per_att"]:first',
@@ -71,7 +75,7 @@ SCHEDULE_SCHEME = {
     "third_down_conversions": 'td[data-stat="third_down_success"]:first',
     "time_of_possession": 'td[data-stat="time_of_poss"]:first',
     "times_sacked": 'td[data-stat="pass_sacked"]:first',
-    "week": 'th[data-stat="week_num"]:first',
+    "week": 'th[data-stat="week_num"]:first, td[data-stat="week_num"]:first',
     "yards_lost_from_sacks": 'td[data-stat="pass_sacked_yds"]:first',
 }
 
