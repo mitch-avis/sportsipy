@@ -1,4 +1,8 @@
+"""Provide utilities for test utils."""
+
+
 def normalize_game(game):
+    """Return normalize game."""
     normalized = {}
     for key, value in game.items():
         if isinstance(value, str):
@@ -9,9 +13,11 @@ def normalize_game(game):
 
 
 def normalize_games(games):
+    """Return normalize games."""
     return {
         date: sorted(
-            (normalize_game(game) for game in day_games), key=lambda game: game["boxscore"]
+            (normalize_game(game) for game in day_games),
+            key=lambda game: game["boxscore"],
         )
         for date, day_games in games.items()
     }
@@ -27,6 +33,7 @@ def normalize_rankings_entries(entries):
 
 
 def normalize_rankings_complete(complete):
+    """Return normalize rankings complete."""
     return {
         week: normalize_rankings_entries(week_entries) for week, week_entries in complete.items()
     }
