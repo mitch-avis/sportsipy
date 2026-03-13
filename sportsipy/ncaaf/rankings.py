@@ -119,7 +119,9 @@ class Rankings:
             year = utils.resolve_year_for_url(year, lambda y: RANKINGS_URL % y)
         page = self._pull_rankings_page(year)
         if not page:
-            output = f"Can't pull rankings page. Ensure the following URL exists: {RANKINGS_URL}"
+            output = (
+                f"Can't pull rankings page. Ensure the following URL exists: {RANKINGS_URL % year}"
+            )
             raise ValueError(output)
 
         def _safe_int(value, default=0):
@@ -341,7 +343,8 @@ class CFPRankings:
         page = self._pull_rankings_page(year)
         if not page:
             output = (
-                f"Can't pull rankings page. Ensure the following URL exists: {CFP_RANKINGS_URL}"
+                "Can't pull rankings page. Ensure the following URL exists: "
+                f"{CFP_RANKINGS_URL % year}"
             )
             raise ValueError(output)
 
@@ -562,7 +565,8 @@ class CoachesRankings:
         page = self._pull_rankings_page(year)
         if not page:
             output = (
-                f"Can't pull rankings page. Ensure the following URL exists: {COACHES_RANKINGS_URL}"
+                "Can't pull rankings page. Ensure the following URL exists: "
+                f"{COACHES_RANKINGS_URL % year}"
             )
             raise ValueError(output)
 
