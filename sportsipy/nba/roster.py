@@ -121,7 +121,7 @@ class Player(AbstractPlayer):
         self._index = None
         self._player_id: str | None = player_id
         self._season: list[str] | None = None
-        self._name = None
+        self._name: str | None = None
         self._team_abbreviation = None
         self._position = None
         self._height = None
@@ -1553,12 +1553,14 @@ class Roster:
             player_id = self._get_id(player)
             if not player_id or player_id == "":
                 continue  # pragma: no cover
+            name = self._get_name(player)
             if self._slim:
-                name = self._get_name(player)
                 if isinstance(self._players, dict):
                     self._players[player_id] = name
             else:
                 player_instance = Player(player_id)
+                if player_instance.name is None:
+                    player_instance._name = name
                 if isinstance(self._players, list):
                     self._players.append(player_instance)
 

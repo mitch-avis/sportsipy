@@ -43,6 +43,48 @@ def _float_property_decorator(func):
     return wrapper
 
 
+def _rounded_int_property_decorator(func):
+    @property
+    @wraps(func)
+    def wrapper(*args):
+        index = args[0]._index
+        prop = func(*args)
+        try:
+            return int(round(float(prop[index])))
+        except (ValueError, TypeError, IndexError):
+            # If there is no value, default to None
+            return None
+
+    return wrapper
+
+
+def _time_on_ice_property_decorator(func):
+    @property
+    @wraps(func)
+    def wrapper(*args):
+        index = args[0]._index
+        prop = func(*args)
+        try:
+            value = prop[index]
+        except (TypeError, IndexError):
+            return None
+        if value in (None, ""):
+            return None
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            if not isinstance(value, str) or ":" not in value:
+                return None
+            minutes, seconds = value.split(":", 1)
+            try:
+                total_minutes = int(minutes) + int(seconds) / 60
+            except ValueError:
+                return None
+            return int(round(total_minutes))
+
+    return wrapper
+
+
 class Player(AbstractPlayer):
     """Get player information and stats for all seasons.
 
@@ -74,7 +116,7 @@ class Player(AbstractPlayer):
         self._index = None
         self._player_id: str | None = player_id
         self._season: list[str] | None = None
-        self._name = None
+        self._name: str | None = None
         self._team_abbreviation = None
         self._height = None
         self._weight: str | None = None
@@ -289,10 +331,13 @@ class Player(AbstractPlayer):
         self._most_recent_season = most_recent_season
         if not career_stats:
             return all_stats_dict
+        career_row = next(career_stats, None)
+        if career_row is None:
+            return all_stats_dict
         try:
-            all_stats_dict["Career"]["data"] += str(next(career_stats))
+            all_stats_dict["Career"]["data"] += str(career_row)
         except KeyError:
-            all_stats_dict["Career"] = {"data": str(next(career_stats))}
+            all_stats_dict["Career"] = {"data": str(career_row)}
         return all_stats_dict
 
     def _combine_all_stats(self, player_info):
@@ -317,14 +362,23 @@ class Player(AbstractPlayer):
         """
         all_stats_dict = {}
 
-        for table_id in [
-            "stats_basic_plus_nhl",
-            "skaters_advanced",
-            "stats_misc_plus_nhl",
-            "stats_goalie_situational",
-        ]:
-            table_items = utils.get_stats_table(player_info, f"table#{table_id}")
-            career_items = utils.get_stats_table(player_info, f"table#{table_id}", footer=True)
+        table_groups = [
+            ["stats_basic_plus_nhl", "player_stats", "goalie_stats"],
+            ["skaters_advanced", "skaters_advanced_all"],
+            ["stats_misc_plus_nhl", "stats_misc_plus"],
+            ["stats_goalie_situational"],
+        ]
+
+        for table_ids in table_groups:
+            table_items = None
+            career_items = None
+            for table_id in table_ids:
+                table_items = utils.get_stats_table(player_info, f"table#{table_id}")
+                if table_items:
+                    career_items = utils.get_stats_table(
+                        player_info, f"table#{table_id}", footer=True
+                    )
+                    break
             all_stats_dict = self._combine_season_stats(table_items, career_items, all_stats_dict)
         return all_stats_dict
 
@@ -568,11 +622,8 @@ class Player(AbstractPlayer):
         Detroit Red Wings.
         """
         # For career stats, skip the team abbreviation.
-        if (
-            self._season is not None
-            and self._index is not None
-            and self._season[self._index].lower() == "career"
-        ):
+        season = self.season
+        if season is not None and isinstance(season, str) and season.lower() == "career":
             return None
         if self._team_abbreviation is not None and self._index is not None:
             return self._team_abbreviation[self._index]
@@ -613,7 +664,7 @@ class Player(AbstractPlayer):
         """Return an ``int`` of the number of games the player participated in."""
         return self._games_played
 
-    @_int_property_decorator
+    @_time_on_ice_property_decorator
     def time_on_ice(self):
         """Return an ``int`` of the total time the player has spent on ice in.
 
@@ -822,7 +873,7 @@ class Player(AbstractPlayer):
         """
         return self._adjusted_points
 
-    @_int_property_decorator
+    @_rounded_int_property_decorator
     def adjusted_goals_created(self):
         """Return an ``int`` of the adjusted number of goals the player created."""
         return self._adjusted_goals_created
@@ -1263,12 +1314,14 @@ class Roster:
             player_id = self._get_id(player)
             if not player_id:
                 continue
+            name = self._get_name(player)
             if self._slim:
-                name = self._get_name(player)
                 if isinstance(self._players, dict):
                     self._players[player_id] = name
             else:
                 player_instance = Player(player_id)
+                if player_instance.name is None:
+                    player_instance._name = name
                 if isinstance(self._players, list):
                     self._players.append(player_instance)
 

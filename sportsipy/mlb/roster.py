@@ -75,7 +75,14 @@ def _most_recent_decorator(func):
     def wrapper(*args):
         season = args[0]._most_recent_season
         seasons = args[0]._season
-        index = seasons.index(season)
+        if not seasons:
+            return None
+        try:
+            index = seasons.index(season)
+        except ValueError:
+            # Fall back to the first parsed season if the inferred most-recent
+            # season token is missing from the returned season list.
+            index = 0
         prop = func(*args)
         element_ind = 0
         try:
@@ -1490,9 +1497,14 @@ class Roster:
             Returns a string of the player ID.
 
         """
-        name_tag = player('td[data-stat="player"] a')
-        name = re.sub(r".*/players/./", "", str(name_tag))
-        return re.sub(r"\.shtml.*", "", name)
+        name_tag = player(
+            'td[data-stat="player"] a, td[data-stat="name_display"] a, th[data-stat="player"] a'
+        )
+        href = str(name_tag.attr("href") or "")
+        match = re.search(r"/players/./([^./]+)\.shtml", href)
+        if not match:
+            return ""
+        return match.group(1)
 
     def _get_name(self, player):
         """Parse the player's name.
@@ -1512,7 +1524,9 @@ class Roster:
             Returns a string of the player's name.
 
         """
-        name_tag = player('td[data-stat="player"] a')
+        name_tag = player(
+            'td[data-stat="player"] a, td[data-stat="name_display"] a, th[data-stat="player"] a'
+        )
         name = name_tag.text()
         if not isinstance(name, str):
             name = str(name) if name is not None else ""
@@ -1540,6 +1554,8 @@ class Roster:
             strong = line.find("strong")
             if hasattr(strong, "text") and strong.text().strip() == "Manager:":
                 coach_name = line.find("a").text()
+                if isinstance(coach_name, str):
+                    coach_name = coach_name.replace(".", "")
         return coach_name
 
     def _find_players_with_coach(self, year):
@@ -1566,7 +1582,9 @@ class Roster:
         if not page:
             output = f"Can't pull requested team page. Ensure the following URL exists: {url}"
             raise ValueError(output)
-        players = page("table#team_batting tbody tr").items()
+        players = page(
+            "table#team_batting tbody tr, table#players_standard_batting tbody tr"
+        ).items()
         players_parsed = []
         for player in players:
             if 'class="thead"' in str(player):
@@ -1584,7 +1602,9 @@ class Roster:
                 if isinstance(self._players, list):
                     self._players.append(player_instance)
             players_parsed.append(player_id)
-        for player in page("table#team_pitching tbody tr").items():
+        for player in page(
+            "table#team_pitching tbody tr, table#players_standard_pitching tbody tr"
+        ).items():
             if 'class="thead"' in str(player):
                 continue
             player_id = self._get_id(player)

@@ -1499,6 +1499,11 @@ class Roster:
         """Return the number of player on the given team's roster."""
         return len(self._players)
 
+    @property
+    def players(self) -> list[SquadPlayer]:
+        """Return a list of all SquadPlayer instances on the roster."""
+        return list(self._players)
+
     def _player_id(self, player_data):
         """Parse the player's ID from a row.
 
