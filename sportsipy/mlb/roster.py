@@ -1,6 +1,9 @@
 """Provide utilities for roster."""
 
+from __future__ import annotations
+
 import re
+from datetime import datetime
 from functools import wraps
 from urllib.error import HTTPError
 
@@ -113,7 +116,7 @@ class Player(AbstractPlayer):
 
     """
 
-    def __init__(self, player_id):
+    def __init__(self, player_id: str | None) -> None:
         """Initialize the class instance."""
         self._most_recent_season = ""
         self._index = None
@@ -702,7 +705,7 @@ class Player(AbstractPlayer):
         return fields_to_include
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame:
         """Return a ``pandas DataFrame`` containing all other relevant class.
 
         properties and values where each index is a different season plus the
@@ -720,7 +723,7 @@ class Player(AbstractPlayer):
         return pd.DataFrame(rows, index=[indices])
 
     @property
-    def season(self):
+    def season(self) -> str | None:
         """Return a ``string`` of the season in the format 'YYYY', such as.
 
         '2017'. If no season was requsted, the career stats will be
@@ -731,7 +734,7 @@ class Player(AbstractPlayer):
         return None
 
     @property
-    def name(self):
+    def name(self) -> str | None:
         """Return a ``string`` of the player's name, such as 'Jose Altuve'."""
         return self._name
 
@@ -749,24 +752,24 @@ class Player(AbstractPlayer):
         return self._position
 
     @property
-    def height(self):
+    def height(self) -> str | None:
         """Return a ``string`` of the players height in the format "feet-inches"."""
         return self._height
 
     @property
-    def weight(self):
+    def weight(self) -> int | None:
         """Return an ``int`` of the player's weight in pounds."""
         if not self._weight:
             return None
         return int(self._weight.replace("lb", ""))
 
     @property
-    def birth_date(self):
+    def birth_date(self) -> datetime | None:
         """Return a ``datetime`` object of the day and year the player was born."""
         return self._birth_date
 
     @property
-    def nationality(self):
+    def nationality(self) -> str | None:
         """Return a ``string`` constant denoting which country the player.
 
         originiates from.
@@ -774,7 +777,7 @@ class Player(AbstractPlayer):
         return self._nationality
 
     @property
-    def contract(self):
+    def contract(self) -> dict[str, dict[str, str]] | None:
         """Return a ``dictionary`` of the player's contract where each key is a.
 
         ``string`` of the year, such as '2017' and each value is a
@@ -1402,7 +1405,7 @@ class Roster:
 
     """
 
-    def __init__(self, team, year=None, slim=False):
+    def __init__(self, team: str | None, year: int | str | None = None, slim: bool = False) -> None:
         """Initialize the class instance."""
         self._team = team
         self._slim = slim
@@ -1466,7 +1469,8 @@ class Roster:
             and year.
 
         """
-        return ROSTER_URL % (self._team.upper(), year)
+        team = self._team.upper() if self._team else ""
+        return ROSTER_URL % (team, year)
 
     def _get_id(self, player):
         """Parse the player ID.
@@ -1603,7 +1607,7 @@ class Roster:
         self._coach = self._parse_coach(page)
 
     @property
-    def players(self):
+    def players(self) -> dict[str, str] | list[Player]:
         """Return a ``list`` of player instances for each player on the requested.
 
         team's roster if the ``slim`` property is False when calling the Roster
@@ -1614,6 +1618,6 @@ class Roster:
         return self._players
 
     @property
-    def coach(self):
+    def coach(self) -> str | None:
         """Return a ``string`` of the coach's name, such as 'AJ Hinch'."""
         return self._coach
