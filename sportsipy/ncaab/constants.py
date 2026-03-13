@@ -1,5 +1,7 @@
 """Provide utilities for constants."""
 
+from __future__ import annotations
+
 PARSING_SCHEME = {
     "assist_percentage": 'td[data-stat="ast_pct"]:first',
     "assists": 'td[data-stat="ast"]:first',
