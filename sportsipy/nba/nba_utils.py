@@ -1,12 +1,18 @@
 """Provide utilities for nba utils."""
 
+from __future__ import annotations
+
+from typing import Any
 from urllib.error import HTTPError
 
 from sportsipy import utils
 from sportsipy.nba.constants import PARSING_SCHEME, SEASON_PAGE_URL
 
 
-def _add_stats_data(teams_list, team_data_dict):
+def _add_stats_data(
+    teams_list: Any,
+    team_data_dict: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
     """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate all
@@ -37,6 +43,8 @@ def _add_stats_data(teams_list, team_data_dict):
             # might be an embedded header row, like in the division standings
             if team_data("a").attr("href") is not None:
                 abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
+                if not isinstance(abbr, str):
+                    continue
                 try:
                     team_data_dict[abbr]["data"] += team_data
                 except KeyError:
@@ -45,7 +53,10 @@ def _add_stats_data(teams_list, team_data_dict):
     return team_data_dict
 
 
-def _retrieve_all_teams(year, season_file=None):
+def _retrieve_all_teams(
+    year: int | str | None,
+    season_file: str | None = None,
+) -> tuple[dict[str, dict[str, Any]] | None, int | str | None]:
     """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NBA stats table and finds all
