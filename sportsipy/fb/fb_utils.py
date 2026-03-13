@@ -1,11 +1,12 @@
+"""Provide utilities for fb utils."""
+
 from difflib import get_close_matches
 
-from .squad_ids import SQUAD_IDS
+from sportsipy.fb.squad_ids import SQUAD_IDS
 
 
 def _parse_squad_name(team_id):
-    """
-    Parse and clean the team's name.
+    """Parse and clean the team's name.
 
     To try and match requested team names with the master squad ID list, passed
     names should be parsed to remove the common 'FC' and 'CF' tags, as well as
@@ -20,6 +21,7 @@ def _parse_squad_name(team_id):
     -------
     string
         Returns a ``string`` of the parsed team's name.
+
     """
     irrelevant = [" FC", " CF", "FC ", "CF "]
     for val in irrelevant:
@@ -29,8 +31,7 @@ def _parse_squad_name(team_id):
 
 
 def lookup_squad_id(name, quiet=False):
-    """
-    Attempt to match a team name with a squad ID.
+    """Attempt to match a team name with a squad ID.
 
     A simple utility to make it easier to find squad IDs given a team name.
     By supplying a team name, this function will return the squad ID if a
@@ -79,6 +80,7 @@ def lookup_squad_id(name, quiet=False):
         found for the requested team. If a match could not be found, a
         ``dictionary`` is returned with the key-value pairs for the top 5
         closest teams as keys and their respective IDs as values.
+
     """
     filtered_name = _parse_squad_name(name)
     if filtered_name in SQUAD_IDS:
@@ -96,8 +98,7 @@ def lookup_squad_id(name, quiet=False):
 
 
 def _lookup_team(team_id):
-    """
-    Find the squad ID for the requested team.
+    """Find the squad ID for the requested team.
 
     Every team on fbref.com has its own unique squad ID, which is a 8-digit
     code containing alphanumeric numbers. The user can either supply the
@@ -117,6 +118,7 @@ def _lookup_team(team_id):
     -------
     string
         Returns a ``string`` of the squad's 8-digit ID.
+
     """
     if team_id.lower() in SQUAD_IDS.values():
         return team_id.lower()
