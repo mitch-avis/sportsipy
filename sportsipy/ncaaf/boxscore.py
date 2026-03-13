@@ -1,5 +1,7 @@
 """Provide utilities for boxscore."""
 
+from __future__ import annotations
+
 import re
 from datetime import timedelta
 from functools import wraps
@@ -87,7 +89,12 @@ class BoxscorePlayer(AbstractPlayer):
 
     """
 
-    def __init__(self, player_id, player_name, player_data):
+    def __init__(
+        self,
+        player_id: str | None,
+        player_name: str | None,
+        player_data: dict[str, dict[str, str]] | str | None,
+    ) -> None:
         """Initialize the class instance."""
         self._index = 0
         self._player_id = player_id
@@ -304,7 +311,7 @@ class Boxscore:
 
     """
 
-    def __init__(self, uri):
+    def __init__(self, uri: str | None) -> None:
         """Initialize the class instance."""
         self._uri = uri
         self._date = None
@@ -1188,7 +1195,7 @@ class Boxscores:
 
     """
 
-    def __init__(self, date, end_date=None):
+    def __init__(self, date: Any, end_date: Any | None = None) -> None:
         """Initialize the class instance."""
         self._boxscores = {}
 
