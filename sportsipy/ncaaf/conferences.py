@@ -1,5 +1,7 @@
 """Provide utilities for conferences."""
 
+from __future__ import annotations
+
 import re
 from urllib.error import HTTPError
 
@@ -30,7 +32,12 @@ class Conference:
 
     """
 
-    def __init__(self, conference_abbreviation, year=None, ignore_missing=False):
+    def __init__(
+        self,
+        conference_abbreviation: str,
+        year: int | str | None = None,
+        ignore_missing: bool = False,
+    ) -> None:
         """Initialize the class instance."""
         self._teams = {}
         self._ignore_missing = ignore_missing
@@ -161,7 +168,7 @@ class Conferences:
 
     """
 
-    def __init__(self, year=None, ignore_missing=False):
+    def __init__(self, year: int | str | None = None, ignore_missing: bool = False) -> None:
         """Initialize the class instance."""
         self._conferences = {}
         self._team_conference = {}
