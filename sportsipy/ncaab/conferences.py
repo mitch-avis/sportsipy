@@ -1,13 +1,14 @@
+"""Provide utilities for conferences."""
+
 import re
 from urllib.error import HTTPError
 
-from .. import utils
-from .constants import CONFERENCE_URL, CONFERENCES_URL
+from sportsipy import utils
+from sportsipy.ncaab.constants import CONFERENCE_URL, CONFERENCES_URL
 
 
 class Conference:
-    """
-    Find teams that participated in a particular conference.
+    """Find teams that participated in a particular conference.
 
     Create a dictionary which includes the names and abbreviations for all
     teams that participated in a conference during a given year.
@@ -20,29 +21,26 @@ class Conference:
     year : string (optional)
         A string of the requested year to pull conference information from.
         Defaults to the most recent season.
+
     """
 
     def __init__(self, conference_abbreviation, year=None):
+        """Initialize the class instance."""
         self._teams = {}
         self._conference_abbreviation = conference_abbreviation
 
         self._find_conference_teams(conference_abbreviation, year)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return f"{self._conference_abbreviation} - NCAAB"
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def _pull_conference_page(self, conference_abbreviation, year):
-        """
-        Download the conference page.
+        """Download the conference page.
 
         Download the conference page for the requested conference and season
         and create a PyQuery object.
@@ -54,6 +52,7 @@ class Conference:
             'big-12'.
         year : string
             A string of the requested year to pull conference information from.
+
         """
         try:
             page_source = utils.get_page_source(
@@ -66,8 +65,7 @@ class Conference:
             return None
 
     def _get_team_abbreviation(self, team):
-        """
-        Retrieve team's abbreviation.
+        """Retrieve team's abbreviation.
 
         The team's abbreviation is embedded within the 'school_name' tag and
         requires special parsing as it is located in the middle of a URI. The
@@ -83,6 +81,7 @@ class Conference:
         -------
         string
             Returns a string of the team's abbreviation, such as 'PURDUE'.
+
         """
         name_tag = team('td[data-stat="school_name"] a')
         team_href = name_tag.attr("href") if hasattr(name_tag, "attr") else ""
@@ -91,8 +90,7 @@ class Conference:
         return team_abbreviation
 
     def _find_conference_teams(self, conference_abbreviation, year):
-        """
-        Retrieve the teams in the conference for the requested season.
+        """Retrieve the teams in the conference for the requested season.
 
         Find and retrieve all teams that participated in a conference for a
         given season. The name and abbreviation for each team are parsed and
@@ -105,6 +103,7 @@ class Conference:
             'big-12'.
         year : string
             A string of the requested year to pull conference information from.
+
         """
         if not year:
             year = utils.find_year_for_season("ncaab")
@@ -124,8 +123,8 @@ class Conference:
 
     @property
     def teams(self):
-        """
-        Returns a ``dictionary`` of team names and abbreviations where each key
+        """Return a ``dictionary`` of team names and abbreviations where each key.
+
         is a ``string`` of the team abbreviation and each value is a ``string``
         of the full team name.
         """
@@ -133,8 +132,7 @@ class Conference:
 
 
 class Conferences:
-    """
-    Get all conferences and teams for a season.
+    """Get all conferences and teams for a season.
 
     Retrieve a list of all conferences and teams that participated in the
     conference for each team in the season. The included properties allow
@@ -147,29 +145,26 @@ class Conferences:
     year : string (optional)
         A string of the requested year to pull conferences from. Defaults to
         the most recent season.
+
     """
 
     def __init__(self, year=None):
+        """Initialize the class instance."""
         self._conferences = {}
         self._team_conference = {}
 
         self._find_conferences(year)
 
     def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return "NCAAB Conferences"
 
     def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+        """Return the string representation of the class."""
         return self.__str__()
 
     def _pull_conference_page(self, year):
-        """
-        Download the conference page.
+        """Download the conference page.
 
         Download the conference page for the requested team and create a
         PyQuery object.
@@ -183,6 +178,7 @@ class Conferences:
         -------
         PyQuery object
             Returns a PyQuery object of the conference HTML page.
+
         """
         try:
             page_source = utils.get_page_source(url=CONFERENCES_URL % year)
@@ -193,8 +189,7 @@ class Conferences:
             return None
 
     def _get_conference_id(self, conference):
-        """
-        Get the conference abbreviation, such as 'big-12'.
+        """Get the conference abbreviation, such as 'big-12'.
 
         The conference abbreviation is embedded within the Conference Name
         tag and requires special parsing to extract. The abbreviation is
@@ -210,6 +205,7 @@ class Conferences:
         -------
         string
             Returns a string of the conference abbreviation, such as 'big-12'.
+
         """
         name_tag = conference('td[data-stat="conf_name"] a')
         conference_href = name_tag.attr("href") if hasattr(name_tag, "attr") else ""
@@ -218,8 +214,7 @@ class Conferences:
         return conference_id
 
     def _find_conferences(self, year):
-        """
-        Retrieve the conferences and teams for the requested season.
+        """Retrieve the conferences and teams for the requested season.
 
         Find and retrieve all conferences for a given season and parse all of
         the teams that participated in the conference during that year.
@@ -231,6 +226,7 @@ class Conferences:
         ----------
         year : string
             A string of the requested year to pull conferences from.
+
         """
         if not year:
             year = utils.find_year_for_season("ncaab")
@@ -259,8 +255,8 @@ class Conferences:
 
     @property
     def conferences(self):
-        """
-        Returns a ``dictionary`` of conference names and abbreviations where
+        """Return a ``dictionary`` of conference names and abbreviations where.
+
         each key is a ``string`` of the abbreviation and each value is a
         ``dictionary`` containing the full conference name and another
         ``dictionary`` with individual team information. The overall dictionary
@@ -283,8 +279,8 @@ class Conferences:
 
     @property
     def team_conference(self):
-        """
-        Returns a ``dictionary`` of conference abbreviations for each team
+        """Return a ``dictionary`` of conference abbreviations for each team.
+
         where each key is a ``string`` of the team abbreviation and each value
         is a ``string`` of the conference abbreviation.
         """
