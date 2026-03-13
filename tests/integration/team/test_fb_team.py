@@ -1,14 +1,19 @@
+"""Provide utilities for test fb team."""
+
 from os import path
 
 from sportsipy.fb.team import Team
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = path.join(path.dirname(__file__), "fb_stats", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -20,7 +25,10 @@ def mock_pyquery(url, timeout=None):
 
 
 class TestFBTeam:
+    """Represent TestFBTeam."""
+
     def setup_method(self):
+        """Return setup method."""
         self.results = {
             "name": "Tottenham Hotspur",
             "short_name": "Tottenham",
@@ -53,12 +61,14 @@ class TestFBTeam:
         }
 
     def test_fb_team_returns_correct_attributes(self, *args, **kwargs):
+        """Return test fb team returns correct attributes."""
         tottenham = Team("Tottenham Hotspur")
 
         for attribute, value in self.results.items():
             assert getattr(tottenham, attribute) == value
 
     def test_team_name(self, *args, **kwargs):
+        """Return test team name."""
         team = Team("Tottenham Hotspur")
 
         assert repr(team) == "Tottenham Hotspur (361ca564) - 2019-2020"
