@@ -1,3 +1,5 @@
+"""Utility functions for HTTP fetching, HTML parsing, caching, and fixture loading."""
+
 from __future__ import annotations
 
 import hashlib
@@ -7,16 +9,16 @@ import os
 import re
 import threading
 import time
+from collections.abc import Callable, Generator
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Generator, Optional
 from urllib.parse import parse_qs, urlparse
 
 import requests
 from lxml.etree import ParserError, XMLSyntaxError
 from pyquery import PyQuery
 
-from .constants import RATE_LIMIT_INTERVAL
+from sportsipy.constants import RATE_LIMIT_INTERVAL
 
 _RATE_LIMIT_LOCK = threading.Lock()
 _LAST_REQUEST_TIME = 0.0
@@ -25,6 +27,25 @@ _FIXTURE_MAP: dict | list | None = None
 
 # Backward-compatible callable matching prior usage: utils.pq(...)
 def pq(*args: object, **kwargs: object) -> PyQuery:
+    """Wrap the PyQuery constructor with a None-safe guard.
+
+    Provides backward compatibility for call sites that previously imported
+    and called ``pq`` directly.  A single ``None`` argument is silently
+    converted to an empty HTML string rather than raising a ``TypeError``.
+
+    Parameters
+    ----------
+    *args : object
+        Positional arguments forwarded to :class:`pyquery.PyQuery`.
+    **kwargs : object
+        Keyword arguments forwarded to :class:`pyquery.PyQuery`.
+
+    Returns
+    -------
+    PyQuery
+        A :class:`pyquery.PyQuery` instance wrapping the given input.
+
+    """
     if len(args) == 1 and args[0] is None:
         return PyQuery("")
     return PyQuery(*args, **kwargs)
@@ -32,7 +53,7 @@ def pq(*args: object, **kwargs: object) -> PyQuery:
 
 # Try optional Playwright (only used if explicitly falling back for dynamic pages)
 try:
-    from playwright.sync_api import sync_playwright  # type: ignore
+    from playwright.sync_api import sync_playwright  # type: ignore[import-untyped]
 except ImportError:
     sync_playwright = None
 
@@ -58,8 +79,7 @@ SEASON_START_MONTH = {
 
 
 def todays_date() -> datetime:
-    """
-    Get today's date.
+    """Get today's date.
 
     Returns the current date and time. In a standalone function to easily be
     mocked in unit tests.
@@ -68,6 +88,7 @@ def todays_date() -> datetime:
     -------
     datetime.datetime
         The current date and time as a datetime object.
+
     """
     return datetime.now()
 
@@ -78,8 +99,7 @@ def _env_flag(name: str) -> bool:
 
 
 def offline_mode() -> bool:
-    """
-    Return True when offline fixtures mode is enabled.
+    """Return True when offline fixtures mode is enabled.
 
     This is a simple helper intended to provide a readable way for other
     modules to detect that network requests are being redirected to offline
@@ -105,9 +125,7 @@ def _rate_limit_enabled() -> bool:
         return True
     if _env_flag("SPORTSIPY_OFFLINE"):
         return False
-    if os.environ.get("PYTEST_CURRENT_TEST"):
-        return False
-    return True
+    return not os.environ.get("PYTEST_CURRENT_TEST")
 
 
 def _rate_limit_wait() -> None:
@@ -123,14 +141,14 @@ def _rate_limit_wait() -> None:
         _LAST_REQUEST_TIME = time.monotonic()
 
 
-def _cache_dir() -> Optional[Path]:
+def _cache_dir() -> Path | None:
     value = os.environ.get("SPORTSIPY_CACHE_DIR")
     if not value:
         return None
     return Path(value)
 
 
-def _cache_ttl_seconds() -> Optional[float]:
+def _cache_ttl_seconds() -> float | None:
     value = os.environ.get("SPORTSIPY_CACHE_TTL_SECONDS")
     if not value:
         return None
@@ -144,7 +162,7 @@ def _cache_key(url: str) -> str:
     return hashlib.sha256(url.encode("utf-8")).hexdigest()
 
 
-def _cache_read(url: str) -> Optional[str]:
+def _cache_read(url: str) -> str | None:
     cache_dir = _cache_dir()
     ttl = _cache_ttl_seconds()
     if not cache_dir or ttl is None:
@@ -186,7 +204,7 @@ def _fixture_map() -> dict | list:
         fixture_map = os.path.join(fixture_dir, "url_map.json")
     if fixture_map and os.path.exists(fixture_map):
         try:
-            with open(fixture_map, "r", encoding="utf-8") as handle:
+            with open(fixture_map, encoding="utf-8") as handle:
                 _FIXTURE_MAP = json.load(handle)
         except (OSError, json.JSONDecodeError):
             _FIXTURE_MAP = {}
@@ -197,14 +215,16 @@ def _fixture_map() -> dict | list:
     return _FIXTURE_MAP
 
 
-def _fixture_for_url(url: str) -> Optional[str]:
+def _fixture_for_url(url: str) -> str | None:
     if not _env_flag("SPORTSIPY_OFFLINE"):
         return None
     mapping = _fixture_map()
     url_sport_hint = _sport_hint_from_url(url)
-    rel_path: Optional[str] = None
+    rel_path: str | None = None
+    matched_from_mapping = False
     if isinstance(mapping, dict):
         rel_path = mapping.get(url)
+        matched_from_mapping = rel_path is not None
     elif isinstance(mapping, list):
         matches: list[tuple[int, str]] = []
         for entry in mapping:
@@ -222,6 +242,7 @@ def _fixture_for_url(url: str) -> Optional[str]:
             entry_url = entry.get("url")
             if entry_url and entry_url == url:
                 rel_path = path
+                matched_from_mapping = True
                 break
             contains = entry.get("contains")
             if contains and contains in url:
@@ -237,6 +258,7 @@ def _fixture_for_url(url: str) -> Optional[str]:
         if rel_path is None and matches:
             matches.sort(key=lambda item: item[0], reverse=True)
             rel_path = matches[0][1]
+            matched_from_mapping = True
     if not rel_path:
         rel_path = _heuristic_fixture_path(url)
     if not rel_path:
@@ -254,18 +276,19 @@ def _fixture_for_url(url: str) -> Optional[str]:
         content = path.read_text(encoding="utf-8")
     except OSError:
         return None
-    slug = _slug_from_url(url)
-    if slug and not _slug_matches_content(content, slug):
-        return None
-    year = _year_from_url(url)
-    if year:
-        title = _extract_title(content)
-        if title and not _title_matches_year(title, year):
+    if not matched_from_mapping:
+        slug = _slug_from_url(url)
+        if slug and not _slug_matches_content(content, slug):
             return None
+        year = _year_from_url(url)
+        if year:
+            title = _extract_title(content)
+            if title and not _title_matches_year(title, year):
+                return None
     return content
 
 
-def _heuristic_fixture_path(url: str) -> Optional[str]:
+def _heuristic_fixture_path(url: str) -> str | None:
     fixture_dir = os.environ.get("SPORTSIPY_FIXTURE_DIR", "")
     if not fixture_dir:
         return None
@@ -499,10 +522,7 @@ def _title_matches_year(title: str, year: str) -> bool:
         return False
     prev = year_int - 1
     short = str(year_int)[-2:]
-    for pattern in (f"{prev}-{short}", f"{prev}-{year}"):
-        if pattern in normalized:
-            return True
-    return False
+    return any(pattern in normalized for pattern in (f"{prev}-{short}", f"{prev}-{year}"))
 
 
 def _sport_hint_from_url(url: str) -> str | None:
@@ -543,10 +563,10 @@ def _sport_hint_from_path(path: str) -> str | None:
     return None
 
 
-def _fallback_fixture_by_context(root: Path, url: str) -> Optional[Path]:
+def _fallback_fixture_by_context(root: Path, url: str) -> Path | None:
     url_lower = url.lower()
 
-    def _pick_first(paths: list[Path]) -> Optional[Path]:
+    def _pick_first(paths: list[Path]) -> Path | None:
         return sorted(paths)[0] if paths else None
 
     fixture_root = root / "integration" if (root / "integration").exists() else root
@@ -587,9 +607,8 @@ def _fallback_fixture_by_context(root: Path, url: str) -> Optional[Path]:
     if ("boxscores" in url_lower or "/boxes/" in url_lower) and sport_hint:
         return _pick_first(list(fixture_root.rglob(f"boxscore/{sport_hint}/*")))
 
-    if "gamelog" in url_lower or "_games" in url_lower or "schedule" in url_lower:
-        if sport_hint:
-            return _pick_first(list(fixture_root.rglob(f"schedule/{sport_hint}/*")))
+    if ("gamelog" in url_lower or "_games" in url_lower or "schedule" in url_lower) and sport_hint:
+        return _pick_first(list(fixture_root.rglob(f"schedule/{sport_hint}/*")))
 
     if "/players/" in url_lower and sport_hint:
         return _pick_first(list(fixture_root.rglob(f"roster/{sport_hint}/*")))
@@ -614,15 +633,22 @@ def _request_with_retries(method: str, url: str, **kwargs):
         max_retries = max(int(max_retries_value), 0)
     except ValueError:
         max_retries = 2
+    request_kwargs = dict(kwargs)
+    timeout_value = request_kwargs.pop("timeout", 20)
     for attempt in range(max_retries + 1):
         _rate_limit_wait()
         try:
             if method.upper() == "HEAD":
-                response = requests.head(url, **kwargs)
+                response = requests.head(url, timeout=timeout_value, **request_kwargs)
             elif method.upper() == "GET":
-                response = requests.get(url, **kwargs)
+                response = requests.get(url, timeout=timeout_value, **request_kwargs)
             else:
-                response = requests.request(method, url, **kwargs)
+                response = requests.request(
+                    method,
+                    url,
+                    timeout=timeout_value,
+                    **request_kwargs,
+                )
         except requests.RequestException as exc:
             if attempt >= max_retries:
                 raise exc
@@ -646,8 +672,7 @@ def _request_with_retries(method: str, url: str, **kwargs):
 
 
 def url_exists(url: str) -> bool:
-    """
-    Determine if a URL is valid and exists.
+    """Determine if a URL is valid and exists.
 
     Not every URL that is provided is valid and exists, such as requesting
     stats for a season that hasn't yet begun. In this case, the URL needs to be
@@ -664,6 +689,7 @@ def url_exists(url: str) -> bool:
     bool
         Evaluates to True when the URL exists and is valid, otherwise returns
         False.
+
     """
     try:
         if _env_flag("SPORTSIPY_OFFLINE"):
@@ -684,8 +710,7 @@ def resolve_year_for_url(
     url_builder: Callable[[str], str],
     max_lookback: int = 10,
 ) -> str | None:
-    """
-    Find the most recent year that has data for the supplied URL builder.
+    """Find the most recent year that has data for the supplied URL builder.
 
     When data is missing for the current season (common early in a season),
     step backward until a valid year is found or the lookback limit is hit.
@@ -704,8 +729,7 @@ def resolve_year_for_url(
 
 
 def find_year_for_season(league: str) -> int:
-    """
-    Return the necessary seaons's year based on the current date.
+    """Return the necessary seaons's year based on the current date.
 
     Since all sports start and end at different times throughout the year,
     simply using the current year is not sufficient to describe a season. For
@@ -739,6 +763,7 @@ def find_year_for_season(league: str) -> int:
     ------
     ValueError
         If the passed 'league' is not a key in SEASON_START_MONTH.
+
     """
     if league not in SEASON_START_MONTH:
         raise ValueError(f"Unsupported league '{league}'")
@@ -759,9 +784,7 @@ def find_year_for_season(league: str) -> int:
 
 
 def parse_abbreviation(uri_link: PyQuery | str) -> str:
-    """
-    Returns a team's abbreviation. Accepts either a PyQuery object or raw HTML
-    string for a single <tr> row.
+    """Return a team's abbreviation from a PyQuery object or raw HTML row.
 
     A school or team's abbreviation is generally embedded in a URI link which
     contains other relative link information. For example, the URI for the
@@ -779,6 +802,7 @@ def parse_abbreviation(uri_link: PyQuery | str) -> str:
     -------
     string
         The shortened uppercase abbreviation for a given team.
+
     """
     # Make sure we have a callable PyQuery selection object
     if isinstance(uri_link, str):
@@ -803,10 +827,9 @@ def parse_field(
     field: str,
     index: int = 0,
     strip: bool = False,
-    secondary_index: Optional[int] = None,
-) -> Optional[str | int]:
-    """
-    Parse an HTML table to find the requested field's value.
+    secondary_index: int | None = None,
+) -> str | int | None:
+    """Parse an HTML table to find the requested field's value.
 
     All of the values are passed in an HTML table row instead of as individual
     items. The values need to be parsed by matching the requested attribute
@@ -850,6 +873,7 @@ def parse_field(
     string
         The value at the specified index for the requested field. If no value
         could be found, returns None.
+
     """
     if field == "abbreviation":
         return parse_abbreviation(html_data)
@@ -860,9 +884,7 @@ def parse_field(
         return None
 
     try:
-        if isinstance(html_data, PyQuery):
-            selection = html_data(scheme)
-        elif callable(html_data):
+        if isinstance(html_data, PyQuery) or callable(html_data):
             selection = html_data(scheme)
         else:
             selection = pq(html_data)(scheme)
@@ -897,9 +919,7 @@ def parse_field(
 
 
 def remove_html_comment_tags(html: str | PyQuery) -> str:
-    """
-    Returns the passed HTML contents with all comment tags removed while
-    keeping the contents within the tags.
+    """Return HTML contents with all comment tags removed.
 
     Some pages embed the HTML contents in comments. Since the HTML contents are
     valid, removing the content tags (but not the actual code within the
@@ -914,15 +934,15 @@ def remove_html_comment_tags(html: str | PyQuery) -> str:
     -------
     string
         The passed HTML contents with all comment tags removed.
+
     """
     return str(html).replace("<!--", "").replace("-->", "")
 
 
 def get_stats_table(
     html_page, div: str, footer: bool = False
-) -> Optional[Generator[PyQuery, None, None]]:
-    """
-    Return a generator of PyQuery rows (<tr>...</tr>) for the requested table.
+) -> Generator[PyQuery, None, None] | None:
+    """Return a generator of PyQuery rows (<tr>...</tr>) for the requested table.
 
     When given a PyQuery HTML object and a requested div, this function creates
     a generator where every item is a PyQuery object pertaining to every row in
@@ -944,6 +964,7 @@ def get_stats_table(
     -------
     generator
         A generator of all row items in a given table.
+
     """
     try:
         raw = html_page(div)
@@ -973,8 +994,7 @@ def get_stats_table(
 
 
 def pull_page(url: str | None = None, local_file: str | None = None):
-    """
-    Pull data from a local file if exists, or download data from the website.
+    """Pull data from a local file if exists, or download data from the website.
 
     If local_file is passed, users can pull data directly from a local file
     which has already been downloaded instead of downloading from
@@ -999,11 +1019,12 @@ def pull_page(url: str | None = None, local_file: str | None = None):
     ValueError
         Raises a ``ValueError`` if neither the URL nor the local_file
         parameters were specified.
+
     """
     if local_file:
         if not os.path.exists(local_file):
             return None
-        with open(local_file, "r", encoding="utf-8") as file_handle:
+        with open(local_file, encoding="utf-8") as file_handle:
             return pq(file_handle.read())
     if url:
         html = get_page_source(url)
@@ -1014,8 +1035,7 @@ def pull_page(url: str | None = None, local_file: str | None = None):
 
 
 def no_data_found() -> bool:
-    """
-    Print a message that no data could be found on the page.
+    """Print a message that no data could be found on the page.
 
     Occasionally, such as right before the beginning of a season, a page will
     return a valid response but will have no data outside of the default
@@ -1032,9 +1052,12 @@ def no_data_found() -> bool:
     return False
 
 
-def get_page_source(url: str) -> Optional[str]:
-    """
-    Basic HTML fetch; Playwright fallback only if available and requests fails.
+def get_page_source(url: str) -> str | None:
+    """Fetch and return a page's HTML source.
+
+    Tries fixture mode and disk cache first, then performs a live HTTP fetch.
+    If the request path fails and Playwright is available, uses a headless
+    browser as a fallback.
     """
     if _env_flag("SPORTSIPY_OFFLINE"):
         return _fixture_for_url(url)
