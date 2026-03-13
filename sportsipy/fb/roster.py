@@ -1,5 +1,7 @@
 """Provide utilities for roster."""
 
+from __future__ import annotations
+
 import re
 from typing import cast
 from urllib.error import HTTPError
@@ -34,7 +36,7 @@ class SquadPlayer:
 
     """
 
-    def __init__(self, player_data, player_id):
+    def __init__(self, player_data: str | None, player_id: str | None) -> None:
         """Initialize the class instance."""
         self._name = None
         self._player_id = player_id
@@ -1435,7 +1437,7 @@ class Roster:
 
     """
 
-    def __init__(self, squad_id, doc=None):
+    def __init__(self, squad_id: str | None, doc: PyQuery | None = None) -> None:
         """Initialize the class instance."""
         self._players = []
 
