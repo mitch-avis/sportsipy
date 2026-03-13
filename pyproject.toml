@@ -25,17 +25,9 @@ packages = ["sportsipy"]
 [tool.hatch.version]
 path = "VERSION"
 
-[tool.black]
-line-length = 100
-target-version = ["py312"]
-
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-lint.select = ["E", "F", "W", "I", "B"]
-lint.ignore = [
-    "E203", # space before ':' (conflicts with black)
-]
 extend-exclude = [
     ".venv",
     ".git",
@@ -46,8 +38,43 @@ extend-exclude = [
     "dist",
 ]
 
+[tool.ruff.lint]
+select = [
+    "B",   # flake8-bugbear rules
+    "C4",  # flake8-comprehensions rules
+    "D",   # pydocstyle rules
+    "E",   # pycodestyle errors
+    "F",   # pyflakes rules
+    "I",   # isort rules
+    "N",   # pep8-naming rules
+    "S",   # bandit security rules
+    "SIM", # flake8-simplify rules
+    "UP",  # pyupgrade rules
+    "W",   # pycodestyle warnings
+    "NPY", # numpy docstring rules
+    "PGH", # pygrep-hooks rules
+]
+ignore = [
+    "D203", # Conflicts with D211 (no-blank-line-before-class)
+    "D213", # Conflicts with D212 (multi-line-summary-first-line)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"] # Use of assert is standard in pytest
+
 [tool.ruff.lint.isort]
 known-first-party = ["sportsipy"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = false
+venvPath = "."
+venv = ".venv"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
