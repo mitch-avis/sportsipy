@@ -1,3 +1,5 @@
+"""Provide utilities for nfl tests."""
+
 import os
 import sys
 
