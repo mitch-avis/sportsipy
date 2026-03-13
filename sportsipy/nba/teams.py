@@ -52,11 +52,11 @@ class Team:
         team_name: str | None = None,
         team_data: Any = None,
         rank: int | None = None,
-        year: str | None = None,
+        year: int | str | None = None,
         season_file: str | None = None,
     ) -> None:
         """Initialize the class instance."""
-        self._year: str | None = year
+        self._year: int | str | None = year
         self._rank: int | None = rank
         self._abbreviation: str | None = None
         self._name: str | None = None
@@ -122,7 +122,7 @@ class Team:
 
     def _retrieve_team_data(
         self,
-        year: str | None,
+        year: int | str | None,
         team_name: str,
         season_file: str | None = None,
     ) -> Any:
@@ -685,7 +685,7 @@ class Teams:
 
     """
 
-    def __init__(self, year: str | None = None, season_file: str | None = None) -> None:
+    def __init__(self, year: int | str | None = None, season_file: str | None = None) -> None:
         """Initialize the class instance."""
         self._teams: list[Team] = []
 
@@ -760,7 +760,7 @@ class Teams:
         return len(self._teams)
 
     def _instantiate_teams(
-        self, team_data_dict: dict[str, dict[str, Any]], year: str | None
+        self, team_data_dict: dict[str, dict[str, Any]], year: int | str | None
     ) -> None:
         """Create a Team instance for all teams.
 
