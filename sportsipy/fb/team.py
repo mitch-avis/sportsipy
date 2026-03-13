@@ -1,5 +1,7 @@
 """Provide utilities for team."""
 
+from __future__ import annotations
+
 import re
 from urllib.error import HTTPError
 
@@ -39,7 +41,7 @@ class Team:
 
     """
 
-    def __init__(self, team_id, squad_page=None):
+    def __init__(self, team_id: str | None, squad_page: PyQuery | None = None) -> None:
         """Initialize the class instance."""
         self._squad_id = None
         self._name = None
