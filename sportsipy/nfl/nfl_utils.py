@@ -1,10 +1,17 @@
 """Provide utilities for nfl utils."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from sportsipy import utils
 from sportsipy.nfl.constants import PARSING_SCHEME, SEASON_PAGE_URL
 
 
-def _add_stats_data(teams_list, team_data_dict):
+def _add_stats_data(
+    teams_list: Any,
+    team_data_dict: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
     """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate
@@ -34,7 +41,7 @@ def _add_stats_data(teams_list, team_data_dict):
         if 'class="thead' in row_html:
             continue
         abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
-        if not abbr:
+        if not isinstance(abbr, str):
             continue
         try:
             team_data_dict[abbr]["data"] += team_data
@@ -44,7 +51,10 @@ def _add_stats_data(teams_list, team_data_dict):
     return team_data_dict
 
 
-def _retrieve_all_teams(year, season_page=None):
+def _retrieve_all_teams(
+    year: int | str | None,
+    season_page: str | None = None,
+) -> tuple[dict[str, dict[str, Any]] | None, int | str | None]:
     """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NFL stats table and finds all
