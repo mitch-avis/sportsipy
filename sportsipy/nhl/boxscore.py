@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from datetime import timedelta
+from collections.abc import Callable, Iterable
+from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any
 from urllib.error import HTTPError
@@ -27,12 +28,12 @@ from sportsipy.nhl.player import (
 )
 
 
-def nhl_int_property_decorator(func):
+def nhl_int_property_decorator(func: Callable[..., Any]) -> property:
     """Return nhl int property decorator."""
 
     @property
     @wraps(func)
-    def wrapper(*args):
+    def wrapper(*args: Any) -> int:
         value = func(*args)
         num_skaters = args[0]._away_skaters
         num_goalies = args[0]._away_goalies
@@ -116,7 +117,7 @@ class BoxscorePlayer(AbstractPlayer):
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
     @property
-    def dataframe(self) -> Any:
+    def dataframe(self) -> pd.DataFrame:
         """Return a ``pandas DataFrame`` containing all other relevant.
 
         properties and values for the specified game.
@@ -161,22 +162,22 @@ class BoxscorePlayer(AbstractPlayer):
         return pd.DataFrame([fields_to_include], index=[self._player_id])
 
     @property
-    def decision(self) -> Any:
+    def decision(self) -> str | None:
         """Return a ``string`` denoting whether the goalie won or lost the game."""
         return self._decision
 
     @_float_property_decorator
-    def defensive_zone_start_percentage(self):
+    def defensive_zone_start_percentage(self) -> float | None:
         """Return a ``float`` of the percentage of starts that took place in the.
 
         player's defensive zone. Percentage ranges from 0-100.
         """
         if self.offensive_zone_start_percentage is not None:
-            return [100.0 - self.offensive_zone_start_percentage]
+            return 100.0 - self.offensive_zone_start_percentage
         return None
 
     @_int_property_decorator
-    def defensive_zone_starts(self):
+    def defensive_zone_starts(self) -> int | None:
         """Return an ``int`` of the number of starts that took place in the.
 
         player's defensive zone.
@@ -184,7 +185,7 @@ class BoxscorePlayer(AbstractPlayer):
         return self._defensive_zone_starts
 
     @_int_property_decorator
-    def individual_corsi_for_events(self):
+    def individual_corsi_for_events(self) -> int | None:
         """Return an ``int`` of the number of individual events that impacted.
 
         the player's Corsi For score during the game.
@@ -192,7 +193,7 @@ class BoxscorePlayer(AbstractPlayer):
         return self._individual_corsi_for_events
 
     @_int_property_decorator
-    def offensive_zone_starts(self):
+    def offensive_zone_starts(self) -> int | None:
         """Return an ``int`` of the number of starts that took place in the.
 
         player's offensive zone.
@@ -200,7 +201,7 @@ class BoxscorePlayer(AbstractPlayer):
         return self._offensive_zone_starts
 
     @_int_property_decorator
-    def on_ice_shot_attempts_for(self):
+    def on_ice_shot_attempts_for(self) -> int | None:
         """Return an ``int`` of the Corsi For shot attempts that occurred while.
 
         the player was on the ice.
@@ -208,7 +209,7 @@ class BoxscorePlayer(AbstractPlayer):
         return self._on_ice_shot_attempts_for
 
     @_int_property_decorator
-    def on_ice_shot_attempts_against(self):
+    def on_ice_shot_attempts_against(self) -> int | None:
         """Return an ``int`` of the Corsi Against shot attempts that occurred.
 
         while the player was on the ice.
@@ -216,7 +217,7 @@ class BoxscorePlayer(AbstractPlayer):
         return self._on_ice_shot_attempts_against
 
     @_int_property_decorator
-    def shifts(self):
+    def shifts(self) -> int | None:
         """Return an ``int`` of the number of shifts the player had on the ice.
 
         during the game.
@@ -224,7 +225,7 @@ class BoxscorePlayer(AbstractPlayer):
         return self._shifts
 
     @property
-    def time_on_ice(self) -> Any:
+    def time_on_ice(self) -> str | None:
         """Return a ``string`` of the total time the player has spent on ice in.
 
         the format 'MM:SS'.
@@ -299,20 +300,22 @@ class Boxscore:
         self._home_shutout = None
         self._away_skaters = None
         self._away_goalies = None
+        self._away_players: list[BoxscorePlayer] | None = None
+        self._home_players: list[BoxscorePlayer] | None = None
 
         self._parse_game_data(uri)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         away_name = self._away_name.text() if self._away_name is not None else ""
         home_name = self._home_name.text() if self._home_name is not None else ""
         return f"Boxscore for {away_name} at {home_name} ({self.date})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _retrieve_html_page(self, uri):
+    def _retrieve_html_page(self, uri: str | None) -> PyQuery | None:
         """Download the requested HTML page.
 
         Given a relative link, download the requested page and strip it of all
@@ -342,7 +345,7 @@ class Boxscore:
             return None
         return PyQuery(utils.remove_html_comment_tags(url_data))
 
-    def _parse_game_date_and_location(self, boxscore):
+    def _parse_game_date_and_location(self, boxscore: PyQuery) -> None:
         """Retrieve the game's date and location.
 
         The game's meta information, such as date, location, attendance, and
@@ -359,10 +362,12 @@ class Boxscore:
 
         """
         scheme = BOXSCORE_SCHEME["game_info"]
-        items = [i.text() for i in boxscore(scheme).items()]
+        items = [str(i.text()) for i in boxscore(scheme).items()]
+        if not items:
+            return
         game_info = items[0].split("\n")
         arena = None
-        attendance = None
+        attendance: int | None = None
         date = None
         duration = None
         playoff_round = None
@@ -376,7 +381,11 @@ class Boxscore:
             if "Arena: " in line:
                 arena = line.replace("Arena: ", "")
             if "Attendance: " in line:
-                attendance = line.replace("Attendance: ", "").replace(",", "")
+                attendance_text = line.replace("Attendance: ", "").replace(",", "")
+                try:
+                    attendance = int(attendance_text)
+                except ValueError:
+                    attendance = None
             if "Game Duration: " in line:
                 duration = line.replace("Game Duration: ", "")
             if (
@@ -396,7 +405,7 @@ class Boxscore:
         self._playoff_round = playoff_round
         self._time = time
 
-    def _parse_name(self, field, boxscore):
+    def _parse_name(self, field: str, boxscore: PyQuery) -> PyQuery:
         """Retrieve the team's complete name tag.
 
         Both the team's full name (embedded in the tag's text) and the team's
@@ -419,7 +428,7 @@ class Boxscore:
         scheme = BOXSCORE_SCHEME[field]
         return boxscore(scheme)
 
-    def _find_boxscore_tables(self, boxscore):
+    def _find_boxscore_tables(self, boxscore: PyQuery) -> list[PyQuery]:
         """Find all tables with boxscore information on the page.
 
         Iterate through all tables on the page and see if any of them are
@@ -442,17 +451,16 @@ class Boxscore:
 
         for table in boxscore("table").items():
             try:
-                if (
-                    "_adv" in table.attr["id"]
-                    or "_skaters" in table.attr["id"]
-                    or "_goalies" in table.attr["id"]
-                ):
+                table_id = table.attr("id")
+                if not isinstance(table_id, str):
+                    continue
+                if "_adv" in table_id or "_skaters" in table_id or "_goalies" in table_id:
                     tables.append(table)
             except (KeyError, TypeError):
                 continue
         return tables
 
-    def _find_player_id(self, row):
+    def _find_player_id(self, row: PyQuery) -> str | None:
         """Find the player's ID.
 
         Find the player's ID as embedded in the 'data-append-csv' attribute,
@@ -474,9 +482,9 @@ class Boxscore:
         player_id = row("th").attr("data-append-csv")
         if not player_id:
             player_id = row("td").attr("data-append-csv")
-        return player_id
+        return player_id if isinstance(player_id, str) else None
 
-    def _find_player_name(self, row):
+    def _find_player_name(self, row: PyQuery) -> str:
         """Find the player's full name.
 
         Find the player's full name, such as 'Henrik Zetterberg'. The name is
@@ -495,9 +503,14 @@ class Boxscore:
             Zetterberg'.
 
         """
-        return row("a").text()
+        return str(row("a").text())
 
-    def _extract_player_stats(self, table, player_dict, home_or_away):
+    def _extract_player_stats(
+        self,
+        table: PyQuery,
+        player_dict: dict[str, dict[str, str]],
+        home_or_away: str,
+    ) -> dict[str, dict[str, str]]:
         """Combine all player stats into a single object.
 
         Since each player generally has a couple of rows worth of stats (one
@@ -545,7 +558,10 @@ class Boxscore:
                 }
         return player_dict
 
-    def _instantiate_players(self, player_dict):
+    def _instantiate_players(
+        self,
+        player_dict: dict[str, dict[str, str]],
+    ) -> tuple[list[BoxscorePlayer], list[BoxscorePlayer]]:
         """Create a list of player instances for both the home and away teams.
 
         For every player listed on the boxscores page, create an instance of
@@ -579,7 +595,7 @@ class Boxscore:
                 away_players.append(player)
         return away_players, home_players
 
-    def _find_players(self, boxscore):
+    def _find_players(self, boxscore: PyQuery) -> tuple[list[BoxscorePlayer], list[BoxscorePlayer]]:
         """Find all players for each team.
 
         Iterate through every player for both teams as found in the boxscore
@@ -600,7 +616,7 @@ class Boxscore:
             home teams, respectively.
 
         """
-        player_dict = {}
+        player_dict: dict[str, dict[str, str]] = {}
         tables = self._find_boxscore_tables(boxscore)
         for table_count, table in enumerate(tables):
             home_or_away = HOME
@@ -613,7 +629,7 @@ class Boxscore:
         away_players, home_players = self._instantiate_players(player_dict)
         return away_players, home_players
 
-    def _parse_game_data(self, uri):
+    def _parse_game_data(self, uri: str | None) -> None:
         """Parse a value for every attribute.
 
         This function looks through every attribute and retrieves the value
@@ -679,7 +695,7 @@ class Boxscore:
                 continue
             if short_field in fields_to_special_parse:
                 scheme = BOXSCORE_SCHEME[short_field]
-                value = [i.text() for i in boxscore(scheme).items()]
+                value = [str(i.text()) for i in boxscore(scheme).items()]
                 setattr(self, field, value)
                 continue
             index = BOXSCORE_ELEMENT_INDEX.get(short_field, 0)
@@ -695,7 +711,7 @@ class Boxscore:
         self._away_players, self._home_players = self._find_players(boxscore)
 
     @property
-    def dataframe(self) -> Any:
+    def dataframe(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
@@ -750,33 +766,33 @@ class Boxscore:
         return pd.DataFrame([fields_to_include], index=[self._uri])
 
     @property
-    def away_players(self) -> Any:
+    def away_players(self) -> list[BoxscorePlayer]:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the away team.
         """
-        return self._away_players
+        return self._away_players or []
 
     @property
-    def home_players(self) -> Any:
+    def home_players(self) -> list[BoxscorePlayer]:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the home team.
         """
-        return self._home_players
+        return self._home_players or []
 
     @property
-    def date(self) -> Any:
+    def date(self) -> str | None:
         """Return a ``string`` of the date the game took place."""
         return self._date
 
     @property
-    def time(self) -> Any:
+    def time(self) -> str | None:
         """Return a ``string`` of the time the game started."""
         return self._time
 
     @property
-    def arena(self) -> Any:
+    def arena(self) -> str | None:
         """Return a ``string`` of the name of the ballpark where the game was.
 
         played.
@@ -784,17 +800,17 @@ class Boxscore:
         return self._arena
 
     @int_property_decorator
-    def attendance(self):
+    def attendance(self) -> int | None:
         """Return an ``int`` of the game's listed attendance."""
         return self._attendance
 
     @property
-    def duration(self) -> Any:
+    def duration(self) -> str | None:
         """Return a ``string`` of the game's duration in the format 'H:MM'."""
         return self._duration
 
     @property
-    def playoff_round(self) -> Any:
+    def playoff_round(self) -> str | None:
         """Return a ``string`` denoting which round of the playoffs the game is a.
 
         part of, such as 'Western First Round', or None if the game was played
@@ -803,7 +819,7 @@ class Boxscore:
         return self._playoff_round
 
     @property
-    def winner(self) -> Any:
+    def winner(self) -> str | None:
         """Return a ``string`` constant indicating whether the home or away team.
 
         won.
@@ -817,7 +833,7 @@ class Boxscore:
         return AWAY
 
     @property
-    def winning_name(self) -> Any:
+    def winning_name(self) -> str:
         """Return a ``string`` of the winning team's name, such as 'Vegas Golden.
 
         Knights'.
@@ -831,7 +847,7 @@ class Boxscore:
         return ""
 
     @property
-    def winning_abbr(self) -> Any:
+    def winning_abbr(self) -> str:
         """Return a ``string`` of the winning team's abbreviation, such as 'VEG'.
 
         for the Vegas Golden Knights.
@@ -843,7 +859,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_name(self) -> Any:
+    def losing_name(self) -> str:
         """Return a ``string`` of the losing team's name, such as 'Washington.
 
         Capitals'.
@@ -857,7 +873,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_abbr(self) -> Any:
+    def losing_abbr(self) -> str:
         """Return a ``string`` of the losing team's abbreviation, such as 'WSH'.
 
         for the Washington Capitals.
@@ -869,22 +885,22 @@ class Boxscore:
         return ""
 
     @int_property_decorator
-    def away_goals(self):
+    def away_goals(self) -> int | None:
         """Return an ``int`` of the number of goals the away team scored."""
         return self._away_goals
 
     @int_property_decorator
-    def away_assists(self):
+    def away_assists(self) -> int | None:
         """Return an ``int`` of the number of assists the away team registered."""
         return self._away_assists
 
     @int_property_decorator
-    def away_points(self):
+    def away_points(self) -> int | None:
         """Return an ``int`` of the number of points the away team registered."""
         return self._away_points
 
     @int_property_decorator
-    def away_penalties_in_minutes(self):
+    def away_penalties_in_minutes(self) -> int | None:
         """Return an ``int`` of the length of time the away team spent in the.
 
         penalty box.
@@ -892,7 +908,7 @@ class Boxscore:
         return self._away_penalties_in_minutes
 
     @int_property_decorator
-    def away_even_strength_goals(self):
+    def away_even_strength_goals(self) -> int | None:
         """Return an ``int`` of the number of goals the away team scored at even.
 
         strength.
@@ -900,7 +916,7 @@ class Boxscore:
         return self._away_even_strength_goals
 
     @int_property_decorator
-    def away_power_play_goals(self):
+    def away_power_play_goals(self) -> int | None:
         """Return an ``int`` of the number of goals the away team scored while on.
 
         a power play.
@@ -908,7 +924,7 @@ class Boxscore:
         return self._away_power_play_goals
 
     @int_property_decorator
-    def away_short_handed_goals(self):
+    def away_short_handed_goals(self) -> int | None:
         """Return an ``int`` of the number of goals the away team scored while.
 
         short handed.
@@ -916,7 +932,7 @@ class Boxscore:
         return self._away_short_handed_goals
 
     @nhl_int_property_decorator
-    def away_game_winning_goals(self):
+    def away_game_winning_goals(self) -> list[str] | None:
         """Return an ``int`` of the number of game winning goals the away team.
 
         scored.
@@ -924,7 +940,7 @@ class Boxscore:
         return self._away_game_winning_goals
 
     @nhl_int_property_decorator
-    def away_even_strength_assists(self):
+    def away_even_strength_assists(self) -> list[str] | None:
         """Return an ``int`` of the number of assists the away team registered.
 
         while at even strength.
@@ -932,7 +948,7 @@ class Boxscore:
         return self._away_even_strength_assists
 
     @nhl_int_property_decorator
-    def away_power_play_assists(self):
+    def away_power_play_assists(self) -> list[str] | None:
         """Return an ``int`` of the number of assists the away team registered.
 
         while on a power play.
@@ -940,7 +956,7 @@ class Boxscore:
         return self._away_power_play_assists
 
     @nhl_int_property_decorator
-    def away_short_handed_assists(self):
+    def away_short_handed_assists(self) -> list[str] | None:
         """Return an ``int`` of the number of assists the away team registered.
 
         while short handed.
@@ -948,7 +964,7 @@ class Boxscore:
         return self._away_short_handed_assists
 
     @int_property_decorator
-    def away_shots_on_goal(self):
+    def away_shots_on_goal(self) -> int | None:
         """Return an ``int`` of the number of shots on goal the away team.
 
         registered.
@@ -956,7 +972,7 @@ class Boxscore:
         return self._away_shots_on_goal
 
     @float_property_decorator
-    def away_shooting_percentage(self):
+    def away_shooting_percentage(self) -> float | None:
         """Return a ``float`` of the away team's shooting percentage. Percentage.
 
         ranges from 0-100.
@@ -964,12 +980,12 @@ class Boxscore:
         return self._away_shooting_percentage
 
     @nhl_int_property_decorator
-    def away_saves(self):
+    def away_saves(self) -> list[str] | None:
         """Return an ``int`` of the number of saves the away team made."""
         return self._away_saves
 
     @property
-    def away_save_percentage(self) -> Any:
+    def away_save_percentage(self) -> float | None:
         """Return a ``float`` of the percentage of shots the away team saved.
 
         Percentage ranges from 0-1.
@@ -983,7 +999,7 @@ class Boxscore:
         return round(saves / shots, 3)
 
     @nhl_int_property_decorator
-    def away_shutout(self):
+    def away_shutout(self) -> list[str] | None:
         """Return an ``int`` denoting whether or not the away team shutout the.
 
         home team.
@@ -991,22 +1007,22 @@ class Boxscore:
         return self._away_shutout
 
     @int_property_decorator
-    def home_goals(self):
+    def home_goals(self) -> int | None:
         """Return an ``int`` of the number of goals the home team scored."""
         return self._home_goals
 
     @int_property_decorator
-    def home_assists(self):
+    def home_assists(self) -> int | None:
         """Return an ``int`` of the number of assists the home team registered."""
         return self._home_assists
 
     @int_property_decorator
-    def home_points(self):
+    def home_points(self) -> int | None:
         """Return an ``int`` of the number of points the home team registered."""
         return self._home_points
 
     @int_property_decorator
-    def home_penalties_in_minutes(self):
+    def home_penalties_in_minutes(self) -> int | None:
         """Return an ``int`` of the length of time the home team spent in the.
 
         penalty box.
@@ -1014,7 +1030,7 @@ class Boxscore:
         return self._home_penalties_in_minutes
 
     @int_property_decorator
-    def home_even_strength_goals(self):
+    def home_even_strength_goals(self) -> int | None:
         """Return an ``int`` of the number of goals the home team scored at even.
 
         strength.
@@ -1022,7 +1038,7 @@ class Boxscore:
         return self._home_even_strength_goals
 
     @int_property_decorator
-    def home_power_play_goals(self):
+    def home_power_play_goals(self) -> int | None:
         """Return an ``int`` of the number of goals the home team scored while on.
 
         a power play.
@@ -1030,7 +1046,7 @@ class Boxscore:
         return self._home_power_play_goals
 
     @int_property_decorator
-    def home_short_handed_goals(self):
+    def home_short_handed_goals(self) -> int | None:
         """Return an ``int`` of the number of goals the home team scored while.
 
         short handed.
@@ -1038,7 +1054,7 @@ class Boxscore:
         return self._home_short_handed_goals
 
     @nhl_int_property_decorator
-    def home_game_winning_goals(self):
+    def home_game_winning_goals(self) -> list[str] | None:
         """Return an ``int`` of the number of game winning goals the home team.
 
         scored.
@@ -1046,7 +1062,7 @@ class Boxscore:
         return self._home_game_winning_goals
 
     @nhl_int_property_decorator
-    def home_even_strength_assists(self):
+    def home_even_strength_assists(self) -> list[str] | None:
         """Return an ``int`` of the number of assists the home team registered.
 
         while at even strength.
@@ -1054,7 +1070,7 @@ class Boxscore:
         return self._home_even_strength_assists
 
     @nhl_int_property_decorator
-    def home_power_play_assists(self):
+    def home_power_play_assists(self) -> list[str] | None:
         """Return an ``int`` of the number of assists the home team registered.
 
         while on a power play.
@@ -1062,7 +1078,7 @@ class Boxscore:
         return self._home_power_play_assists
 
     @nhl_int_property_decorator
-    def home_short_handed_assists(self):
+    def home_short_handed_assists(self) -> list[str] | None:
         """Return an ``int`` of the number of assists the home team registered.
 
         while short handed.
@@ -1070,7 +1086,7 @@ class Boxscore:
         return self._home_short_handed_assists
 
     @int_property_decorator
-    def home_shots_on_goal(self):
+    def home_shots_on_goal(self) -> int | None:
         """Return an ``int`` of the number of shots on goal the home team.
 
         registered.
@@ -1078,7 +1094,7 @@ class Boxscore:
         return self._home_shots_on_goal
 
     @float_property_decorator
-    def home_shooting_percentage(self):
+    def home_shooting_percentage(self) -> float | None:
         """Return a ``float`` of the home team's shooting percentage. Percentage.
 
         ranges from 0-100.
@@ -1086,12 +1102,12 @@ class Boxscore:
         return self._home_shooting_percentage
 
     @nhl_int_property_decorator
-    def home_saves(self):
+    def home_saves(self) -> list[str] | None:
         """Return an ``int`` of the number of saves the home team made."""
         return self._home_saves
 
     @property
-    def home_save_percentage(self) -> Any:
+    def home_save_percentage(self) -> float | None:
         """Return a ``float`` of the percentage of shots the home team saved.
 
         Percentage ranges from 0-1.
@@ -1105,7 +1121,7 @@ class Boxscore:
         return round(saves / shots, 3)
 
     @nhl_int_property_decorator
-    def home_shutout(self):
+    def home_shutout(self) -> list[str] | None:
         """Return an ``int`` denoting whether or not the home team shutout the.
 
         home team.
@@ -1135,22 +1151,23 @@ class Boxscores:
 
     """
 
-    def __init__(self, date: Any, end_date: Any | None = None) -> None:
+    def __init__(self, date: datetime | None, end_date: datetime | None = None) -> None:
         """Initialize the class instance."""
         self._boxscores = {}
 
-        self._find_games(date, end_date)
+        if date is not None:
+            self._find_games(date, end_date)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"NHL games for {', '.join(self._boxscores.keys())}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
     @property
-    def games(self) -> Any:
+    def games(self) -> dict[str, list[dict[str, str | int | None]]]:
         """Return a ``dictionary`` object representing all of the games played on.
 
         the requested day. Dictionary is in the following format::
@@ -1187,7 +1204,7 @@ class Boxscores:
         """
         return self._boxscores
 
-    def _create_url(self, date):
+    def _create_url(self, date: datetime) -> str:
         """Build the URL based on the passed datetime object.
 
         In order to get the proper boxscore page, the URL needs to include the
@@ -1208,7 +1225,7 @@ class Boxscores:
         """
         return BOXSCORES_URL % (date.month, date.day, date.year)
 
-    def _get_requested_page(self, url):
+    def _get_requested_page(self, url: str) -> PyQuery | None:
         """Get the requested page.
 
         Download the requested page given the created URL and return a PyQuery
@@ -1231,7 +1248,7 @@ class Boxscores:
             return None
         return utils.pq(page_source)
 
-    def _get_boxscore_uri(self, url):
+    def _get_boxscore_uri(self, url: PyQuery) -> str:
         """Find the boxscore URI.
 
         Given the boxscore tag for a game, parse the embedded URI for the
@@ -1254,7 +1271,7 @@ class Boxscores:
         uri = re.sub(r"\.html.*", "", uri).strip()
         return uri
 
-    def _parse_abbreviation(self, abbr):
+    def _parse_abbreviation(self, abbr: str | PyQuery | None) -> str | None:
         """Parse a team's abbreviation.
 
         Given the team's HTML name tag, parse their abbreviation.
@@ -1272,7 +1289,7 @@ class Boxscores:
         """
         if not abbr:
             return None
-        href = abbr.attr("href") if hasattr(abbr, "attr") else None
+        href = abbr.attr("href") if isinstance(abbr, PyQuery) else None
         if isinstance(href, str) and href:
             abbr = re.sub(r".*/teams/", "", href)
         else:
@@ -1280,7 +1297,7 @@ class Boxscores:
         abbr = re.sub(r"/.*", "", abbr)
         return abbr
 
-    def _get_name(self, name):
+    def _get_name(self, name: PyQuery) -> tuple[str, str | None]:
         """Find a team's name and abbreviation.
 
         Given the team's HTML name tag, determine their name, and abbreviation.
@@ -1297,11 +1314,11 @@ class Boxscores:
             Tuple is in the following order: Team Name, Team Abbreviation.
 
         """
-        team_name = name.text()
+        team_name = str(name.text())
         abbr = self._parse_abbreviation(name)
         return team_name, abbr
 
-    def _get_score(self, score_link):
+    def _get_score(self, score_link: str) -> int:
         """Find a team's final score.
 
         Given an HTML string of a team's boxscore, extract the integer
@@ -1323,7 +1340,10 @@ class Boxscores:
         score = score.replace("</td>", "")
         return int(score)
 
-    def _get_team_details(self, game):
+    def _get_team_details(
+        self,
+        game: PyQuery,
+    ) -> tuple[str, str | None, int | None, str, str | None, int | None]:
         """Find the names and abbreviations for both teams in a game.
 
         Using the HTML contents in a boxscore, find the name and abbreviation
@@ -1360,7 +1380,7 @@ class Boxscores:
         home_name, home_abbr = self._get_name(home)
         return (away_name, away_abbr, away_score, home_name, home_abbr, home_score)
 
-    def _get_team_results(self, team_result_html):
+    def _get_team_results(self, team_result_html: PyQuery) -> tuple[str, str | None] | None:
         """Extract the winning or losing team's name and abbreviation.
 
         Depending on which team's data field is passed (either the winner or
@@ -1387,7 +1407,7 @@ class Boxscores:
         name, abbreviation = self._get_name(link[0])
         return name, abbreviation
 
-    def _extract_game_info(self, games):
+    def _extract_game_info(self, games: Iterable[PyQuery]) -> list[dict[str, str | int | None]]:
         """Parse game information from all boxscores.
 
         Find the major game information for all boxscores listed on a
@@ -1407,7 +1427,7 @@ class Boxscores:
             link to the game's boxscore.
 
         """
-        all_boxscores = []
+        all_boxscores: list[dict[str, str | int | None]] = []
 
         for game in games:
             details = self._get_team_details(game)
@@ -1455,7 +1475,7 @@ class Boxscores:
             all_boxscores.append(game_info)
         return all_boxscores
 
-    def _find_games(self, date, end_date):
+    def _find_games(self, date: datetime, end_date: datetime | None) -> None:
         """Retrieve all major games played on a given day.
 
         Builds a URL based on the requested date and downloads the HTML
