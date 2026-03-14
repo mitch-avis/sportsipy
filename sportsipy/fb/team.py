@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 from urllib.error import HTTPError
 
 from pyquery import PyQuery
@@ -333,7 +334,7 @@ class Team:
         self._parse_header(doc)
 
     @property
-    def squad_id(self):
+    def squad_id(self) -> Any:
         """Return a ``string`` of the team's squad ID according to.
 
         sports-reference.com, such as '361ca564' for Tottenham Hotspur.
@@ -341,7 +342,7 @@ class Team:
         return self._squad_id
 
     @property
-    def name(self):
+    def name(self) -> Any:
         """Return a ``string`` of the team's full name, such as 'Tottenham.
 
         Hotspur'.
@@ -349,7 +350,7 @@ class Team:
         return self._name
 
     @property
-    def short_name(self):
+    def short_name(self) -> Any:
         """Return a ``string`` of the team's short name, such as 'Tottenham',.
 
         used in schedule and standings tables.
@@ -357,7 +358,7 @@ class Team:
         return self._short_name
 
     @property
-    def schedule(self):
+    def schedule(self) -> Any:
         """Return an instance of the Schedule class containing the team's.
 
         complete schedule for the season.
@@ -367,7 +368,7 @@ class Team:
         return Schedule(self.squad_id, self._doc)
 
     @property
-    def roster(self):
+    def roster(self) -> Any:
         """Return an instance of the Roster class containing instances of every.
 
         player on the team.
@@ -377,7 +378,7 @@ class Team:
         return Roster(self._squad_id, self._doc)
 
     @property
-    def season(self):
+    def season(self) -> Any:
         """Return a ``string`` of the season's year(s) in the format YYYY or.
 
         YYYY-YYYY. For example, '2020' or '2019-2020'.
@@ -385,7 +386,7 @@ class Team:
         return self._season
 
     @property
-    def record(self):
+    def record(self) -> Any:
         """Return a ``string`` of the team's record during their primary.
 
         competition (ie. Premier League) for the current season in the format
@@ -411,7 +412,7 @@ class Team:
         return self._points
 
     @property
-    def league(self):
+    def league(self) -> Any:
         """Return a ``string`` of the team's primary competition, such as.
 
         'Premier League'.
@@ -419,7 +420,7 @@ class Team:
         return self._league
 
     @property
-    def manager(self):
+    def manager(self) -> Any:
         """Return a ``string`` of the full name of the team's manager, such as.
 
         'José Mourinho'.
@@ -427,7 +428,7 @@ class Team:
         return self._manager
 
     @property
-    def country(self):
+    def country(self) -> Any:
         """Return a ``string`` of the team's governing country, such as.
 
         'England'.
@@ -435,7 +436,7 @@ class Team:
         return self._country
 
     @property
-    def gender(self):
+    def gender(self) -> Any:
         """Return a ``string`` denoting which gender the team competes in (ie.
 
         'Female').
@@ -492,7 +493,7 @@ class Team:
         return self._expected_goal_difference
 
     @property
-    def home_record(self):
+    def home_record(self) -> Any:
         """Return a ``string`` of the team's home record during their primary.
 
         competition (ie. Premier League) for the current season in the format
@@ -514,7 +515,7 @@ class Team:
         return wins + draws + losses
 
     @property
-    def away_record(self):
+    def away_record(self) -> Any:
         """Return a ``string`` of the team's away record during their primary.
 
         competition (ie. Premier League) for the current season in the format
