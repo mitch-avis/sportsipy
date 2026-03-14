@@ -133,7 +133,7 @@ class AbstractPlayer:
 
         self._parse_player_data(player_data)
 
-    def _parse_value(self, stats, field):
+    def _parse_value(self, stats: PyQuery, field: str) -> str | None:
         """Pull the specified value from the HTML contents.
 
         Given a field, find the corresponding HTML tag for that field and parse
@@ -161,9 +161,9 @@ class AbstractPlayer:
             value = self._parse_team_abbreviation(stats)
         else:
             value = utils.parse_field(PLAYER_SCHEME, stats, field)
-        return value
+        return None if value is None else str(value)
 
-    def _parse_player_data(self, player_data):
+    def _parse_player_data(self, player_data: dict[str, Any] | str | None) -> None:
         """Parse all player information and set attributes.
 
         Iterate through each class attribute to parse the data from the HTML
@@ -224,7 +224,7 @@ class AbstractPlayer:
                 field_stats.append(value)
             setattr(self, field, field_stats)
 
-    def _parse_conference(self, stats):
+    def _parse_conference(self, stats: PyQuery) -> str:
         """Parse the conference abbreviation for the player's team.
 
         The conference abbreviation is embedded within the conference name tag
@@ -246,7 +246,7 @@ class AbstractPlayer:
         conference = re.sub(r"/.*", "", conference)
         return conference
 
-    def _parse_team_abbreviation(self, stats):
+    def _parse_team_abbreviation(self, stats: PyQuery) -> str:
         """Parse the team abbreviation.
 
         The team abbreviation is embedded within the team name tag and should
