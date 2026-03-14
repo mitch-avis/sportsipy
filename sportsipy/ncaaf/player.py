@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import wraps
+from typing import Any
 
 from pyquery import PyQuery
 
@@ -202,7 +203,7 @@ class AbstractPlayer:
             setattr(self, field, field_stats)
 
     @property
-    def player_id(self):
+    def player_id(self) -> Any:
         """Return a ``string`` of the player's ID on sports-reference, such as.
 
         'david-blough-1' for David Blough.
@@ -210,7 +211,7 @@ class AbstractPlayer:
         return self._player_id
 
     @property
-    def name(self):
+    def name(self) -> Any:
         """Return a ``string`` of the player's name, such as 'David Blough'."""
         return self._name
 
