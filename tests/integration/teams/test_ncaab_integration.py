@@ -4,7 +4,6 @@ import os
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.ncaab.conferences import Conferences
@@ -18,6 +17,10 @@ from sportsipy.ncaab.teams import Team, Teams
 
 MONTH = 1
 YEAR = 2018
+
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
 
 
 def read_file(filename):
@@ -884,11 +887,17 @@ class TestNCAABIntegration:
             "maryland-eastern-shore": "meac",
             "delaware-state": "meac",
         }
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
+        self.team_conference = team_conference
 
-        flexmock(Conferences).should_receive("_find_conferences").and_return(None)
-        flexmock(Conferences).should_receive("team_conference").and_return(team_conference)
-
+    @pytest.fixture(autouse=True)
+    def _setup_default_mocks(self, monkeypatch):
+        """Patch conference/date lookups for deterministic integration tests."""
+        monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+        monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+        monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+        monkeypatch.setattr(Conferences, "_find_conferences", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(Conferences, "team_conference", self.team_conference)
         self.teams = Teams()
 
     def test_ncaab_integration_returns_correct_number_of_teams(self):
@@ -980,20 +989,20 @@ class TestNCAABIntegration:
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    def test_ncaab_empty_page_returns_no_teams(self, *args, **kwargs):
+    def test_ncaab_empty_page_returns_no_teams(self, monkeypatch, *args, **kwargs):
         """Return test ncaab empty page returns no teams."""
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        monkeypatch.setattr(utils, "no_data_found", lambda: None)
+        monkeypatch.setattr(utils, "get_stats_table", lambda *_args, **_kwargs: None)
 
         teams = Teams()
 
         assert len(teams) == 0
 
-    def test_ncaab_no_conference_info_skips_team(self, *args, **kwargs):
+    def test_ncaab_no_conference_info_skips_team(self, monkeypatch, *args, **kwargs):
         """Return test ncaab no conference info skips team."""
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-        flexmock(Conferences).should_receive("team_conference").and_return({})
-        flexmock(Conferences).should_receive("_find_conferences").and_return(None)
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+        monkeypatch.setattr(Conferences, "team_conference", {})
+        monkeypatch.setattr(Conferences, "_find_conferences", lambda *_args, **_kwargs: None)
 
         teams = Teams()
 
@@ -1430,7 +1439,7 @@ Youngstown State (YOUNGSTOWN-STATE)"""
 class TestNCAABIntegrationInvalidYear:
     """Represent TestNCAABIntegrationInvalidYear."""
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
         team_conference = {
             "kansas": "big-12",
@@ -1785,9 +1794,9 @@ class TestNCAABIntegrationInvalidYear:
             "maryland-eastern-shore": "meac",
             "delaware-state": "meac",
         }
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
-        flexmock(Conferences).should_receive("_find_conferences").and_return(None)
-        flexmock(Conferences).should_receive("team_conference").and_return(team_conference)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2019)
+        monkeypatch.setattr(Conferences, "_find_conferences", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(Conferences, "team_conference", team_conference)
 
         teams = Teams()
 
