@@ -1,7 +1,10 @@
 """Provide utilities for test nfl schedule."""
 
+from typing import cast
+
 from flexmock import flexmock
 
+from sportsipy import utils
 from sportsipy.constants import (
     AWAY,
     HOME,
@@ -63,6 +66,12 @@ class TestNFLSchedule:
 
         assert self.game.result == TIE
 
+    def test_invalid_result_returns_none(self):
+        """Return test invalid result returns none."""
+        self.game._result = "X"
+
+        assert self.game.result is None
+
     def test_no_result_returns_none(self):
         """Return test no result returns none."""
         self.game._result = ""
@@ -121,12 +130,67 @@ class TestNFLSchedule:
         assert self.game._points_allowed is None
         assert self.game.dataframe is None
 
+    def test_date_property_formats_iso_date(self):
+        """Return test date property formats iso date."""
+        self.game._date = "2017-09-17"
+
+        assert self.game.date == "September 17"
+
+    def test_datetime_property_handles_iso_date(self):
+        """Return test datetime property handles iso date."""
+        self.game._date = "2017-09-17"
+        self.game._day = "Sun"
+
+        result = self.game.datetime
+
+        assert result is not None
+        assert result.year == 2017
+        assert result.month == 9
+        assert result.day == 17
+
+    def test_datetime_property_returns_none_without_year(self):
+        """Return test datetime property returns none without year."""
+        self.game._year = None
+        self.game._date = "September 17"
+        self.game._day = "Sun"
+
+        assert self.game.datetime is None
+
+    def test_parse_abbreviation_without_href_sets_none(self):
+        """Return test parse abbreviation without href sets none."""
+        game_data = utils.pq('<tr><td data-stat="opp_name_abbr">No Opponent</td></tr>')
+
+        self.game._parse_abbreviation(game_data)
+
+        assert self.game.opponent_abbr is None
+
+    def test_parse_boxscore_falls_back_to_date_cell(self):
+        """Return test parse boxscore falls back to date cell."""
+        game_data = utils.pq(
+            '<tr><td data-stat="boxscore_word"></td>'
+            '<td data-stat="game_date"><a href="/boxscores/201709170nor.htm">Date</a></td></tr>'
+        )
+
+        self.game._parse_boxscore(game_data)
+
+        assert self.game.boxscore_index == "201709170nor"
+
+    def test_parse_boxscore_without_href_sets_empty_string(self):
+        """Return test parse boxscore without href sets empty string."""
+        game_data = utils.pq(
+            '<tr><td data-stat="boxscore_word"></td><td data-stat="game_date">Date</td></tr>'
+        )
+
+        self.game._parse_boxscore(game_data)
+
+        assert self.game.boxscore_index == ""
+
     def test_no_dataframes_returns_none(self):
         """Return test no dataframes returns none."""
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
         schedule = Schedule("DET")
 
-        fake_game = flexmock(dataframe=None)
+        fake_game = cast(Game, flexmock(dataframe=None))
         schedule._games = [fake_game]
 
         assert schedule.dataframe is None
@@ -136,7 +200,7 @@ class TestNFLSchedule:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
         schedule = Schedule("DET")
 
-        fake_game = flexmock(dataframe_extended=None)
+        fake_game = cast(Game, flexmock(dataframe_extended=None))
         schedule._games = [fake_game]
 
         assert schedule.dataframe_extended is None
