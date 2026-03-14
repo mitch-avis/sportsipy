@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from functools import wraps
+from typing import Any
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -455,7 +456,7 @@ class Player(AbstractPlayer):
         return fields_to_include
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a ``pandas DataFrame`` containing all other relevant class.
 
         properties and values where each index is a different season plus the
@@ -473,7 +474,7 @@ class Player(AbstractPlayer):
         return pd.DataFrame(rows, index=indices)
 
     @property
-    def season(self):
+    def season(self) -> Any:
         """Return a ``string`` of the season in the format 'YYYY-YY', such as.
 
         '2017-18'. If no season was requested, the career stats will be
@@ -484,7 +485,7 @@ class Player(AbstractPlayer):
         return None
 
     @property
-    def conference(self):
+    def conference(self) -> Any:
         """Return a ``string`` of the abbreviation for the conference the team.
 
         participated in for the requested season.
@@ -502,12 +503,12 @@ class Player(AbstractPlayer):
         return self._team_abbreviation
 
     @property
-    def position(self):
+    def position(self) -> Any:
         """Return a ``string`` constant of the player's primary position."""
         return self._position
 
     @property
-    def height(self):
+    def height(self) -> Any:
         """Return a ``string`` of the player's height in the format.
 
         "feet-inches".
@@ -515,7 +516,7 @@ class Player(AbstractPlayer):
         return self._height
 
     @property
-    def weight(self):
+    def weight(self) -> Any:
         """Return an ``int`` of the player's weight in pounds."""
         if not self._weight:
             return None
@@ -824,7 +825,7 @@ class Roster:
         self._coach = self._parse_coach(page)
 
     @property
-    def players(self):
+    def players(self) -> Any:
         """Return a ``list`` of player instances for each player on the requested.
 
         team's roster if the ``slim`` property is False when calling the Roster
@@ -835,6 +836,6 @@ class Roster:
         return self._players
 
     @property
-    def coach(self):
+    def coach(self) -> Any:
         """Return a ``string`` of the coach's name, such as 'Matt Painter'."""
         return self._coach
