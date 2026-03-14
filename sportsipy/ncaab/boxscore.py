@@ -73,7 +73,7 @@ class BoxscorePlayer(AbstractPlayer):
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a ``pandas DataFrame`` containing all other relevant class.
 
         properties and values for the specified game.
@@ -721,7 +721,7 @@ class Boxscore:
                 self._pace = None
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
@@ -820,12 +820,12 @@ class Boxscore:
         return pd.DataFrame([fields_to_include], index=[self._uri])
 
     @property
-    def date(self):
+    def date(self) -> Any:
         """Return a ``string`` of the date the game took place."""
         return self._date
 
     @property
-    def away_players(self):
+    def away_players(self) -> Any:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the away team.
@@ -833,7 +833,7 @@ class Boxscore:
         return self._away_players
 
     @property
-    def home_players(self):
+    def home_players(self) -> Any:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the home team.
@@ -841,7 +841,7 @@ class Boxscore:
         return self._home_players
 
     @property
-    def location(self):
+    def location(self) -> Any:
         """Return a ``string`` of the name of the venue where the game was.
 
         played.
@@ -849,7 +849,7 @@ class Boxscore:
         return self._location
 
     @property
-    def summary(self):
+    def summary(self) -> Any:
         """Return a ``dictionary`` with two keys, 'away' and 'home'. The value of.
 
         each key will be a list for each respective team's score by order of
@@ -864,7 +864,7 @@ class Boxscore:
         return self._summary
 
     @property
-    def winner(self):
+    def winner(self) -> Any:
         """Return a ``string`` constant indicating whether the home or away team.
 
         won.
@@ -878,7 +878,7 @@ class Boxscore:
         return AWAY
 
     @property
-    def winning_name(self):
+    def winning_name(self) -> Any:
         """Return a ``string`` of the winning team's name, such as 'Purdue.
 
         Boilermakers'.
@@ -900,7 +900,7 @@ class Boxscore:
         return ""
 
     @property
-    def winning_abbr(self):
+    def winning_abbr(self) -> Any:
         """Return a ``string`` of the winning team's abbreviation, such as.
 
         'PURDUE' for the Purdue Boilermakers.
@@ -922,7 +922,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_name(self):
+    def losing_name(self) -> Any:
         """Return a ``string`` of the losing team's name, such as 'Indiana'.
 
         Hoosiers'.
@@ -944,7 +944,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_abbr(self):
+    def losing_abbr(self) -> Any:
         """Return a ``string`` of the losing team's abbreviation, such as.
 
         'INDIANA' for the Indiana Hoosiers.
@@ -1642,7 +1642,7 @@ class Boxscores:
         return self.__str__()
 
     @property
-    def games(self):
+    def games(self) -> Any:
         """Return a ``dictionary`` object representing all of the games played on.
 
         the requested day. Dictionary is in the following format::
