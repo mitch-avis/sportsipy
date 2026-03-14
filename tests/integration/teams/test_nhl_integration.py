@@ -4,13 +4,16 @@ import os
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.nhl.teams import Team, Teams
 
 MONTH = 1
 YEAR = 2017
+
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
 
 
 def read_file(filename):
@@ -65,6 +68,14 @@ class MockDateTime:
 
 class TestNHLIntegration:
     """Represent TestNHLIntegration."""
+
+    @pytest.fixture(autouse=True)
+    def _patch_todays_date(self, monkeypatch):
+        """Patch today's date for deterministic tests."""
+        monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+        monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+        monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
 
     def setup_method(self, *args, **kwargs):
         """Return setup method."""
@@ -132,8 +143,6 @@ class TestNHLIntegration:
         ]
         _ = read_file(f"NHL_{YEAR}.html")
 
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-
         self.teams = Teams()
 
     def test_nhl_integration_returns_correct_number_of_teams(self):
@@ -180,10 +189,10 @@ class TestNHLIntegration:
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    def test_nhl_empty_page_returns_no_teams(self, *args, **kwargs):
+    def test_nhl_empty_page_returns_no_teams(self, monkeypatch, *args, **kwargs):
         """Return test nhl empty page returns no teams."""
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        monkeypatch.setattr(utils, "no_data_found", lambda: None)
+        monkeypatch.setattr(utils, "get_stats_table", lambda *_args, **_kwargs: None)
 
         teams = Teams()
 
@@ -244,9 +253,9 @@ Colorado Avalanche (COL)"""
 class TestNHLIntegrationInvalidYear:
     """Represent TestNHLIntegrationInvalidYear."""
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2018)
 
         teams = Teams()
 
