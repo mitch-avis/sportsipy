@@ -4,7 +4,6 @@ import os
 import re
 
 import pandas as pd
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.ncaaf.roster import Player, Roster
@@ -12,9 +11,7 @@ from sportsipy.ncaaf.teams import Team
 
 YEAR = 2018
 
-CORE_PLAYER_FIELDS = (
-    "player_id",
-)
+CORE_PLAYER_FIELDS = ("player_id",)
 
 
 def _normalize_multiline(text: str) -> str:
@@ -536,9 +533,9 @@ class TestNCAAFPlayer:
 class TestNCAAFRoster:
     """Represent TestNCAAFRoster."""
 
-    def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
+    def test_roster_class_pulls_all_player_stats(self, monkeypatch, *args, **kwargs):
         """Return test roster class pulls all player stats."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("PURDUE")
 
         assert len(roster.players) >= 2
@@ -554,9 +551,9 @@ class TestNCAAFRoster:
         roster = Roster("BAD")
         assert isinstance(roster.players, list)
 
-    def test_roster_from_team_class(self, *args, **kwargs):
+    def test_roster_from_team_class(self, monkeypatch, *args, **kwargs):
         """Return test roster from team class."""
-        flexmock(Team).should_receive("_parse_team_data").and_return(None)
+        monkeypatch.setattr(Team, "_parse_team_data", lambda *_args, **_kwargs: None)
         team = Team(team_data=None, team_conference=None, year="2018")
         team._abbreviation = "PURDUE"
 
@@ -569,19 +566,22 @@ class TestNCAAFRoster:
         assert "rondale-moore-1" in player_ids
         team._abbreviation = None
 
-    def test_roster_class_with_slim_parameter(self, *args, **kwargs):
+    def test_roster_class_with_slim_parameter(self, monkeypatch, *args, **kwargs):
         """Return test roster class with slim parameter."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("PURDUE", slim=True)
 
         assert len(roster.players) >= 2
-        player_ids = {_normalize_player_id(player_id) for player_id in roster.players}
+        player_ids = {
+            _normalize_player_id(player.player_id if isinstance(player, Player) else player)
+            for player in roster.players
+        }
         assert "david-blough-1" in player_ids
         assert "rondale-moore-1" in player_ids
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2019")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2019")
 
         roster = Roster("PURDUE")
 
@@ -592,9 +592,9 @@ class TestNCAAFRoster:
         assert "david-blough-1" in player_ids
         assert "rondale-moore-1" in player_ids
 
-    def test_roster_class_string_representation(self, *args, **kwargs):
+    def test_roster_class_string_representation(self, monkeypatch, *args, **kwargs):
         """Return test roster class string representation."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("PURDUE")
 
         roster_repr = _normalize_multiline(repr(roster))
