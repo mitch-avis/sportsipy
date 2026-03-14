@@ -5,7 +5,6 @@ from os import path
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 from pyquery import PyQuery
 
 from sportsipy import utils
@@ -13,6 +12,21 @@ from sportsipy.constants import AWAY, DRAW
 from sportsipy.fb.schedule import Schedule
 
 NUM_GAMES_IN_SCHEDULE = 52
+
+ORIGINAL_TODAYS_DATE = utils.todays_date
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
+
+
+@pytest.fixture(autouse=True)
+def _reset_utils(monkeypatch):
+    """Reset shared utils callables for isolated tests."""
+    monkeypatch.setattr(utils, "todays_date", ORIGINAL_TODAYS_DATE)
+    monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+    monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+    monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+
 
 CORE_MATCH_FIELDS = (
     "competition",
@@ -118,8 +132,8 @@ class TestFBSchedule:
 
     def test_empty_page_return_no_games(self, *args, **kwargs):
         """Return test empty page return no games."""
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        utils.no_data_found = lambda: None
+        utils.get_stats_table = lambda *_args, **_kwargs: None
 
         schedule = Schedule("Tottenham Hotspur")
 
