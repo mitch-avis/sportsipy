@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import wraps
+from typing import Any
 
 from pyquery import PyQuery
 
@@ -118,7 +119,7 @@ class AbstractPlayer:
 
         self._parse_player_data(player_data)
 
-    def _parse_value(self, stats, field):
+    def _parse_value(self, stats: PyQuery, field: str) -> list[str] | None:
         """Pull the specified value from the HTML contents.
 
         Given a field, find the corresponding HTML tag for that field and parse
@@ -140,14 +141,14 @@ class AbstractPlayer:
 
         """
         scheme = PLAYER_SCHEME[field]
-        items = [i.text() for i in stats(scheme).items()]
+        items = [str(i.text() or "") for i in stats(scheme).items()]
         # Stats can be added and removed on a yearly basis. If no stats are
         # found, return None and have that be the value.
         if len(items) == 0:
             return None
         return items
 
-    def _parse_player_data(self, player_data):
+    def _parse_player_data(self, player_data: dict[str, Any] | str | None) -> None:
         """Parse all player information and set attributes.
 
         Iterate through each class attribute to parse the data from the HTML
