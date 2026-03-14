@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from functools import wraps
+from typing import Any
 
 from lxml.etree import ParserError
 from pyquery import PyQuery
@@ -269,7 +270,7 @@ class AbstractPlayer:
         return team
 
     @property
-    def player_id(self):
+    def player_id(self) -> Any:
         """Return a ``string`` of the player's ID on sports-reference, such as.
 
         'carsen-edwards-1' for Carsen Edwards.
@@ -277,7 +278,7 @@ class AbstractPlayer:
         return self._player_id
 
     @property
-    def name(self):
+    def name(self) -> Any:
         """Return a ``string`` of the players name, such as 'Carsen Edwards'."""
         return self._name
 
