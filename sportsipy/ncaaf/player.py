@@ -134,7 +134,7 @@ class AbstractPlayer:
 
         self._parse_player_data(player_data)
 
-    def _parse_value(self, stats, field):
+    def _parse_value(self, stats: PyQuery, field: str) -> str | None:
         """Pull the specified value from the HTML contents.
 
         Given a field, find the corresponding HTML tag for that field and parse
@@ -159,9 +159,9 @@ class AbstractPlayer:
         value = utils.parse_field(PLAYER_SCHEME, stats, field)
         if not value and field in BOXSCORE_RETRY:
             value = utils.parse_field(BOXSCORE_RETRY, stats, field)
-        return value
+        return None if value is None else str(value)
 
-    def _parse_player_data(self, player_data):
+    def _parse_player_data(self, player_data: dict[str, Any] | str | None) -> None:
         """Parse all player information and set attributes.
 
         Iterate through each class attribute to parse the data from the HTML
