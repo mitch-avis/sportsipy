@@ -160,7 +160,7 @@ class Team:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string abbreviation of the
@@ -207,7 +207,7 @@ class Team:
         return self._rank
 
     @property
-    def abbreviation(self):
+    def abbreviation(self) -> Any:
         """Return a ``string`` of the team's abbreviation, such as 'DET' for the.
 
         Detroit Red Wings.
@@ -215,7 +215,7 @@ class Team:
         return self._abbreviation
 
     @property
-    def schedule(self):
+    def schedule(self) -> Any:
         """Return an instance of the Schedule class containing the team's.
 
         complete schedule for the season.
@@ -223,7 +223,7 @@ class Team:
         return Schedule(self._abbreviation, self._year)
 
     @property
-    def roster(self):
+    def roster(self) -> Any:
         """Return an instance of the Roster class containing all players for the.
 
         team during the season with all career stats.
@@ -231,7 +231,7 @@ class Team:
         return Roster(self._abbreviation, self._year)
 
     @property
-    def name(self):
+    def name(self) -> Any:
         """Return a ``string`` of the team's full name, such as 'Detroit Red.
 
         Wings'.
@@ -552,7 +552,7 @@ class Teams:
             rank += 1
 
     @property
-    def dataframes(self):
+    def dataframes(self) -> Any:
         """Return a pandas DataFrame where each row is a representation of the.
 
         Team class. Rows are indexed by the team abbreviation.
