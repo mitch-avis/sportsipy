@@ -208,3 +208,82 @@ class TestNCAABScheduleNames:
         game = Game(game_data)
 
         assert game.opponent_conference == NON_DI
+
+
+class TestNCAABScheduleBranches:
+    """Exercise lower-coverage NCAAB schedule branches."""
+
+    def setup_method(self, *args, **kwargs):
+        """Return setup method."""
+        flexmock(Game).should_receive("_parse_game_data").and_return(None)
+        self.game: Any = Game(None)
+
+    def test_datetime_without_date_returns_none(self):
+        """Return test datetime without date returns none."""
+        self.game._date = None
+        self.game._time = "9:30 pm"
+
+        assert self.game.datetime is None
+
+    def test_time_preserves_existing_est_suffix(self):
+        """Return test time preserves existing est suffix."""
+        self.game._time = "9:30 pm/est"
+
+        assert self.game.time == "9:30 pm/est"
+
+    def test_time_appends_est_suffix_for_formatted_value(self):
+        """Return test time appends est suffix for formatted value."""
+        self.game._time = "9:30 pm"
+
+        assert self.game.time == "9:30 pm/est"
+
+    def test_time_expands_compact_am_value(self):
+        """Return test time expands compact am value."""
+        self.game._time = "9:30a"
+
+        assert self.game.time == "9:30 am/est"
+
+    def test_time_returns_raw_unknown_value(self):
+        """Return test time returns raw unknown value."""
+        self.game._time = "TBD"
+
+        assert self.game.time == "TBD"
+
+    def test_unknown_game_type_returns_none(self):
+        """Return test unknown game type returns none."""
+        self.game._type = "EXH"
+
+        assert self.game.type is None
+
+    def test_unknown_location_returns_none(self):
+        """Return test unknown location returns none."""
+        self.game._location = "?"
+
+        assert self.game.location is None
+
+    def test_boxscore_fallback_uses_html_when_href_missing(self):
+        """Return test boxscore fallback uses html when href missing."""
+        game_data = PyQuery(
+            '<td data-stat="date_game">/boxscores/201812130pur.html<a>boxscore</a></td>'
+        )
+
+        self.game._parse_boxscore(game_data)
+
+        assert self.game.boxscore_index == "201812130pur"
+
+
+class TestNCAABScheduleLookup:
+    """Represent test coverage for schedule lookup branches."""
+
+    def test_call_skips_games_without_datetime(self):
+        """Return test call skips games without datetime."""
+        flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
+        schedule = Schedule("PURDUE")
+
+        missing_datetime_game = cast(Game, flexmock(datetime=None))
+        matching_game = cast(Game, flexmock(datetime=datetime(2018, 12, 13, 19, 0)))
+        schedule._games = [missing_datetime_game, matching_game]
+
+        found_game = schedule(datetime(2018, 12, 13, 0, 0))
+
+        assert found_game is matching_game
