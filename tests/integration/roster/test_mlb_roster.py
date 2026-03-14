@@ -6,7 +6,6 @@ from unittest import mock
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.mlb.roster import Player, Roster
@@ -515,7 +514,6 @@ class TestMLBPlayer:
                 "wins": None,
             },
         ]
-        indices = ["Career", "2017", "2016"]
 
         player = self.player("")
         result = player.dataframe
@@ -1044,7 +1042,6 @@ class TestMLBPitcher:
                 "wins": 16,
             },
         ]
-        indices = ["Career", "2017", "2016"]
 
         player = self.player("")
         result = player.dataframe
@@ -1076,9 +1073,9 @@ class TestMLBPitcher:
 class TestMLBRoster:
     """Represent TestMLBRoster."""
 
-    def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
+    def test_roster_class_pulls_all_player_stats(self, monkeypatch, *args, **kwargs):
         """Return test roster class pulls all player stats."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2017")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2017")
         roster = Roster("HOU")
         players = roster.players
 
@@ -1095,9 +1092,9 @@ class TestMLBRoster:
         with pytest.raises(ValueError):
             Roster("bad")
 
-    def test_roster_from_team_class(self, *args, **kwargs):
+    def test_roster_from_team_class(self, monkeypatch, *args, **kwargs):
         """Return test roster from team class."""
-        flexmock(Team).should_receive("_parse_team_data").and_return(None)
+        monkeypatch.setattr(Team, "_parse_team_data", lambda *_args, **_kwargs: None)
         team = Team(None, 1, "2018")
         team._abbreviation = "HOU"
         players = team.roster.players
@@ -1111,9 +1108,9 @@ class TestMLBRoster:
         assert "Charlie Morton" in player_names
         team._abbreviation = None
 
-    def test_roster_class_with_slim_parameter(self, *args, **kwargs):
+    def test_roster_class_with_slim_parameter(self, monkeypatch, *args, **kwargs):
         """Return test roster class with slim parameter."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("HOU", slim=True)
 
         assert len(roster.players) == 46
@@ -1123,9 +1120,9 @@ class TestMLBRoster:
         assert players["verlaju01"] == "Justin Verlander"
         assert players["mortoch02"] == "Charlie Morton"
 
-    def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_mlb_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test mlb invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: 2018)
 
         roster = Roster("HOU")
         players = roster.players
@@ -1138,9 +1135,9 @@ class TestMLBRoster:
         assert "Justin Verlander" in player_names
         assert "Charlie Morton" in player_names
 
-    def test_roster_class_string_representation(self, *args, **kwargs):
+    def test_roster_class_string_representation(self, monkeypatch, *args, **kwargs):
         """Return test roster class string representation."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("HOU")
         roster_repr = repr(roster)
 
