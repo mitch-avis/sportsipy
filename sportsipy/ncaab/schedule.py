@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 
@@ -46,38 +47,38 @@ class Game:
 
     def __init__(self, game_data: Any) -> None:
         """Initialize the class instance."""
-        self._game = None
+        self._game: int | None = None
         self._date: str | None = None
-        self._datetime = None
+        self._datetime: datetime | None = None
         self._time: str | None = None
         self._boxscore: str | None = None
         self._type: str | None = None
         self._location: str | None = None
         self._opponent_abbr: str | None = None
         self._opponent_name: str | None = None
-        self._opponent_rank = None
+        self._opponent_rank: int | None = None
         self._opponent_conference: str | None = None
         self._result: str | None = None
-        self._points_for = None
-        self._points_against = None
+        self._points_for: int | None = None
+        self._points_against: int | None = None
         self._overtimes: str | None = None
-        self._season_wins = None
-        self._season_losses = None
-        self._streak = None
-        self._arena = None
+        self._season_wins: int | None = None
+        self._season_losses: int | None = None
+        self._streak: str | None = None
+        self._arena: str | None = None
         self._team_abbr: str | None = None
 
         self._parse_game_data(game_data)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.date} - {self.opponent_abbr}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _parse_abbreviation(self, game_data):
+    def _parse_abbreviation(self, game_data: Any) -> None:
         """Parse the opponent's abbreviation from their name.
 
         The opponent's abbreviation is embedded within the HTML tag and needs
@@ -105,7 +106,7 @@ class Game:
         # differently by just using the team's display name as the abbreviation.
         self._opponent_abbr = name.text()
 
-    def _parse_boxscore(self, game_data):
+    def _parse_boxscore(self, game_data: Any) -> None:
         """Parse the boxscore URI for the game.
 
         The boxscore is embedded within the HTML tag and needs a special
@@ -134,7 +135,7 @@ class Game:
         boxscore = re.sub(r"\.html.*", "", str(boxscore))
         self._boxscore = boxscore
 
-    def _parse_game_data(self, game_data):
+    def _parse_game_data(self, game_data: Any) -> None:
         """Parse a value for every attribute.
 
         The function looks through every attribute with the exception of those
@@ -167,7 +168,7 @@ class Game:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the boxscore string.
@@ -203,7 +204,7 @@ class Game:
         return pd.DataFrame([fields_to_include], index=[index_value])
 
     @property
-    def dataframe_extended(self):
+    def dataframe_extended(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame representing the Boxscore class for the.
 
         game. This property provides much richer context for the selected game,
@@ -215,7 +216,7 @@ class Game:
         return self.boxscore.dataframe
 
     @int_property_decorator
-    def game(self):
+    def game(self) -> int | None:
         """Return an ``int`` of the game's position in the season. The first game.
 
         of the season returns 1.
@@ -223,12 +224,12 @@ class Game:
         return self._game
 
     @property
-    def date(self):
+    def date(self) -> str | None:
         """Return a ``string`` of the game's date, such as 'Fri, Nov 10, 2017'."""
         return self._date
 
     @property
-    def datetime(self):
+    def datetime(self) -> datetime | None:
         """Return a datetime object to indicate the month, day, year, and time.
 
         the requested game took place.
@@ -239,6 +240,8 @@ class Game:
         # the time can't properly be parsed, a default start time of midnight
         # should be used in this scenario, allowing users to decide if and how
         # they want to handle the time being empty.
+        if not self._date:
+            return None
         time = "12:00A" if not self._time or self._time.upper() == "" else self._time.upper()
         date_string = f"{self._date} {time}"
         date_string = re.sub(r"/.*", "", date_string)
@@ -251,7 +254,7 @@ class Game:
         return datetime.strptime(date_string, "%a, %b %d, %Y %I:%M%p")
 
     @property
-    def time(self):
+    def time(self) -> str | None:
         """Return a ``string`` to indicate the time the game started, such as.
 
         '9:00 pm/est'.
@@ -277,7 +280,7 @@ class Game:
         return t
 
     @property
-    def boxscore(self):
+    def boxscore(self) -> Boxscore:
         """Return an instance of the Boxscore class containing more detailed.
 
         stats on the game.
@@ -285,7 +288,7 @@ class Game:
         return Boxscore(self._boxscore)
 
     @property
-    def boxscore_index(self):
+    def boxscore_index(self) -> str | None:
         """Return a ``string`` of the URI for a boxscore which can be used to.
 
         access or index a game.
@@ -293,7 +296,7 @@ class Game:
         return self._boxscore
 
     @property
-    def type(self):
+    def type(self) -> str | None:
         """Return a ``string`` constant to indicate whether the game was played.
 
         during the regular season or in the post season.
@@ -318,7 +321,7 @@ class Game:
         return type_string
 
     @property
-    def location(self):
+    def location(self) -> str | None:
         """Return a ``string`` constant to indicate whether the game was played.
 
         at the team's home venue, the opponent's venue, or at a neutral site.
@@ -337,7 +340,7 @@ class Game:
         return location_string
 
     @property
-    def opponent_abbr(self):
+    def opponent_abbr(self) -> str | None:
         """Return a ``string`` of the opponent's abbreviation, such as 'PURDUE'.
 
         for the Purdue Boilermakers.
@@ -345,7 +348,7 @@ class Game:
         return self._opponent_abbr
 
     @property
-    def opponent_name(self):
+    def opponent_name(self) -> str | None:
         """Return a ``string`` of the opponent's name, such as the 'Purdue.
 
         Boilermakers'.
@@ -357,7 +360,7 @@ class Game:
         return name
 
     @property
-    def opponent_rank(self):
+    def opponent_rank(self) -> int | None:
         """Return a ``string`` of the opponent's rank when the game was played.
 
         and None if the team was unranked.
@@ -370,7 +373,7 @@ class Game:
         return None
 
     @property
-    def opponent_conference(self):
+    def opponent_conference(self) -> str | None:
         """Return a ``string`` of the opponent's conference, such as 'Big Ten'.
 
         for a team participating in the Big Ten Conference. If the team is not
@@ -381,7 +384,7 @@ class Game:
         return self._opponent_conference
 
     @property
-    def result(self):
+    def result(self) -> str | None:
         """Return a ``string`` constant to indicate whether the team won or lost.
 
         the game.
@@ -393,7 +396,7 @@ class Game:
         return LOSS
 
     @int_property_decorator
-    def points_for(self):
+    def points_for(self) -> int | None:
         """Return an ``int`` of the number of points the team scored during the.
 
         game.
@@ -401,7 +404,7 @@ class Game:
         return self._points_for
 
     @int_property_decorator
-    def points_against(self):
+    def points_against(self) -> int | None:
         """Return an ``int`` of the number of points the team allowed during the.
 
         game.
@@ -409,7 +412,7 @@ class Game:
         return self._points_against
 
     @property
-    def overtimes(self):
+    def overtimes(self) -> int:
         """Return an ``int`` of the number of overtimes that were played during.
 
         the game and 0 if the game finished at the end of regulation time.
@@ -425,7 +428,7 @@ class Game:
             return 0
 
     @int_property_decorator
-    def season_wins(self):
+    def season_wins(self) -> int | None:
         """Return an ``int`` of the number of games the team has won after the.
 
         conclusion of the requested game.
@@ -433,7 +436,7 @@ class Game:
         return self._season_wins
 
     @int_property_decorator
-    def season_losses(self):
+    def season_losses(self) -> int | None:
         """Return an ``int`` of the number of games the team has lost after the.
 
         conclusion of the requested game.
@@ -441,7 +444,7 @@ class Game:
         return self._season_losses
 
     @property
-    def streak(self):
+    def streak(self) -> str | None:
         """Return a ``string`` of the team's win streak at the conclusion of the.
 
         requested game. Streak is in the format '[W|L] #' (ie. 'W 3' indicates
@@ -450,7 +453,7 @@ class Game:
         return self._streak
 
     @property
-    def arena(self):
+    def arena(self) -> str | None:
         """Return a ``string`` of the name of the arena the game was played at."""
         return self._arena
 
@@ -472,10 +475,10 @@ class Schedule:
 
     def __init__(self, abbreviation: str | None, year: int | str | None = None) -> None:
         """Initialize the class instance."""
-        self._games = []
+        self._games: list[Game] = []
         self._pull_schedule(abbreviation, year)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Game:
         """Return a specified game.
 
         Returns a specified game as requested by the index number in the array.
@@ -495,7 +498,7 @@ class Schedule:
         """
         return self._games[index]
 
-    def __call__(self, date):
+    def __call__(self, date: datetime) -> Game:
         """Return a specified game.
 
         Returns a specific game as requested by the passed datetime. The input
@@ -521,32 +524,35 @@ class Schedule:
 
         """
         for game in self._games:
+            game_datetime = game.datetime
+            if game_datetime is None:
+                continue
             if (
-                game.datetime.year == date.year
-                and game.datetime.month == date.month
-                and game.datetime.day == date.day
+                game_datetime.year == date.year
+                and game_datetime.month == date.month
+                and game_datetime.day == date.day
             ):
                 return game
         raise ValueError("No games found for requested date")
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         games = [f"{game.date} - {game.opponent_abbr}".strip() for game in self._games]
         return "\n".join(games)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Game]:
         """Return an iterator of all of the games scheduled for the given team."""
         return iter(self._games)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of scheduled games for the given team."""
         return len(self._games)
 
-    def _pull_schedule(self, abbreviation, year):
+    def _pull_schedule(self, abbreviation: str | None, year: int | str | None) -> None:
         """Download and create objects for the team's schedule.
 
         Given a team abbreviation and season, first download the team's
@@ -562,6 +568,9 @@ class Schedule:
             The requested year to pull stats from.
 
         """
+        if abbreviation is None:
+            utils.no_data_found()
+            return
         if not year:
             year = utils.find_year_for_season("ncaab")
             year = utils.resolve_year_for_url(
@@ -587,7 +596,7 @@ class Schedule:
             self._games.append(game)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame where each row is a representation of the.
 
         Game class. Rows are indexed by the boxscore string.
@@ -602,7 +611,7 @@ class Schedule:
         return pd.concat(frames)
 
     @property
-    def dataframe_extended(self):
+    def dataframe_extended(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame where each row is a representation of the.
 
         Boxscore class for every game in the schedule. Rows are indexed by the
