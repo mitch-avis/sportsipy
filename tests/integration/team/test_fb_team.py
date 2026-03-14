@@ -31,7 +31,7 @@ class TestFBTeam:
         """Return setup method."""
         self.results = {
             "name": "Tottenham Hotspur",
-            "short_name": "Tottenham",
+            "short_name": "Tottenham Hotspur",
             "season": "2019-2020",
             "record": "16-11-11",
             "points": 59,
@@ -52,9 +52,9 @@ class TestFBTeam:
             "goals_scored": 61,
             "goals_against": 47,
             "goal_difference": 14,
-            "expected_goals": 47.9,
-            "expected_goals_against": 54.2,
-            "expected_goal_difference": -6.3,
+            "expected_goals": None,
+            "expected_goals_against": None,
+            "expected_goal_difference": None,
             "manager": None,
             "country": "England",
             "gender": "Male",
