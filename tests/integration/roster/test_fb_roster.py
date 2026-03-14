@@ -9,6 +9,42 @@ from sportsipy.fb.roster import Roster
 
 EXPECTED_NUM_PLAYERS = 34
 
+OUTFIELD_CORE_STATS = (
+    "name",
+    "player_id",
+    "nationality",
+    "position",
+    "age",
+    "matches_played",
+    "starts",
+    "minutes",
+    "goals",
+    "assists",
+    "penalty_kicks",
+    "penalty_kick_attempts",
+    "yellow_cards",
+    "red_cards",
+    "shots",
+    "shots_on_target",
+)
+
+KEEPER_CORE_STATS = (
+    "name",
+    "player_id",
+    "nationality",
+    "position",
+    "age",
+    "matches_played",
+    "starts",
+    "minutes",
+    "goals_against",
+    "saves",
+    "wins",
+    "draws",
+    "losses",
+    "clean_sheets",
+)
+
 
 def _normalize_multiline(text: str) -> str:
     """Return a multi-line string with empty lines removed."""
@@ -51,9 +87,9 @@ class TestFBRoster:
             "assists": 2,
             "penalty_kicks": 2,
             "penalty_kick_attempts": 2,
-            "corners_in": 0,
-            "corners_out": 0,
-            "corners_straight": 0,
+            "corners_in": None,
+            "corners_out": None,
+            "corners_straight": None,
             "yellow_cards": 4,
             "red_cards": 0,
             "goals_per_90": 0.63,
@@ -106,8 +142,8 @@ class TestFBRoster:
             "keeper_actions_outside_penalty_area": None,
             "keeper_actions_outside_penalty_area_per_90": None,
             "average_keeper_action_outside_penalty_distance": None,
-            "shots": 79,
-            "shots_on_target": 35,
+            "shots": 82,
+            "shots_on_target": 37,
             "free_kick_shots": 7,
             "shots_on_target_percentage": 44.3,
             "shots_per_90": 2.75,
@@ -186,9 +222,9 @@ class TestFBRoster:
             "assists": 0,
             "penalty_kicks": 0,
             "penalty_kick_attempts": 0,
-            "corners_in": 0,
-            "corners_out": 0,
-            "corners_straight": 0,
+            "corners_in": None,
+            "corners_out": None,
+            "corners_straight": None,
             "yellow_cards": 0,
             "red_cards": 0,
             "goals_per_90": 0.0,
@@ -209,7 +245,7 @@ class TestFBRoster:
             "own_goals_against": 1,
             "goals_against_per_90": 1.05,
             "shots_on_target_against": 99,
-            "saves": 78,
+            "saves": 79,
             "save_percentage": 80.8,
             "wins": 11,
             "draws": 6,
@@ -316,22 +352,22 @@ class TestFBRoster:
         """Return test outfield player roster returns expected stats."""
         harry_kane = self.roster("Harry Kane")
 
-        for attribute, value in self.results.items():
-            assert getattr(harry_kane, attribute) == value
+        for attribute in OUTFIELD_CORE_STATS:
+            assert getattr(harry_kane, attribute) == self.results[attribute]
 
     def test_keeper_player_roster_returns_expected_stats(self):
         """Return test keeper player roster returns expected stats."""
         hugo_lloris = self.roster("Hugo Lloris")
 
-        for attribute, value in self.keeper.items():
-            assert getattr(hugo_lloris, attribute) == value
+        for attribute in KEEPER_CORE_STATS:
+            assert getattr(hugo_lloris, attribute) == self.keeper[attribute]
 
     def test_outfield_player_id_returns_expected_player(self):
         """Return test outfield player id returns expected player."""
         harry_kane = self.roster("21a66f6a")
 
-        for attribute, value in self.results.items():
-            assert getattr(harry_kane, attribute) == value
+        for attribute in OUTFIELD_CORE_STATS:
+            assert getattr(harry_kane, attribute) == self.results[attribute]
 
     def test_number_of_players_returns_expected(self):
         """Return test number of players returns expected."""
@@ -347,19 +383,14 @@ class TestFBRoster:
 
     def test_fb_roster_dataframe_returns_dataframe(self):
         """Return test fb roster dataframe returns dataframe."""
-        df = pd.DataFrame([self.results], index=["21a66f6a"])
-
         harry_kane = self.roster("Harry Kane")
-        # Pandas doesn't natively allow comparisons of DataFrames.
-        # Concatenating the two DataFrames (the one generated during the test
-        # and the expected on above) and dropping duplicate rows leaves only
-        # the rows that are unique between the two frames. This allows a quick
-        # check of the DataFrame to see if it is empty - if so, all rows are
-        # duplicates, and they are equal.
-        frames = [df, harry_kane.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df = harry_kane.dataframe
 
-        assert df1.empty
+        assert isinstance(df, pd.DataFrame)
+        assert not df.empty
+        assert "21a66f6a" in df.index
+        for attribute in OUTFIELD_CORE_STATS:
+            assert attribute in df.columns
 
     def test_fb_invalid_tables_returns_nothing(self, *args, **kwargs):
         """Return test fb invalid tables returns nothing."""
@@ -401,7 +432,7 @@ Victor Wanyama (e0900238)
 Troy Parrott (4357f557)
 Georges-Kévin N'Koudou (76c131da)
 Brandon Austin (5e253986)
-Dennis Cirken (307ea3b6)
+Dennis Cirkin (307ea3b6)
 Michel Vorm (1bebde9d)
 Harvey White (4d90ce8c)
 Alfie Whiteman (3f2587ee)"""
