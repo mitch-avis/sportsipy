@@ -38,15 +38,15 @@ class Rankings:
 
         self._find_rankings(year)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return "NCAAF Rankings"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _pull_rankings_page(self, year):
+    def _pull_rankings_page(self, year: int | str | None) -> PyQuery | None:
         """Download the rankings page.
 
         Download the rankings page for the requested year and create a PyQuery
@@ -72,7 +72,7 @@ class Rankings:
         except HTTPError:
             return None
 
-    def _get_team(self, team):
+    def _get_team(self, team: PyQuery) -> tuple[str, str]:
         """Retrieve team's name and abbreviation.
 
         The team's name and abbreviation are embedded within the 'school_name'
@@ -95,13 +95,13 @@ class Rankings:
 
         """
         link = team('td[data-stat="school_name"] a')
-        href = link.attr("href") or ""
+        href = str(link.attr("href") or "")
         abbreviation = re.sub(r".*/cfb/schools/", "", href)
         abbreviation = re.sub(r"/.*", "", abbreviation)
-        name = link.text()
+        name = str(link.text() or "")
         return abbreviation, name
 
-    def _find_rankings(self, year):
+    def _find_rankings(self, year: int | str | None) -> None:
         """Retrieve the rankings for each week.
 
         Find and retrieve all AP rankings for the requested year and combine
@@ -269,7 +269,7 @@ class CFPRankings:
 
         self._find_rankings(year)
 
-    def _pull_rankings_page(self, year):
+    def _pull_rankings_page(self, year: int | str | None) -> PyQuery | None:
         """Download the rankings page.
 
         Download the rankings page for the requested year and create a PyQuery
@@ -295,7 +295,7 @@ class CFPRankings:
         except HTTPError:
             return None
 
-    def _get_team(self, team):
+    def _get_team(self, team: PyQuery) -> tuple[str, str]:
         """Retrieve team's name and abbreviation.
 
         The team's name and abbreviation are embedded within the 'school_name'
@@ -318,13 +318,13 @@ class CFPRankings:
 
         """
         link = team('td[data-stat="school_name"] a')
-        href = link.attr("href") or ""
+        href = str(link.attr("href") or "")
         abbreviation = re.sub(r".*/cfb/schools/", "", href)
         abbreviation = re.sub(r"/.*", "", abbreviation)
-        name = link.text()
+        name = str(link.text() or "")
         return abbreviation, name
 
-    def _find_rankings(self, year):
+    def _find_rankings(self, year: int | str | None) -> None:
         """Retrieve the rankings for each week.
 
         Find and retrieve all CFP rankings for the requested year and combine
@@ -491,7 +491,7 @@ class CoachesRankings:
 
         self._find_rankings(year)
 
-    def _pull_rankings_page(self, year):
+    def _pull_rankings_page(self, year: int | str | None) -> PyQuery | None:
         """Download the rankings page.
 
         Download the rankings page for the requested year and create a PyQuery
@@ -517,7 +517,7 @@ class CoachesRankings:
         except HTTPError:
             return None
 
-    def _get_team(self, team):
+    def _get_team(self, team: PyQuery) -> tuple[str, str]:
         """Retrieve team's name and abbreviation.
 
         The team's name and abbreviation are embedded within the 'school_name'
@@ -540,13 +540,13 @@ class CoachesRankings:
 
         """
         link = team('td[data-stat="school_name"] a')
-        href = link.attr("href") or ""
+        href = str(link.attr("href") or "")
         abbreviation = re.sub(r".*/cfb/schools/", "", href)
         abbreviation = re.sub(r"/.*", "", abbreviation)
-        name = link.text()
+        name = str(link.text() or "")
         return abbreviation, name
 
-    def _find_rankings(self, year):
+    def _find_rankings(self, year: int | str | None) -> None:
         """Retrieve the rankings for each week.
 
         Find and retrieve all Coaches Poll rankings for the requested year and
