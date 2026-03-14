@@ -1,10 +1,14 @@
 """Provide utilities for test utils."""
 
+import json
+from pathlib import Path
 from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
+import requests
 from flexmock import flexmock
+from lxml.etree import ParserError
 
 from sportsipy import utils
 
@@ -430,3 +434,587 @@ class TestUtils:
 
         monkeypatch.setattr(utils, "url_exists", fake_exists)
         assert utils.resolve_year_for_url("BAD", lambda y: f"https://example.com/{y}") == "BAD"
+
+    def test_pq_handles_none_and_html(self):
+        """Return test pq handles none and html."""
+        with pytest.raises(ParserError):
+            utils.pq(None)
+        assert utils.pq("<div>ok</div>")
+
+    def test_env_flag_and_offline_mode(self, monkeypatch):
+        """Return test env flag and offline mode."""
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "true")
+        assert utils._env_flag("SPORTSIPY_OFFLINE")
+        assert utils.offline_mode()
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        assert not utils.offline_mode()
+
+    def test_rate_limit_seconds_and_enabled(self, monkeypatch):
+        """Return test rate limit seconds and enabled."""
+        monkeypatch.setenv("SPORTSIPY_RATE_LIMIT_SECONDS", "2")
+        assert utils._rate_limit_seconds() == 3.0
+        monkeypatch.setenv("SPORTSIPY_RATE_LIMIT_SECONDS", "5")
+        assert utils._rate_limit_seconds() == 5.0
+        monkeypatch.setenv("SPORTSIPY_DISABLE_RATE_LIMIT", "1")
+        assert not utils._rate_limit_enabled()
+        monkeypatch.delenv("SPORTSIPY_DISABLE_RATE_LIMIT", raising=False)
+        monkeypatch.setenv("SPORTSIPY_FORCE_RATE_LIMIT", "1")
+        assert utils._rate_limit_enabled()
+
+    def test_rate_limit_wait_sleeps_when_required(self, monkeypatch):
+        """Return test rate limit wait sleeps when required."""
+        monkeypatch.setattr(utils, "_rate_limit_enabled", lambda: True)
+        monkeypatch.setattr(utils, "_rate_limit_seconds", lambda: 1.0)
+        monkeypatch.setattr(utils, "_LAST_REQUEST_TIME", 10.0)
+        ticks = iter([10.5, 11.0])
+        sleeps = []
+        monkeypatch.setattr(utils.time, "monotonic", lambda: next(ticks))
+        monkeypatch.setattr(utils.time, "sleep", lambda seconds: sleeps.append(seconds))
+
+        utils._rate_limit_wait()
+
+        assert sleeps == [0.5]
+
+    def test_cache_read_write_round_trip(self, monkeypatch, tmp_path):
+        """Return test cache read write round trip."""
+        monkeypatch.setenv("SPORTSIPY_CACHE_DIR", str(tmp_path))
+        monkeypatch.setenv("SPORTSIPY_CACHE_TTL_SECONDS", "60")
+
+        utils._cache_write("https://example.com/test", "hello")
+        assert utils._cache_read("https://example.com/test") == "hello"
+
+    def test_cache_read_handles_expired_and_bad_json(self, monkeypatch, tmp_path):
+        """Return test cache read handles expired and bad json."""
+        monkeypatch.setenv("SPORTSIPY_CACHE_DIR", str(tmp_path))
+        monkeypatch.setenv("SPORTSIPY_CACHE_TTL_SECONDS", "1")
+        key = utils._cache_key("https://example.com/test")
+        cache_file = tmp_path / f"{key}.json"
+        cache_file.write_text("not json", encoding="utf-8")
+        assert utils._cache_read("https://example.com/test") is None
+
+        cache_file.write_text(json.dumps({"timestamp": 0, "text": "x"}), encoding="utf-8")
+        monkeypatch.setattr(utils.time, "time", lambda: 999)
+        assert utils._cache_read("https://example.com/test") is None
+
+    def test_fixture_map_and_fixture_for_url(self, monkeypatch, tmp_path):
+        """Return test fixture map and fixture for url."""
+        fixture_file = tmp_path / "fixture.html"
+        fixture_file.write_text("<html>fixture</html>", encoding="utf-8")
+        fixture_map = tmp_path / "url_map.json"
+        fixture_map.write_text(
+            json.dumps({"https://example.com/test": "fixture.html"}),
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "1")
+        monkeypatch.setenv("SPORTSIPY_FIXTURE_DIR", str(tmp_path))
+        monkeypatch.setenv("SPORTSIPY_FIXTURE_MAP", str(fixture_map))
+        monkeypatch.setattr(utils, "_FIXTURE_MAP", None)
+
+        assert utils._fixture_map()
+        assert utils._fixture_for_url("https://example.com/test") == "<html>fixture</html>"
+
+    def test_heuristic_fixture_path_for_boxscore_query(self, monkeypatch, tmp_path):
+        """Return test heuristic fixture path for boxscore query."""
+        fixture_file = tmp_path / "boxscores-1-2-2020.html"
+        fixture_file.write_text("<html>fixture</html>", encoding="utf-8")
+        monkeypatch.setenv("SPORTSIPY_FIXTURE_DIR", str(tmp_path))
+
+        path = utils._heuristic_fixture_path("https://site/boxscores/?month=1&day=2&year=2020")
+
+        assert path == "boxscores-1-2-2020.html"
+
+    def test_filter_fixture_candidates_can_drop_mismatched_sport(self, tmp_path):
+        """Return test filter fixture candidates can drop mismatched sport."""
+        ncaaf = tmp_path / "integration" / "roster" / "ncaaf" / "a.html"
+        nba = tmp_path / "integration" / "roster" / "nba" / "a.html"
+        ncaaf.parent.mkdir(parents=True, exist_ok=True)
+        nba.parent.mkdir(parents=True, exist_ok=True)
+        ncaaf.write_text("ok", encoding="utf-8")
+        nba.write_text("ok", encoding="utf-8")
+
+        result = utils._filter_fixture_candidates(
+            [ncaaf, nba],
+            "https://www.sports-reference.com/cfb/schools/purdue/2017.html",
+        )
+        assert result == [ncaaf]
+
+    def test_request_with_retries_recovers_from_request_exception(self, monkeypatch):
+        """Return test request with retries recovers from request exception."""
+
+        class Response:
+            def __init__(self, status_code, text="ok"):
+                self.status_code = status_code
+                self.text = text
+                self.headers = {}
+
+        calls = {"count": 0}
+
+        def fake_get(url, timeout=20, **kwargs):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise requests.RequestException("boom")
+            return Response(200)
+
+        monkeypatch.setattr(utils.requests, "get", fake_get)
+        monkeypatch.setattr(utils.time, "sleep", lambda *_args, **_kwargs: None)
+        response = utils._request_with_retries("GET", "https://example.com")
+        assert response is not None
+        assert response.status_code == 200
+
+    def test_request_with_retries_honors_retry_after(self, monkeypatch):
+        """Return test request with retries honors retry after."""
+
+        class Response:
+            def __init__(self, status_code, retry_after=None):
+                self.status_code = status_code
+                self.text = "ok"
+                self.headers = {}
+                if retry_after is not None:
+                    self.headers["Retry-After"] = retry_after
+
+        responses = iter([Response(429, "1"), Response(200)])
+        sleeps = []
+
+        monkeypatch.setattr(utils.requests, "get", lambda *_args, **_kwargs: next(responses))
+        monkeypatch.setattr(utils.time, "sleep", lambda seconds: sleeps.append(seconds))
+
+        response = utils._request_with_retries("GET", "https://example.com")
+        assert response is not None
+        assert response.status_code == 200
+        assert sleeps
+
+    def test_url_exists_handles_301_follow_up(self, monkeypatch):
+        """Return test url exists handles 301 follow up."""
+
+        class Response:
+            def __init__(self, status_code):
+                self.status_code = status_code
+
+        responses = iter([Response(301), Response(200)])
+        monkeypatch.setattr(
+            utils, "_request_with_retries", lambda *_args, **_kwargs: next(responses)
+        )
+
+        assert utils.url_exists("https://example.com")
+
+    def test_get_page_source_paths(self, monkeypatch):
+        """Return test get page source paths."""
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "1")
+        monkeypatch.setattr(utils, "_fixture_for_url", lambda _url: "offline")
+        assert utils.get_page_source("https://example.com") == "offline"
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: "cached")
+        assert utils.get_page_source("https://example.com") == "cached"
+
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+
+        class Response:
+            def __init__(self):
+                self.status_code = 200
+                self.text = "live"
+
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_args, **_kwargs: Response())
+        monkeypatch.setattr(utils, "_cache_write", lambda *_args, **_kwargs: None)
+        assert utils.get_page_source("https://example.com") == "live"
+
+    def test_get_page_source_returns_none_on_failure_without_playwright(self, monkeypatch):
+        """Return test get page source returns none on failure without playwright."""
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+
+        def raise_request(*_args, **_kwargs):
+            raise requests.RequestException("boom")
+
+        monkeypatch.setattr(utils, "_request_with_retries", raise_request)
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", False)
+        assert utils.get_page_source("https://example.com") is None
+
+    def test_pull_page_missing_local_file_returns_none(self):
+        """Return test pull page missing local file returns none."""
+        assert utils.pull_page(local_file="definitely_missing_file.txt") is None
+
+    def test_fallback_fixture_by_context_selectors(self, tmp_path):
+        """Return test fallback fixture by context selectors."""
+        root = tmp_path / "integration"
+        (root / "roster" / "fb").mkdir(parents=True, exist_ok=True)
+        (root / "rankings" / "ncaaf").mkdir(parents=True, exist_ok=True)
+        (root / "conferences" / "ncaaf").mkdir(parents=True, exist_ok=True)
+        (root / "boxscore" / "nfl").mkdir(parents=True, exist_ok=True)
+        (root / "schedule" / "nfl").mkdir(parents=True, exist_ok=True)
+        (root / "roster" / "nfl").mkdir(parents=True, exist_ok=True)
+        (root / "teams" / "nfl_stats").mkdir(parents=True, exist_ok=True)
+
+        (root / "roster" / "fb" / "sample.html").write_text("ok", encoding="utf-8")
+        (root / "rankings" / "ncaaf" / "polls.html").write_text("ok", encoding="utf-8")
+        (root / "conferences" / "ncaaf" / "2017.html").write_text("ok", encoding="utf-8")
+        (root / "boxscore" / "nfl" / "boxscore.html").write_text("ok", encoding="utf-8")
+        (root / "schedule" / "nfl" / "schedule.html").write_text("ok", encoding="utf-8")
+        (root / "roster" / "nfl" / "player.html").write_text("ok", encoding="utf-8")
+        (root / "teams" / "nfl_stats" / "teams.html").write_text("ok", encoding="utf-8")
+
+        assert (
+            utils._fallback_fixture_by_context(
+                tmp_path,
+                "https://fbref.com/en/squads/abc123/2018-2019/matchlogs/all_comps/schedule/",
+            )
+            is not None
+        )
+        assert (
+            utils._fallback_fixture_by_context(
+                tmp_path,
+                "https://www.sports-reference.com/cfb/years/2017-polls.html",
+            )
+            is not None
+        )
+        assert (
+            utils._fallback_fixture_by_context(
+                tmp_path,
+                "https://www.sports-reference.com/cfb/conferences/sec/2017.html",
+            )
+            is not None
+        )
+        assert (
+            utils._fallback_fixture_by_context(
+                tmp_path,
+                "https://www.pro-football-reference.com/boxscores/",
+            )
+            is not None
+        )
+        (root / "roster" / "nba").mkdir(parents=True, exist_ok=True)
+        (root / "roster" / "nba" / "2023.html").write_text("ok", encoding="utf-8")
+        assert (
+            utils._fallback_fixture_by_context(
+                tmp_path,
+                "https://www.basketball-reference.com/teams/LAL/2023.html",
+            )
+            is not None
+        )
+        assert (
+            utils._fallback_fixture_by_context(
+                tmp_path,
+                "https://www.pro-football-reference.com/players/B/BradTo00.htm",
+            )
+            is not None
+        )
+        assert (
+            utils._fallback_fixture_by_context(
+                tmp_path,
+                "https://www.pro-football-reference.com/years/2023/",
+            )
+            is not None
+        )
+
+    def test_fallback_fixture_by_context_returns_none_without_match(self, tmp_path):
+        """Return test fallback fixture by context returns none without match."""
+        assert (
+            utils._fallback_fixture_by_context(
+                tmp_path,
+                "https://example.com/not-a-sports-reference-url",
+            )
+            is None
+        )
+
+    def test_fixture_for_url_list_mapping_and_content_guards(self, monkeypatch, tmp_path):
+        """Return test fixture for url list mapping and content guards."""
+        target = tmp_path / "ncaaf-roster.html"
+        target.write_text(
+            "<title>Purdue 2017 Team Page</title><a href='/schools/purdue/2017.html'>Purdue</a>",
+            encoding="utf-8",
+        )
+
+        mapping = [
+            {"path": "__pycache__/ignored.html", "contains": "purdue"},
+            {"path": "ncaaf-roster.html", "regex": "[invalid"},
+        ]
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "1")
+        monkeypatch.setenv("SPORTSIPY_FIXTURE_DIR", str(tmp_path))
+        monkeypatch.setattr(utils, "_FIXTURE_MAP", mapping)
+        monkeypatch.setattr(utils, "_heuristic_fixture_path", lambda _url: "ncaaf-roster.html")
+
+        url = "https://www.sports-reference.com/cfb/schools/purdue/2017.html"
+        assert utils._fixture_for_url(url) is not None
+
+        target.write_text(
+            "<title>Notre Dame 2016 Team Page</title><a href='/schools/nd/2016.html'>ND</a>",
+            encoding="utf-8",
+        )
+        assert utils._fixture_for_url(url) is None
+
+    def test_heuristic_fixture_path_conference_and_gamelog(self, monkeypatch, tmp_path):
+        """Return test heuristic fixture path conference and gamelog."""
+        conf = tmp_path / "conferences" / "ncaaf" / "2017-sec.html"
+        gamelog = tmp_path / "gamelog"
+        conf.parent.mkdir(parents=True, exist_ok=True)
+        conf.write_text("ok", encoding="utf-8")
+        gamelog.write_text("ok", encoding="utf-8")
+
+        monkeypatch.setenv("SPORTSIPY_FIXTURE_DIR", str(tmp_path))
+        path1 = utils._heuristic_fixture_path(
+            "https://www.sports-reference.com/cfb/conferences/sec/2017.html"
+        )
+        path2 = utils._heuristic_fixture_path("https://example.com/players/x/gamelog/")
+
+        assert path1 == "conferences/ncaaf/2017-sec.html"
+        assert path2 == "gamelog"
+
+    def test_parse_abbreviation_and_parse_field_error_paths(self):
+        """Return test parse abbreviation and parse field error paths."""
+        assert utils.parse_abbreviation("<td>No link</td>") == ""
+
+        class BadHtml:
+            def __call__(self, _scheme):
+                raise TypeError("bad html")
+
+        scheme = {"wins": 'td[data-stat="wins"]'}
+        assert utils.parse_field(scheme, cast(Any, BadHtml()), "wins") is None
+        assert utils.parse_field(scheme, "<tr></tr>", "missing") is None
+
+    def test_get_stats_table_footer_and_none_paths(self):
+        """Return test get stats table footer and none paths."""
+        html = utils.pq(
+            "<table id='sample'><tfoot><tr><td>footer</td></tr></tfoot>"
+            "<tbody><tr><td>body</td></tr></tbody></table>"
+        )
+        footer_rows = utils.get_stats_table(html, "table#sample", footer=True)
+        body_rows = utils.get_stats_table(html, "table#sample", footer=False)
+        missing = utils.get_stats_table(html, "table#missing", footer=False)
+
+        assert footer_rows is not None
+        assert body_rows is not None
+        assert missing is None
+        assert "footer" in str(next(footer_rows))
+        assert "body" in str(next(body_rows))
+
+    def test_no_data_found_returns_false_and_prints(self, capsys):
+        """Return test no data found returns false and prints."""
+        assert not utils.no_data_found()
+        captured = capsys.readouterr()
+        assert "no data" in captured.out.lower()
+
+    def test_get_page_source_playwright_fallback_success(self, monkeypatch):
+        """Return test get page source playwright fallback success."""
+
+        class Browser:
+            def new_page(self):
+                class Page:
+                    def goto(self, *_args, **_kwargs):
+                        return None
+
+                    def content(self):
+                        return "<html>playwright</html>"
+
+                return Page()
+
+            def close(self):
+                return None
+
+        class Chromium:
+            def launch(self, headless=True):
+                return Browser()
+
+        class PlaywrightSession:
+            chromium = Chromium()
+
+        class Context:
+            def __enter__(self):
+                return PlaywrightSession()
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setenv("SPORTSIPY_ENABLE_PLAYWRIGHT", "1")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(utils, "sync_playwright", lambda: Context())
+
+        assert utils.get_page_source("https://example.com") == "<html>playwright</html>"
+
+    def test_get_page_source_playwright_fallback_failure(self, monkeypatch):
+        """Return test get page source playwright fallback failure."""
+
+        class Context:
+            def __enter__(self):
+                raise RuntimeError("playwright failed")
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setenv("SPORTSIPY_ENABLE_PLAYWRIGHT", "1")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(utils, "sync_playwright", lambda: Context())
+
+        assert utils.get_page_source("https://example.com") is None
+
+    def test_rate_limit_and_cache_error_branches(self, monkeypatch, tmp_path):
+        """Return test rate limit and cache error branches."""
+        monkeypatch.setenv("SPORTSIPY_RATE_LIMIT_SECONDS", "BAD")
+        assert utils._rate_limit_seconds() == 3.0
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "1")
+        assert not utils._rate_limit_enabled()
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        assert utils._rate_limit_enabled()
+
+        monkeypatch.setenv("SPORTSIPY_CACHE_DIR", str(tmp_path))
+        monkeypatch.setenv("SPORTSIPY_CACHE_TTL_SECONDS", "BAD")
+        assert utils._cache_ttl_seconds() is None
+
+        monkeypatch.setenv("SPORTSIPY_CACHE_TTL_SECONDS", "60")
+        monkeypatch.setattr(
+            Path, "write_text", lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError)
+        )
+        utils._cache_write("https://example.com/fail", "x")
+
+    def test_fixture_for_url_fallback_and_missing_paths(self, monkeypatch, tmp_path):
+        """Return test fixture for url fallback and missing paths."""
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "1")
+        monkeypatch.setenv("SPORTSIPY_FIXTURE_DIR", str(tmp_path))
+        monkeypatch.setattr(utils, "_FIXTURE_MAP", {"https://example.com/a": "missing.html"})
+        monkeypatch.setattr(utils, "_heuristic_fixture_path", lambda _url: None)
+        assert utils._fixture_for_url("https://example.com/a") is None
+
+        target = tmp_path / "fixture.html"
+        target.write_text(
+            "<title>Valid 2017</title><a href='/teams/hou/2017.html'>x</a>", encoding="utf-8"
+        )
+        monkeypatch.setattr(utils, "_FIXTURE_MAP", {})
+        monkeypatch.setattr(utils, "_heuristic_fixture_path", lambda _url: "fixture.html")
+        assert utils._fixture_for_url("https://example.com/teams/hou/2017.html") is not None
+
+        target.write_text(
+            "<title>Wrong 2016</title><a href='/teams/nyj/2016.html'>x</a>", encoding="utf-8"
+        )
+        assert utils._fixture_for_url("https://example.com/teams/hou/2017.html") is None
+
+    def test_filter_fixture_candidates_additional_contexts(self, tmp_path):
+        """Return test filter fixture candidates additional contexts."""
+        rankings = tmp_path / "integration" / "rankings" / "ncaaf" / "polls.html"
+        roster = tmp_path / "integration" / "roster" / "ncaaf" / "player.html"
+        schedule = tmp_path / "integration" / "schedule" / "ncaaf" / "gamelog.html"
+        teams = tmp_path / "integration" / "teams" / "nfl_stats" / "teams.html"
+        for path in [rankings, roster, schedule, teams]:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("ok", encoding="utf-8")
+
+        assert utils._filter_fixture_candidates(
+            [rankings, roster],
+            "https://www.sports-reference.com/cfb/years/2017-polls.html",
+        ) == [rankings]
+        assert utils._filter_fixture_candidates(
+            [rankings, roster],
+            "https://www.sports-reference.com/cfb/players/a/player-one-1.html",
+        ) == [roster]
+        assert utils._filter_fixture_candidates(
+            [schedule, roster],
+            "https://www.sports-reference.com/cfb/schools/purdue/2017-schedule.html",
+        ) == [schedule]
+        assert utils._filter_fixture_candidates(
+            [teams, roster],
+            "https://www.pro-football-reference.com/years/2023/",
+        ) == [teams]
+
+    def test_parse_abbreviation_parser_error_and_pull_page_url_none(self, monkeypatch):
+        """Return test parse abbreviation parser error and pull page url none."""
+
+        class BadUri:
+            def __call__(self, _selector):
+                raise ParserError("bad")
+
+        assert utils.parse_abbreviation(cast(Any, BadUri())) == ""
+
+        monkeypatch.setattr(utils, "get_page_source", lambda _url: None)
+        assert utils.pull_page(url="https://example.com") is None
+
+    def test_get_stats_table_type_error_path(self):
+        """Return test get stats table type error path."""
+
+        class BadPage:
+            def __call__(self, _selector):
+                raise TypeError("bad page")
+
+        assert utils.get_stats_table(cast(Any, BadPage()), "table#x") is None
+
+    def test_slug_year_title_helper_branches(self):
+        """Return test slug year title helper branches."""
+        assert utils._clean_slug("") is None
+        assert utils._clean_slug("20") is None
+        assert utils._clean_slug("2017") is None
+        assert utils._clean_slug("team.htm") == "team"
+
+        assert utils._slug_from_url("https://x/schools/purdue/2017.html") == "purdue"
+        assert utils._slug_from_url("https://x/players/a/allenjo01.html") == "allenjo01"
+        assert utils._slug_from_url("https://x/no/slug/here") is None
+
+        assert utils._year_from_url("https://x/path?season=2018") == "2018"
+        assert utils._year_from_url("https://x/path/no/year") is None
+
+        assert utils._extract_title("<h1>Header Title</h1>") == "Header Title"
+        assert utils._extract_title("<div>No title</div>") is None
+        assert not utils._title_matches_year("No Year", "BAD")
+
+    def test_fixture_map_and_list_edge_branches(self, monkeypatch, tmp_path):
+        """Return test fixture map and list edge branches."""
+        bad_map = tmp_path / "url_map.json"
+        bad_map.write_text("{invalid json", encoding="utf-8")
+        monkeypatch.setenv("SPORTSIPY_FIXTURE_MAP", str(bad_map))
+        monkeypatch.setattr(utils, "_FIXTURE_MAP", None)
+        assert utils._fixture_map() == {}
+
+        fixture = tmp_path / "target.html"
+        fixture.write_text(
+            "<title>2017</title><a href='/teams/hou/2017.html'>x</a>", encoding="utf-8"
+        )
+        mapping = [
+            "bad-entry",
+            {"path": 123},
+            {"path": "target.html", "regex": "teams/hou"},
+        ]
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "1")
+        monkeypatch.setenv("SPORTSIPY_FIXTURE_DIR", str(tmp_path))
+        monkeypatch.setattr(utils, "_FIXTURE_MAP", mapping)
+
+        assert utils._fixture_for_url("https://example.com/teams/hou/2017.html") is not None
+
+        monkeypatch.setattr(
+            utils,
+            "_FIXTURE_MAP",
+            [{"path": "missing.html", "contains": "teams/hou"}],
+        )
+        monkeypatch.setattr(utils, "_heuristic_fixture_path", lambda _url: "missing2.html")
+        assert utils._fixture_for_url("https://example.com/teams/hou/2017.html") is None
+
+    def test_request_with_retries_and_url_exists_additional_paths(self, monkeypatch):
+        """Return test request with retries and url exists additional paths."""
+
+        class Response:
+            def __init__(self, status_code):
+                self.status_code = status_code
+                self.headers = {}
+                self.text = "ok"
+
+        monkeypatch.setattr(utils.time, "sleep", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(utils.requests, "head", lambda *_args, **_kwargs: Response(200))
+        assert utils._request_with_retries("HEAD", "https://example.com") is not None
+
+        responses = iter([Response(500), Response(500), Response(500)])
+        monkeypatch.setenv("SPORTSIPY_MAX_RETRIES", "2")
+        monkeypatch.setattr(utils.requests, "request", lambda *_args, **_kwargs: next(responses))
+        response = utils._request_with_retries("POST", "https://example.com")
+        assert response is not None
+        assert response.status_code == 500
+
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_args, **_kwargs: None)
+        assert not utils.url_exists("https://example.com")
+
+        def raise_exc(*_args, **_kwargs):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(utils, "_request_with_retries", raise_exc)
+        assert not utils.url_exists("https://example.com")
