@@ -4,7 +4,6 @@ import os
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.ncaaf.conferences import Conferences
@@ -17,6 +16,10 @@ from sportsipy.ncaaf.teams import Team, Teams
 
 MONTH = 9
 YEAR = 2017
+
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
 
 
 def read_file(filename):
@@ -411,10 +414,15 @@ class TestNCAAFIntegration:
         }
         self.team_conference = team_conference
 
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-        flexmock(Conferences).should_receive("_find_conferences").and_return(None)
-        flexmock(Conferences).should_receive("team_conference").and_return(team_conference)
-
+    @pytest.fixture(autouse=True)
+    def _setup_default_mocks(self, monkeypatch):
+        """Patch conference/date lookups for deterministic integration tests."""
+        monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+        monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+        monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+        monkeypatch.setattr(Conferences, "_find_conferences", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(Conferences, "team_conference", self.team_conference)
         self.teams = Teams()
 
     def test_ncaaf_integration_returns_correct_number_of_teams(self):
@@ -463,10 +471,10 @@ class TestNCAAFIntegration:
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    def test_ncaaf_empty_page_returns_no_teams(self, *args, **kwargs):
+    def test_ncaaf_empty_page_returns_no_teams(self, monkeypatch, *args, **kwargs):
         """Return test ncaaf empty page returns no teams."""
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        monkeypatch.setattr(utils, "no_data_found", lambda: None)
+        monkeypatch.setattr(utils, "get_stats_table", lambda *_args, **_kwargs: None)
 
         teams = Teams()
 
@@ -498,7 +506,7 @@ class TestNCAAFIntegration:
 class TestNCAAFIntegrationInvalidYear:
     """Represent TestNCAAFIntegrationInvalidYear."""
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
         team_conference = {
             "florida-state": "acc",
@@ -634,9 +642,9 @@ class TestNCAAFIntegrationInvalidYear:
             "nebraska": "big-ten",
         }
 
-        flexmock(Conferences).should_receive("_find_conferences").and_return(None)
-        flexmock(Conferences).should_receive("team_conference").and_return(team_conference)
-        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
+        monkeypatch.setattr(Conferences, "_find_conferences", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(Conferences, "team_conference", team_conference)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2018)
 
         teams = Teams()
 
@@ -647,7 +655,7 @@ class TestNCAAFIntegrationInvalidYear:
 class TestNCAAFIntegrationInvalidConference:
     """Represent TestNCAAFIntegrationInvalidConference."""
 
-    def test_invalid_conference_returns_none(self, *args, **kwargs):
+    def test_invalid_conference_returns_none(self, monkeypatch, *args, **kwargs):
         """Return test invalid conference returns none."""
         team_conference = {
             "florida-state": "acc",
@@ -769,9 +777,9 @@ class TestNCAAFIntegrationInvalidConference:
             "army": "independent",
         }
 
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-        flexmock(Conferences).should_receive("_find_conferences").and_return(None)
-        flexmock(Conferences).should_receive("team_conference").and_return(team_conference)
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+        monkeypatch.setattr(Conferences, "_find_conferences", lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(Conferences, "team_conference", team_conference)
 
         big_ten_schools = [
             "indiana",
