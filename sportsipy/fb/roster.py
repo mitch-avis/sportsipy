@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import cast
+from typing import Any, cast
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -250,7 +250,7 @@ class SquadPlayer:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a pandas ``DataFame`` containing all other class properties.
 
         and values. The index for the DataFrame is the player ID.
@@ -400,12 +400,12 @@ class SquadPlayer:
         return pd.DataFrame([fields_to_include], index=[self.player_id])  # pyright: ignore[reportGeneralTypeIssues]
 
     @property
-    def name(self):
+    def name(self) -> Any:
         """Return a ``string`` of the player's full name, such as 'Harry Kane'."""
         return self._name
 
     @property
-    def player_id(self):
+    def player_id(self) -> Any:
         """Return a ``string`` of the player's 8-digit ID, such as '21a66f6a' for.
 
         Harry Kane.
@@ -413,12 +413,12 @@ class SquadPlayer:
         return self._player_id
 
     @property
-    def nationality(self):
+    def nationality(self) -> Any:
         """Return a ``string`` of the player's home country, such as 'England'."""
         return self._nationality
 
     @property
-    def position(self):
+    def position(self) -> Any:
         """Return a ``string`` describing the player's primary positions.
 
         Multiple positions are separated by commas.
