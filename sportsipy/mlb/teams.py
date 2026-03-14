@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from functools import wraps
+from typing import Any
 
 import pandas as pd
 
@@ -277,7 +278,7 @@ class Team:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string abbreviation of the
@@ -396,7 +397,7 @@ class Team:
         return self._rank
 
     @property
-    def abbreviation(self):
+    def abbreviation(self) -> Any:
         """Return a ``string`` of the team's abbreviation, such as 'HOU' for the.
 
         Houston Astros.
@@ -404,7 +405,7 @@ class Team:
         return self._abbreviation
 
     @property
-    def schedule(self):
+    def schedule(self) -> Any:
         """Return an instance of the Schedule class containing the team's.
 
         complete schedule for the season.
@@ -412,7 +413,7 @@ class Team:
         return Schedule(self._abbreviation, self._year)
 
     @property
-    def roster(self):
+    def roster(self) -> Any:
         """Return an instance of the Roster class containing all players for the.
 
         team during the season with all career stats.
@@ -420,12 +421,12 @@ class Team:
         return Roster(self._abbreviation, self._year)
 
     @property
-    def name(self):
+    def name(self) -> Any:
         """Return a ``string`` of the team's full name, such as 'Houston Astros'."""
         return self._name
 
     @property
-    def league(self):
+    def league(self) -> Any:
         """Return a ``string`` of the two letter abbreviation of the league, such.
 
         as 'AL' for the American League.
@@ -465,7 +466,7 @@ class Team:
         return self._win_percentage
 
     @property
-    def streak(self):
+    def streak(self) -> Any:
         """Return a ``string`` of the team's current winning or losing streak,.
 
         such as 'W 3' for a team on a 3-game winning streak.
@@ -515,7 +516,7 @@ class Team:
         return self._simple_rating_system
 
     @property
-    def pythagorean_win_loss(self):
+    def pythagorean_win_loss(self) -> Any:
         """Return a ``string`` of the team's expected win-loss record based on.
 
         the runs scored and allowed. Record is in the format 'W-L'.
@@ -531,7 +532,7 @@ class Team:
         return self._luck
 
     @property
-    def interleague_record(self):
+    def interleague_record(self) -> Any:
         """Return a ``string`` of the team's interleague record. Record is in the.
 
         format 'W-L'.
@@ -539,7 +540,7 @@ class Team:
         return self._interleague_record
 
     @property
-    def home_record(self):
+    def home_record(self) -> Any:
         """Return a ``string`` of the team's home record. Record is in the format.
 
         'W-L'.
@@ -557,7 +558,7 @@ class Team:
         return self._home_record
 
     @property
-    def away_record(self):
+    def away_record(self) -> Any:
         """Return a ``string`` of the team's away record. Record is in the format.
 
         'W-L'.
@@ -575,7 +576,7 @@ class Team:
         return self._away_record
 
     @property
-    def extra_inning_record(self):
+    def extra_inning_record(self) -> Any:
         """Return a ``string`` of the team's record when the game has gone to.
 
         extra innings. Record is in the format 'W-L'.
@@ -599,7 +600,7 @@ class Team:
         return self._extra_inning_record
 
     @property
-    def single_run_record(self):
+    def single_run_record(self) -> Any:
         """Return a ``string`` of the team's record when only one run is scored.
 
         Record is in the format 'W-L'.
@@ -623,7 +624,7 @@ class Team:
         return self._single_run_record
 
     @property
-    def record_vs_right_handed_pitchers(self):
+    def record_vs_right_handed_pitchers(self) -> Any:
         """Return a ``string`` of the team's record against right-handed.
 
         pitchers.
@@ -645,7 +646,7 @@ class Team:
         return self._record_vs_right_handed_pitchers
 
     @property
-    def record_vs_left_handed_pitchers(self):
+    def record_vs_left_handed_pitchers(self) -> Any:
         """Return a ``string`` of the team's record against left-handed pitchers.
 
         Record is in the format 'W-L'.
@@ -663,7 +664,7 @@ class Team:
         return self._record_vs_left_handed_pitchers
 
     @property
-    def record_vs_teams_over_500(self):
+    def record_vs_teams_over_500(self) -> Any:
         """Return a ``string`` of the team's record against teams with a win.
 
         percentage over 500. Record is in the format 'W-L'.
@@ -681,7 +682,7 @@ class Team:
         return self._record_vs_teams_over_500
 
     @property
-    def record_vs_teams_under_500(self):
+    def record_vs_teams_under_500(self) -> Any:
         """Return a ``string`` of the team's record against teams with a win.
 
         percentage under 500. Record is in the format 'W-L'.
@@ -699,7 +700,7 @@ class Team:
         return self._record_vs_teams_under_500
 
     @property
-    def last_ten_games_record(self):
+    def last_ten_games_record(self) -> Any:
         """Return a ``string`` of the team's record over the last ten games.
 
         Record is in the format 'W-L'.
@@ -717,7 +718,7 @@ class Team:
         return self._last_ten_games_record
 
     @property
-    def last_twenty_games_record(self):
+    def last_twenty_games_record(self) -> Any:
         """Return a ``string`` of the team's record over the last twenty games.
 
         Record is in the format 'W-L'.
@@ -735,7 +736,7 @@ class Team:
         return self._last_twenty_games_record
 
     @property
-    def last_thirty_games_record(self):
+    def last_thirty_games_record(self) -> Any:
         """Return a ``string`` of the team's record over the last thirty games.
 
         Record is in the format 'W-L'.
@@ -1267,7 +1268,7 @@ class Teams:
             self._teams.append(team)
 
     @property
-    def dataframes(self):
+    def dataframes(self) -> Any:
         """Return a pandas DataFrame where each row is a representation of the.
 
         Team class. Rows are indexed by the team abbreviation.
