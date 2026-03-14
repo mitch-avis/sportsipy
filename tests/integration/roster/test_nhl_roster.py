@@ -4,7 +4,6 @@ import os
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.nhl.roster import Player, Roster
@@ -706,9 +705,9 @@ class TestNHLPlayer:
 class TestNHLRoster:
     """Represent TestNHLRoster."""
 
-    def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
+    def test_roster_class_pulls_all_player_stats(self, monkeypatch, *args, **kwargs):
         """Return test roster class pulls all player stats."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("DET")
 
         assert len(roster.players) == 30
@@ -725,9 +724,9 @@ class TestNHLRoster:
         with pytest.raises(ValueError):
             Roster("bad")
 
-    def test_roster_from_team_class(self, *args, **kwargs):
+    def test_roster_from_team_class(self, monkeypatch, *args, **kwargs):
         """Return test roster from team class."""
-        flexmock(Team).should_receive("_parse_team_data").and_return(None)
+        monkeypatch.setattr(Team, "_parse_team_data", lambda *_args, **_kwargs: None)
         team = Team(team_data=None, rank=1, year="2018")
         team._abbreviation = "DET"
 
@@ -741,9 +740,9 @@ class TestNHLRoster:
         assert player_names["zettehe01"] == "Henrik Zetterberg"
         team._abbreviation = None
 
-    def test_roster_class_with_slim_parameter(self, *args, **kwargs):
+    def test_roster_class_with_slim_parameter(self, monkeypatch, *args, **kwargs):
         """Return test roster class with slim parameter."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("DET", slim=True)
 
         players = roster.players
@@ -753,9 +752,9 @@ class TestNHLRoster:
         assert players["howarja02"] == "Jimmy Howard"
         assert players["zettehe01"] == "Henrik Zetterberg"
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: 2019)
 
         roster = Roster("DET")
 
@@ -768,9 +767,9 @@ class TestNHLRoster:
         assert player_names["howarja02"] == "Jimmy Howard"
         assert player_names["zettehe01"] == "Henrik Zetterberg"
 
-    def test_roster_class_string_representation(self, *args, **kwargs):
+    def test_roster_class_string_representation(self, monkeypatch, *args, **kwargs):
         """Return test roster class string representation."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("DET")
 
         roster_lines = _normalize_multiline(repr(roster)).splitlines()
