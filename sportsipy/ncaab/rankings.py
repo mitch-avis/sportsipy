@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 from urllib.error import HTTPError
 
 from sportsipy import utils
@@ -185,7 +186,7 @@ class Rankings:
             self._rankings[previous_week] = sorted(previous_rankings, key=lambda item: item["rank"])
 
     @property
-    def current_extended(self):
+    def current_extended(self) -> Any:
         """Return a ``list`` of ``dictionaries`` of the most recent AP rankings.
 
         The list is ordered in terms of the ranking so the #1 team will be in
@@ -212,7 +213,7 @@ class Rankings:
         return ordered_dict
 
     @property
-    def current(self):
+    def current(self) -> Any:
         """Return a ``dictionary`` of the most recent rankings from the.
 
         Associated Press where each key is a ``string`` of the team's
@@ -226,7 +227,7 @@ class Rankings:
         return rankings_dict
 
     @property
-    def complete(self):
+    def complete(self) -> Any:
         """Return a ``dictionary`` where each key is a week number as an ``int``.
 
         and each value is a ``list`` of ``dictionaries`` containing the AP
