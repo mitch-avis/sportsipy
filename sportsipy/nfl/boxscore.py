@@ -109,7 +109,7 @@ class BoxscorePlayer(AbstractPlayer):
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a ``pandas DataFrame`` containing all other relevant class.
 
         properties and values for the specified game.
@@ -832,7 +832,7 @@ class Boxscore:
         self._away_players, self._home_players = self._find_players(boxscore)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
@@ -911,7 +911,7 @@ class Boxscore:
         return pd.DataFrame([fields_to_include], index=[self._uri])
 
     @property
-    def away_players(self):
+    def away_players(self) -> Any:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the away team.
@@ -919,7 +919,7 @@ class Boxscore:
         return self._away_players
 
     @property
-    def home_players(self):
+    def home_players(self) -> Any:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the home team.
@@ -927,31 +927,31 @@ class Boxscore:
         return self._home_players
 
     @property
-    def away_abbreviation(self):
+    def away_abbreviation(self) -> Any:
         """Return a ``string`` of the away team's abbreviation, such as 'NWE'."""
         abbr = re.sub(r".*/teams/", "", str(self._away_name))
         abbr = re.sub(r"/.*", "", abbr)
         return abbr
 
     @property
-    def home_abbreviation(self):
+    def home_abbreviation(self) -> Any:
         """Return a ``string`` of the home team's abbreviation, such as 'KAN'."""
         abbr = re.sub(r".*/teams/", "", str(self._home_name))
         abbr = re.sub(r"/.*", "", abbr)
         return abbr
 
     @property
-    def date(self):
+    def date(self) -> Any:
         """Return a ``string`` of the date the game took place."""
         return self._date
 
     @property
-    def time(self):
+    def time(self) -> Any:
         """Return a ``string`` of the time the game started."""
         return self._time
 
     @property
-    def datetime(self):
+    def datetime(self) -> Any:
         """Return a ``datetime`` object of the date and time the game took place."""
         dt = None
         if self._date and self._time:
@@ -962,7 +962,7 @@ class Boxscore:
         return dt
 
     @property
-    def stadium(self):
+    def stadium(self) -> Any:
         """Return a ``string`` of the name of the stadium where the game was.
 
         played.
@@ -975,12 +975,12 @@ class Boxscore:
         return self._attendance
 
     @property
-    def duration(self):
+    def duration(self) -> Any:
         """Return a ``string`` of the game's duration in the format 'H:MM'."""
         return self._duration
 
     @property
-    def won_toss(self):
+    def won_toss(self) -> Any:
         """Return a ``string`` of the team that won the coin toss, such as.
 
         'Chiefs'.
@@ -988,7 +988,7 @@ class Boxscore:
         return self._won_toss
 
     @property
-    def roof(self):
+    def roof(self) -> Any:
         """Return a ``string`` of the stadium type and whether or not the game.
 
         was played outdoors.
@@ -996,17 +996,17 @@ class Boxscore:
         return self._roof
 
     @property
-    def surface(self):
+    def surface(self) -> Any:
         """Return a ``string`` of the type of field the game was played on."""
         return self._surface
 
     @property
-    def weather(self):
+    def weather(self) -> Any:
         """Return a ``string`` of the weather reading at kickoff."""
         return self._weather
 
     @property
-    def vegas_line(self):
+    def vegas_line(self) -> Any:
         """Return a ``string`` of the Vegas Line including the projected winner.
 
         and the spread.
@@ -1014,12 +1014,12 @@ class Boxscore:
         return self._vegas_line
 
     @property
-    def over_under(self):
+    def over_under(self) -> Any:
         """Return a ``string`` of the listed over under, and the actual result."""
         return self._over_under
 
     @property
-    def summary(self):
+    def summary(self) -> Any:
         """Return a ``dictionary`` with two keys, 'away' and 'home'. The value of.
 
         each key will be a list for each respective team's score by order of
@@ -1034,7 +1034,7 @@ class Boxscore:
         return self._summary
 
     @property
-    def winner(self):
+    def winner(self) -> Any:
         """Return a ``string`` constant indicating whether the home or away team.
 
         won.
@@ -1048,7 +1048,7 @@ class Boxscore:
         return AWAY
 
     @property
-    def winning_name(self):
+    def winning_name(self) -> Any:
         """Return a ``string`` of the winning team's name, such as 'New England.
 
         Patriots'.
@@ -1062,7 +1062,7 @@ class Boxscore:
         return ""
 
     @property
-    def winning_abbr(self):
+    def winning_abbr(self) -> Any:
         """Return a ``string`` of the winning team's abbreviation, such as 'NWE'.
 
         for the New England Patriots.
@@ -1074,7 +1074,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_name(self):
+    def losing_name(self) -> Any:
         """Return a ``string`` of the losing team's name, such as 'Kansas City.
 
         Chiefs'.
@@ -1088,7 +1088,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_abbr(self):
+    def losing_abbr(self) -> Any:
         """Return a ``string`` of the losing team's abbreviation, such as 'KAN'.
 
         for the Kansas City Chiefs.
@@ -1254,7 +1254,7 @@ class Boxscore:
         return self._away_fourth_down_attempts
 
     @property
-    def away_time_of_possession(self):
+    def away_time_of_possession(self) -> Any:
         """Return a ``string`` of the amount of time the home team had possession.
 
         of the football in the format 'MM:SS'.
@@ -1416,7 +1416,7 @@ class Boxscore:
         return self._home_fourth_down_conversions
 
     @property
-    def home_time_of_possession(self):
+    def home_time_of_possession(self) -> Any:
         """Return a ``string`` of the amount of time the home team had possession.
 
         of the football in the format 'MM:SS'.
@@ -1465,7 +1465,7 @@ class Boxscores:
         return self.__str__()
 
     @property
-    def games(self):
+    def games(self) -> Any:
         """Return a ``dictionary`` object representing all of the games played on.
 
         the requested day. Dictionary is in the following format::
