@@ -4,6 +4,7 @@ import os
 from typing import Any, cast
 from unittest import mock
 
+import pandas as pd
 import pytest
 from flexmock import flexmock
 
@@ -516,11 +517,13 @@ class TestMLBPlayer:
         ]
         indices = ["Career", "2017", "2016"]
 
-        _ = dataframe, indices
         player = self.player("")
+        result = player.dataframe
 
-        with pytest.raises(ValueError):
-            _ = player.dataframe
+        assert isinstance(result, pd.DataFrame)
+        assert not result.empty
+        assert "Career" in {str(index) for index in result.index.get_level_values(0)}
+        assert set(dataframe[0].keys()).issubset(set(result.columns))
 
     def test_player_contract_returns_contract(self):
         """Return test player contract returns contract."""
@@ -1043,11 +1046,13 @@ class TestMLBPitcher:
         ]
         indices = ["Career", "2017", "2016"]
 
-        _ = dataframe, indices
         player = self.player("")
+        result = player.dataframe
 
-        with pytest.raises(ValueError):
-            _ = player.dataframe
+        assert isinstance(result, pd.DataFrame)
+        assert not result.empty
+        assert "Career" in {str(index) for index in result.index.get_level_values(0)}
+        assert set(dataframe[0].keys()).issubset(set(result.columns))
 
     def test_player_contract_returns_contract(self):
         """Return test player contract returns contract."""
