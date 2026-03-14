@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from datetime import timedelta
 from typing import Any
 from urllib.error import HTTPError
@@ -312,17 +313,17 @@ class Boxscore:
 
         self._parse_game_data(uri)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         away_name = self._away_name.text() if self._away_name is not None else ""
         home_name = self._home_name.text() if self._home_name is not None else ""
         return f"Boxscore for {away_name} at {home_name} ({self.date})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _retrieve_html_page(self, uri):
+    def _retrieve_html_page(self, uri: str | None) -> PyQuery | None:
         """Download the requested HTML page.
 
         Given a relative link, download the requested page and strip it of all
@@ -352,7 +353,7 @@ class Boxscore:
             return None
         return PyQuery(utils.remove_html_comment_tags(url_data))
 
-    def _parse_game_date_and_location(self, field, boxscore):
+    def _parse_game_date_and_location(self, field: str, boxscore: PyQuery) -> str | None:
         r"""Retrieve the game's date and location.
 
         The date and location of the game follow a more complicated parsing
@@ -375,7 +376,7 @@ class Boxscore:
 
         """
         scheme = BOXSCORE_SCHEME[field]
-        items = [i.text() for i in boxscore(scheme).items()]
+        items = [str(i.text()) for i in boxscore(scheme).items()]
         game_info = [line for line in items[0].split("\n") if line.strip()]
         # In 2023, NBA In-Season Tournament text is before the actual game time if applicable,
         # so if the text doesn't contain AM or PM, drop it
@@ -385,7 +386,7 @@ class Boxscore:
             return None
         return game_info[BOXSCORE_ELEMENT_INDEX[field]]
 
-    def _parse_name(self, field, boxscore):
+    def _parse_name(self, field: str, boxscore: PyQuery) -> PyQuery:
         """Retrieve the team's complete name tag.
 
         Both the team's full name (embedded in the tag's text) and the team's
@@ -409,7 +410,7 @@ class Boxscore:
         items = list(boxscore(scheme).items())
         return items[BOXSCORE_ELEMENT_INDEX[field]]
 
-    def _parse_summary(self, boxscore):
+    def _parse_summary(self, boxscore: PyQuery) -> dict[str, list[int | None]]:
         """Find the game summary including score in each quarter.
 
         The game summary provides further information on the points scored
@@ -449,12 +450,12 @@ class Boxscore:
             for quarter in list(team_info(scheme).items())[:-1]:
                 ind = ind % 2
                 try:
-                    summary[team[ind]].append(int(quarter.text()))
+                    summary[team[ind]].append(int(str(quarter.text())))
                 except ValueError:
                     summary[team[ind]].append(None)
         return summary
 
-    def _find_boxscore_tables(self, boxscore):
+    def _find_boxscore_tables(self, boxscore: PyQuery) -> list[PyQuery]:
         """Find all tables with boxscore information on the page.
 
         Iterate through all tables on the page and see if any of them are
@@ -477,13 +478,16 @@ class Boxscore:
 
         for table in boxscore("table").items():
             try:
-                if "box_" in table.attr["id"] or "box-" in table.attr["id"]:
+                table_id = table.attr("id")
+                if not table_id:
+                    continue
+                if "box_" in table_id or "box-" in table_id:
                     tables.append(table)
             except (KeyError, TypeError):
                 continue
         return tables
 
-    def _find_player_id(self, row):
+    def _find_player_id(self, row: PyQuery) -> str | None:
         """Find the player's ID.
 
         Find the player's ID as embedded in the 'data-append-csv' attribute,
@@ -502,9 +506,12 @@ class Boxscore:
             James Harden.
 
         """
-        return row("th").attr("data-append-csv")
+        player_id = row("th").attr("data-append-csv")
+        if not player_id:
+            return None
+        return str(player_id)
 
-    def _find_player_name(self, row):
+    def _find_player_name(self, row: PyQuery) -> str:
         """Find the player's full name.
 
         Find the player's full name, such as 'James Harden'. The name is the
@@ -523,9 +530,14 @@ class Boxscore:
             Harden'.
 
         """
-        return row("a").text()
+        return str(row("a").text())
 
-    def _extract_player_stats(self, table, player_dict, home_or_away):
+    def _extract_player_stats(
+        self,
+        table: PyQuery,
+        player_dict: dict[str, dict[str, str]],
+        home_or_away: str,
+    ) -> dict[str, dict[str, str]]:
         """Combine all player stats into a single object.
 
         Since each player generally has a couple of rows worth of stats (one
@@ -573,7 +585,9 @@ class Boxscore:
                 }
         return player_dict
 
-    def _instantiate_players(self, player_dict):
+    def _instantiate_players(
+        self, player_dict: dict[str, dict[str, str]]
+    ) -> tuple[list[BoxscorePlayer], list[BoxscorePlayer]]:
         """Create a list of player instances for both the home and away teams.
 
         For every player listed on the boxscores page, create an instance of
@@ -607,7 +621,7 @@ class Boxscore:
                 away_players.append(player)
         return away_players, home_players
 
-    def _find_players(self, boxscore):
+    def _find_players(self, boxscore: PyQuery) -> tuple[list[BoxscorePlayer], list[BoxscorePlayer]]:
         """Find all players for each team.
 
         Iterate through every player for both teams as found in the boxscore
@@ -641,7 +655,7 @@ class Boxscore:
         away_players, home_players = self._instantiate_players(player_dict)
         return away_players, home_players
 
-    def _parse_game_data(self, uri):
+    def _parse_game_data(self, uri: str | None) -> None:
         """Parse a value for every attribute.
 
         This function looks through every attribute and retrieves the value
@@ -1540,15 +1554,15 @@ class Boxscores:
 
     def __init__(self, date: Any, end_date: Any | None = None) -> None:
         """Initialize the class instance."""
-        self._boxscores = {}
+        self._boxscores: dict[str, list[dict[str, str | int | None]]] = {}
 
         self._find_games(date, end_date)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"NBA games for {', '.join(self._boxscores.keys())}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
@@ -1590,7 +1604,7 @@ class Boxscores:
         """
         return self._boxscores
 
-    def _create_url(self, date):
+    def _create_url(self, date: Any) -> str:
         """Build the URL based on the passed datetime object.
 
         In order to get the proper boxscore page, the URL needs to include the
@@ -1611,7 +1625,7 @@ class Boxscores:
         """
         return BOXSCORES_URL % (date.month, date.day, date.year)
 
-    def _get_requested_page(self, url):
+    def _get_requested_page(self, url: str) -> PyQuery | None:
         """Get the requested page.
 
         Download the requested page given the created URL and return a PyQuery
@@ -1634,7 +1648,7 @@ class Boxscores:
             return None
         return utils.pq(page_source)
 
-    def _get_boxscore_uri(self, url):
+    def _get_boxscore_uri(self, url: PyQuery) -> str:
         """Find the boxscore URI.
 
         Given the boxscore tag for a game, parse the embedded URI for the
@@ -1657,7 +1671,7 @@ class Boxscores:
         uri = re.sub(r"\.html.*", "", uri).strip()
         return uri
 
-    def _parse_abbreviation(self, abbr):
+    def _parse_abbreviation(self, abbr: Any) -> str:
         """Parse a team's abbreviation.
 
         Given the team's HTML name tag, parse their abbreviation.
@@ -1677,7 +1691,7 @@ class Boxscores:
         abbr = re.sub(r"/.*", "", abbr)
         return abbr
 
-    def _get_name(self, name):
+    def _get_name(self, name: PyQuery) -> tuple[str, str]:
         """Find a team's name and abbreviation.
 
         Given the team's HTML name tag, determine their name, and abbreviation.
@@ -1694,11 +1708,11 @@ class Boxscores:
             Tuple is in the following order: Team Name, Team Abbreviation.
 
         """
-        team_name = name.text()
+        team_name = str(name.text())
         abbr = self._parse_abbreviation(name)
         return team_name, abbr
 
-    def _get_score(self, score_link):
+    def _get_score(self, score_link: str) -> int:
         """Find a team's final score.
 
         Given an HTML string of a team's boxscore, extract the integer
@@ -1720,7 +1734,7 @@ class Boxscores:
         score = score.replace("</td>", "")
         return int(score)
 
-    def _get_team_details(self, game):
+    def _get_team_details(self, game: PyQuery) -> tuple[str, str, int | None, str, str, int | None]:
         """Find the names and abbreviations for both teams in a game.
 
         Using the HTML contents in a boxscore, find the name and abbreviation
@@ -1757,7 +1771,7 @@ class Boxscores:
         home_name, home_abbr = self._get_name(home)
         return (away_name, away_abbr, away_score, home_name, home_abbr, home_score)
 
-    def _get_team_results(self, team_result_html):
+    def _get_team_results(self, team_result_html: PyQuery) -> tuple[str, str] | None:
         """Extract the winning or losing team's name and abbreviation.
 
         Depending on which team's data field is passed (either the winner or
@@ -1784,7 +1798,7 @@ class Boxscores:
         name, abbreviation = self._get_name(link[0])
         return name, abbreviation
 
-    def _extract_game_info(self, games):
+    def _extract_game_info(self, games: Iterable[PyQuery]) -> list[dict[str, str | int | None]]:
         """Parse game information from all boxscores.
 
         Find the major game information for all boxscores listed on a
@@ -1852,7 +1866,7 @@ class Boxscores:
             all_boxscores.append(game_info)
         return all_boxscores
 
-    def _find_games(self, date, end_date):
+    def _find_games(self, date: Any, end_date: Any | None) -> None:
         """Retrieve all major games played on a given day.
 
         Builds a URL based on the requested date and downloads the HTML
