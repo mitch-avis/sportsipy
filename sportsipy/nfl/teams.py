@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pandas as pd
 
 from sportsipy import utils
@@ -178,7 +180,7 @@ class Team:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string abbreviation of the
@@ -237,7 +239,7 @@ class Team:
         return self._rank
 
     @property
-    def abbreviation(self):
+    def abbreviation(self) -> Any:
         """Return a ``string`` of team's abbreviation, such as 'KAN' for the.
 
         Kansas City Chiefs.
@@ -245,7 +247,7 @@ class Team:
         return self._abbreviation
 
     @property
-    def schedule(self):
+    def schedule(self) -> Any:
         """Return an instance of the Schedule class containing the team's.
 
         complete schedule for the season.
@@ -253,7 +255,7 @@ class Team:
         return Schedule(self._abbreviation, self._year)
 
     @property
-    def roster(self):
+    def roster(self) -> Any:
         """Return an instance of the Roster class containing all players for the.
 
         team during the season with all career stats.
@@ -261,7 +263,7 @@ class Team:
         return Roster(self._abbreviation, self._year)
 
     @property
-    def name(self):
+    def name(self) -> Any:
         """Return a ``string`` of the team's full name, such as 'Kansas City.
 
         Chiefs'.
@@ -298,7 +300,7 @@ class Team:
         return self._games_played
 
     @property
-    def post_season_result(self):
+    def post_season_result(self) -> Any:
         """Return a ``string constant`` denoting how far the team made it in the.
 
         post-season.
@@ -691,7 +693,7 @@ class Teams:
             self._teams.append(team)
 
     @property
-    def dataframes(self):
+    def dataframes(self) -> Any:
         """Return a pandas DataFrame where each row is a representation of the.
 
         Team class. Rows are indexed by the team abbreviation.
