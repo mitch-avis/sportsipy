@@ -31,15 +31,15 @@ class Rankings:
 
         self._find_rankings(year)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return "NCAAB Rankings"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _pull_rankings_page(self, year):
+    def _pull_rankings_page(self, year: int | str | None) -> Any | None:
         """Download the rankings page.
 
         Download the rankings page for the requested year and create a PyQuery
@@ -64,7 +64,7 @@ class Rankings:
         except HTTPError:
             return None
 
-    def _parse_table_columns(self, page):
+    def _parse_table_columns(self, page: Any) -> dict[int, dict[str, str]]:
         """Build metadata for each week column in the rankings table."""
         header_rows = page("table#ap-polls thead tr")
         collapsed_header = header_rows.eq(2)
@@ -83,7 +83,7 @@ class Rankings:
             }
         return dict(sorted(columns.items()))
 
-    def _parse_team(self, row):
+    def _parse_team(self, row: Any) -> tuple[str | None, str | None]:
         link = row('th[data-stat="school"] a')
         if not link:
             return None, None
@@ -93,7 +93,7 @@ class Rankings:
         name = link.text()
         return abbreviation, name
 
-    def _parse_rank_cell(self, row, data_stat):
+    def _parse_rank_cell(self, row: Any, data_stat: str) -> int | None:
         cell_text = row(f'td[data-stat="{data_stat}"]').text().strip()
         if not cell_text:
             return None
@@ -102,7 +102,7 @@ class Rankings:
         except ValueError:
             return None
 
-    def _previous_week(self, columns, week_number):
+    def _previous_week(self, columns: dict[int, dict[str, str]], week_number: int) -> int | None:
         keys = sorted(columns.keys())
         try:
             index = keys.index(week_number)
@@ -112,7 +112,12 @@ class Rankings:
             return None
         return keys[index - 1]
 
-    def _build_entry(self, row, week_number, columns):
+    def _build_entry(
+        self,
+        row: Any,
+        week_number: int,
+        columns: dict[int, dict[str, str]],
+    ) -> dict[str, str | int] | None:
         abbreviation, name = self._parse_team(row)
         if not abbreviation or not name:
             return None
@@ -139,7 +144,7 @@ class Rankings:
             "change": change,
         }
 
-    def _find_rankings(self, year):
+    def _find_rankings(self, year: int | str | None) -> None:
         """Retrieve the rankings for each week.
 
         Find and retrieve all AP rankings for the requested year and combine
