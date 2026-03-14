@@ -3,7 +3,6 @@
 from os.path import dirname, join
 
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.ncaab.rankings import Rankings
@@ -771,9 +770,9 @@ class TestNCAABRankings:
         self.results = results
         self.results_complete = results_complete
 
-    def test_rankings_integration(self, *args, **kwargs):
+    def test_rankings_integration(self, monkeypatch, *args, **kwargs):
         """Return test rankings integration."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: YEAR)
 
         rankings = Rankings()
 
@@ -786,9 +785,9 @@ class TestNCAABRankings:
         with pytest.raises(ValueError):
             Rankings("BAD")
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2019)
 
         rankings = Rankings()
 
