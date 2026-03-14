@@ -46,15 +46,19 @@ class Conference:
 
         self._find_conference_teams(conference_abbreviation, year)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"{self._conference_abbreviation} - NCAAF"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _pull_conference_page(self, conference_abbreviation, year):
+    def _pull_conference_page(
+        self,
+        conference_abbreviation: str,
+        year: int | str | None,
+    ) -> Any | None:
         """Download the conference page.
 
         Download the conference page for the requested conference and season
@@ -79,7 +83,7 @@ class Conference:
         except (HTTPError, ParserError):
             return None
 
-    def _get_team_abbreviation(self, team):
+    def _get_team_abbreviation(self, team: Any) -> str:
         """Retrieve team's abbreviation.
 
         The team's abbreviation is embedded within the 'school_name' tag and
@@ -104,7 +108,11 @@ class Conference:
         team_abbreviation = re.sub(r"/.*", "", team_abbreviation)
         return team_abbreviation
 
-    def _find_conference_teams(self, conference_abbreviation, year):
+    def _find_conference_teams(
+        self,
+        conference_abbreviation: str,
+        year: int | str | None,
+    ) -> None:
         """Retrieve the teams in the conference for the requested season.
 
         Find and retrieve all teams that participated in a conference for a
@@ -177,15 +185,15 @@ class Conferences:
 
         self._find_conferences(year)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return "NCAAF Conferences"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _pull_conference_page(self, year):
+    def _pull_conference_page(self, year: int | str | None) -> Any | None:
         """Download the conference page.
 
         Download the conference page for the requested team and create a
@@ -210,7 +218,7 @@ class Conferences:
         except HTTPError:
             return None
 
-    def _get_conference_id(self, conference):
+    def _get_conference_id(self, conference: Any) -> str:
         """Get the conference abbreviation, such as 'big-12'.
 
         The conference abbreviation is embedded within the Conference Name
@@ -235,7 +243,7 @@ class Conferences:
         conference_id = re.sub(r"/.*", "", conference_id)
         return conference_id
 
-    def _find_conferences(self, year):
+    def _find_conferences(self, year: int | str | None) -> None:
         """Retrieve the conferences and teams for the requested season.
 
         Find and retrieve all conferences for a given season and parse all of
