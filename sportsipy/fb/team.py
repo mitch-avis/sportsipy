@@ -42,7 +42,7 @@ class Team:
 
     """
 
-    def __init__(self, team_id: str | None, squad_page: PyQuery | None = None) -> None:
+    def __init__(self, team_id: str | None, squad_page: str | None = None) -> None:
         """Initialize the class instance."""
         self._squad_id = None
         self._name = None
@@ -77,15 +77,15 @@ class Team:
         self._squad_id = _lookup_team(team_id)
         self._pull_team_page(squad_page)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.name} ({self.squad_id}) - {self.season}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _parse_name(self, doc):
+    def _parse_name(self, doc: PyQuery) -> None:
         """Parse the team's name and season.
 
         The squad header includes both the season (in the format '2019-2020' or
@@ -99,7 +99,7 @@ class Team:
         """
         name = doc('div[data-template="Partials/Teams/Summary"]')
         name = name("h1")
-        name = name("span").text()
+        name = str(name("span").text() or "")
         # Name is in format "YYYY-YYYY Team Name Stats"
         # or "YYYY Team Name Stats"
         # ie. "2019-2020 Tottenham Hotspur Stats (Premier League)"
@@ -124,7 +124,10 @@ class Team:
         self._name = name
         self._short_name = short_name
 
-    def _location_records(self, record_line):
+    def _location_records(
+        self,
+        record_line: str,
+    ) -> tuple[str | None, str | None, int | None, int | None]:
         """Parse the team's home and away record.
 
         The squad's header contains information on the team's home and away
@@ -158,7 +161,7 @@ class Team:
             home_points, away_points = [int(p.replace(" points", "")) for p in points]
         return home_record, away_record, home_points, away_points
 
-    def _records(self, record_line):
+    def _records(self, record_line: str) -> tuple[str | None, str | None, str | None, str | None]:
         """Parse the team's record in their primary competition.
 
         The team's record line found on the header of their squad page includes
@@ -192,7 +195,7 @@ class Team:
             position = None
         return record, points, position, league
 
-    def _goals(self, goals_line):
+    def _goals(self, goals_line: str) -> tuple[str | None, str | None, str | None]:
         """Parse the number of goals the team scored and conceded.
 
         The number of goals the team scored and conceded, along with the
@@ -216,9 +219,9 @@ class Team:
         goals = re.findall(r"\d+", goals)
         if len(goals) != 3:
             return None, None, None
-        return goals
+        return goals[0], goals[1], goals[2]
 
-    def _parse_expected_goals(self, goals_line):
+    def _parse_expected_goals(self, goals_line: str) -> tuple[str | None, str | None, str | None]:
         """Parse the expected goals for the team.
 
         The expected goal values can be found in the header with the xG, xGA
@@ -247,9 +250,9 @@ class Team:
         goals = goals.split(" ")
         if len(goals) != 3:
             return None, None, None
-        return goals
+        return goals[0], goals[1], goals[2]
 
-    def _parse_header(self, doc):
+    def _parse_header(self, doc: PyQuery) -> None:
         """Parse the various components on the squad's header.
 
         Each squad page contains information relevant to the team's selected
@@ -308,7 +311,7 @@ class Team:
             elif "gender" in line.lower():
                 self._gender = line.replace("Gender: ", "")
 
-    def _pull_team_page(self, squad_page=None):
+    def _pull_team_page(self, squad_page: str | None = None) -> None:
         """Pull the team page and parse results.
 
         Using the requested squad ID, first pull the team page, then parse
