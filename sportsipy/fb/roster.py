@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from typing import Any, cast
 from urllib.error import HTTPError
 
@@ -181,15 +182,15 @@ class SquadPlayer:
 
         self._parse_player_stats(player_data)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.name} ({self.player_id})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _parse_nationality(self, player_data):
+    def _parse_nationality(self, player_data: Any) -> str | None:
         """Parse the player's nationality.
 
         If the nationality is listed for a player, it will contain a URI which
@@ -218,10 +219,10 @@ class SquadPlayer:
         href = country.attr("href")
         if not href:
             return None
-        country_value = re.sub(r".*\/", "", href)
+        country_value = re.sub(r".*\/", "", str(href))
         return country_value.replace("-Football", "")
 
-    def _parse_player_stats(self, player_data):
+    def _parse_player_stats(self, player_data: Any) -> None:
         """Parse a value for every attribute.
 
         This method looks through every class attribute with a few exceptions
@@ -1447,7 +1448,7 @@ class Roster:
             return
         self._instantiate_players(player_data_dict)
 
-    def __call__(self, player):
+    def __call__(self, player: str) -> SquadPlayer:
         """Return a specified player on the roster.
 
         Returns a specific player as requested by the passed name or player ID.
@@ -1482,20 +1483,20 @@ class Roster:
                 return player_instance
         raise ValueError("No player found with the requested name or ID")
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         players = [f"{x.name} ({x.player_id})".strip() for x in self._players]
         return "\n".join(players)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[SquadPlayer]:
         """Return an iterator of all of the players on the given team's roster."""
         return iter(self._players)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of player on the given team's roster."""
         return len(self._players)
 
@@ -1504,7 +1505,7 @@ class Roster:
         """Return a list of all SquadPlayer instances on the roster."""
         return list(self._players)
 
-    def _player_id(self, player_data):
+    def _player_id(self, player_data: Any) -> str | None:
         """Parse the player's ID from a row.
 
         The player ID is embedded within the header column of each individual
@@ -1532,7 +1533,11 @@ class Roster:
             player_id = None
         return player_id
 
-    def _add_stats_data(self, stats_table, player_data_dict):
+    def _add_stats_data(
+        self,
+        stats_table: Any,
+        player_data_dict: dict[str, dict[str, Any]],
+    ) -> dict[str, dict[str, Any]]:
         """Add each player's stats rows to a dictionary.
 
         Given the player stats are spread throughout many tables, they should
@@ -1567,7 +1572,7 @@ class Roster:
                 player_data_dict[player_id] = {"data": player_data}
         return player_data_dict
 
-    def _competition_id(self, doc):
+    def _competition_id(self, doc: PyQuery) -> str | None:
         """Find the competition id used as a table postfix from the page header.
 
         There used to be a lookup table of squad IDs to league IDs, but the
@@ -1615,7 +1620,7 @@ class Roster:
                     continue
         return None
 
-    def _pull_stats(self, doc):
+    def _pull_stats(self, doc: PyQuery | None) -> dict[str, dict[str, Any]] | None:
         """Download the team page and pull all stats.
 
         Download the requested team's season page and pull all of the relevant
@@ -1673,7 +1678,7 @@ class Roster:
             player_data_dict = self._add_stats_data(table, player_data_dict)
         return player_data_dict
 
-    def _instantiate_players(self, player_data_dict):
+    def _instantiate_players(self, player_data_dict: dict[str, dict[str, Any]]) -> None:
         """Create Player instances for each squad member.
 
         Given the stats information for all players, an instance of the Player
