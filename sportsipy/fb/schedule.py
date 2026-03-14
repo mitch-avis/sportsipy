@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 from urllib.error import HTTPError
@@ -36,15 +37,15 @@ class Game:
         self._day: str | None = None
         self._date: str | None = None
         self._time: str | None = None
-        self._datetime = None
+        self._datetime: datetime | None = None
         self._venue: str | None = None
         self._result: str | None = None
         self._goals_for: str | None = None
         self._goals_against: str | None = None
         self._opponent: str | None = None
         self._opponent_id: str | None = None
-        self._expected_goals = None
-        self._expected_goals_against = None
+        self._expected_goals: float | None = None
+        self._expected_goals_against: float | None = None
         self._attendance: str | None = None
         self._captain: str | None = None
         self._captain_id: str | None = None
@@ -55,15 +56,15 @@ class Game:
 
         self._parse_game_data(game_data)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.date} - {self.opponent}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _parse_opponent_id(self, game_data):
+    def _parse_opponent_id(self, game_data: Any) -> str | None:
         """Parse the opponent's squad ID.
 
         The opponent field has a squad ID embedded in the URL which can be used
@@ -91,7 +92,7 @@ class Game:
             opponent_id = None
         return opponent_id
 
-    def _parse_captain_id(self, game_data):
+    def _parse_captain_id(self, game_data: Any) -> str | None:
         """Parse the captain's player ID.
 
         The captain field contains a link to the captain's unique player ID in
@@ -119,7 +120,7 @@ class Game:
             captain_id = None
         return captain_id
 
-    def _parse_match_report(self, game_data):
+    def _parse_match_report(self, game_data: Any) -> str | None:
         """Parse the match report ID.
 
         The match report field contains a link to the detailed match report via
@@ -147,7 +148,7 @@ class Game:
             match_report_id = None
         return match_report_id
 
-    def _parse_game_data(self, game_data):
+    def _parse_game_data(self, game_data: Any) -> None:
         """Parse a value for every attribute.
 
         The function looks through every attribute with the exception of those
@@ -186,7 +187,7 @@ class Game:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame | None:
         """Return a pandas ``DataFrame`` containing all other class properties.
 
         and values. The index for the DataFrame is the match report ID.
@@ -218,11 +219,10 @@ class Game:
             "match_report": self.match_report,
             "notes": self.notes,
         }
-        # Pandas stubs can trip Pyright/Pylance here; runtime is correct.
-        return pd.DataFrame([fields_to_include], index=[self.match_report])  # pyright: ignore[reportGeneralTypeIssues]
+        return pd.DataFrame([fields_to_include], index=[self.match_report])
 
     @property
-    def competition(self):
+    def competition(self) -> str | None:
         """Return a ``string`` of the competitions name, such as 'Premier.
 
         League' or 'Champions Lg'.
@@ -230,7 +230,7 @@ class Game:
         return self._competition
 
     @property
-    def matchweek(self):
+    def matchweek(self) -> str | None:
         """Return a ``string`` of the matchweek the game was played in, such.
 
         as 'Matchweek 1' or 'Group Stage'.
@@ -238,12 +238,12 @@ class Game:
         return self._matchweek
 
     @property
-    def day(self):
+    def day(self) -> str | None:
         """Return a ``string`` of the day of the week the game was played on."""
         return self._day
 
     @property
-    def date(self):
+    def date(self) -> str | None:
         """Return a ``string`` of the date the game was played in the format.
 
         'YYYY-MM-DD'.
@@ -251,7 +251,7 @@ class Game:
         return self._date
 
     @property
-    def time(self):
+    def time(self) -> str | None:
         """Return a ``string`` of the time the game started in 24-hour.
 
         format, local to the home venue.
@@ -259,7 +259,7 @@ class Game:
         return self._time
 
     @property
-    def datetime(self):
+    def datetime(self) -> datetime | None:
         """Return a ``datetime`` object representing the date and time the match.
 
         started. If the time is not present, the default time of midnight on
@@ -302,7 +302,7 @@ class Game:
         return datetime_
 
     @property
-    def venue(self):
+    def venue(self) -> str | None:
         """Return a ``string`` constant representing if the team played at.
 
         home ('Home'), on the road ('Away'), or at a neutral site
@@ -322,7 +322,7 @@ class Game:
         return venue_string
 
     @property
-    def result(self):
+    def result(self) -> str | None:
         """Return a ``string`` constant representing if the team won ('Win'),.
 
         drew ('Draw'), or lost ('Loss').
@@ -341,16 +341,21 @@ class Game:
         return result_string
 
     @int_property_decorator
-    def goals_for(self):
+    def goals_for(self) -> int | None:
         """Return an ``int`` of the number of goals the team scored."""
         # If the game went to a shootout, remove the penalties.
         goals_for_value = self._goals_for
         if goals_for_value and "(" in str(goals_for_value) and ")" in str(goals_for_value):
-            return re.sub(" .*", "", goals_for_value)
-        return goals_for_value
+            goals_for_value = re.sub(" .*", "", goals_for_value)
+        if goals_for_value is None:
+            return None
+        try:
+            return int(goals_for_value)
+        except ValueError:
+            return None
 
     @int_property_decorator
-    def goals_against(self):
+    def goals_against(self) -> int | None:
         """Return an ``int`` of the number of goals the team conceded."""
         # If the game went to a shootout, remove the penalties.
         goals_against_value = self._goals_against
@@ -359,40 +364,53 @@ class Game:
             and "(" in str(goals_against_value)
             and ")" in str(goals_against_value)
         ):
-            return re.sub(" .*", "", goals_against_value)
-        return goals_against_value
+            goals_against_value = re.sub(" .*", "", goals_against_value)
+        if goals_against_value is None:
+            return None
+        try:
+            return int(goals_against_value)
+        except ValueError:
+            return None
 
     @int_property_decorator
-    def shootout_scored(self):
+    def shootout_scored(self) -> int | None:
         """Return an ``int`` of the number of penalties the team scored if the.
 
         game went to a shootout after normal play.
         """
         goals_for_value = self._goals_for or ""
         penalties = re.findall(r"\(\d+\)", goals_for_value)
-        if penalties:
-            penalties = re.sub(r"\(|\)", "", penalties[0])
-        return penalties
+        if not penalties:
+            return None
+        penalty = re.sub(r"\(|\)", "", penalties[0])
+        try:
+            return int(penalty)
+        except ValueError:
+            return None
 
     @int_property_decorator
-    def shootout_against(self):
+    def shootout_against(self) -> int | None:
         """Return an ``int`` of the number of penalties the team conceded if the.
 
         game went to a shootout after normal play.
         """
         goals_against_value = self._goals_against or ""
         penalties = re.findall(r"\(\d+\)", goals_against_value)
-        if penalties:
-            penalties = re.sub(r"\(|\)", "", penalties[0])
-        return penalties
+        if not penalties:
+            return None
+        penalty = re.sub(r"\(|\)", "", penalties[0])
+        try:
+            return int(penalty)
+        except ValueError:
+            return None
 
     @property
-    def opponent(self):
+    def opponent(self) -> str | None:
         """Return a ``string`` of the opponents name, such as 'Arsenal'."""
         return self._opponent
 
     @property
-    def opponent_id(self):
+    def opponent_id(self) -> str | None:
         """Return a ``string`` of the opponents squad ID, such as '18bb7c10'.
 
         for Arsenal.
@@ -400,7 +418,7 @@ class Game:
         return self._opponent_id
 
     @float_property_decorator
-    def expected_goals(self):
+    def expected_goals(self) -> float | None:
         """Return a ``float`` of the number of goals the team was expected to.
 
         score based on the quality of shots taken.
@@ -408,7 +426,7 @@ class Game:
         return self._expected_goals
 
     @float_property_decorator
-    def expected_goals_against(self):
+    def expected_goals_against(self) -> float | None:
         """Return a ``float`` of the number of goals the team was expected to.
 
         concede based on the quality of shots taken.
@@ -416,14 +434,14 @@ class Game:
         return self._expected_goals_against
 
     @int_property_decorator
-    def attendance(self):
+    def attendance(self) -> int | None:
         """Return an ``int`` of the recorded attendance at the game."""
         if not self._attendance:
             return None
-        return self._attendance.replace(",", "")
+        return int(self._attendance.replace(",", ""))
 
     @property
-    def captain(self):
+    def captain(self) -> str | None:
         """Return a ``string`` representing the captain's name, such as.
 
         'Harry Kane'.
@@ -431,7 +449,7 @@ class Game:
         return self._captain
 
     @property
-    def captain_id(self):
+    def captain_id(self) -> str | None:
         """Return a ``string`` of the captain's unique ID on fbref.com, such.
 
         as '21a66f6a' for Harry Kane.
@@ -439,7 +457,7 @@ class Game:
         return self._captain_id
 
     @property
-    def formation(self):
+    def formation(self) -> str | None:
         """Return a ``string`` of the formation the team started with during.
 
         the game, such as '4-4-2'.
@@ -447,7 +465,7 @@ class Game:
         return self._formation
 
     @property
-    def referee(self):
+    def referee(self) -> str | None:
         """Return a ``string`` of the first and last name of the referee for.
 
         the match.
@@ -455,12 +473,12 @@ class Game:
         return self._referee
 
     @property
-    def match_report(self):
+    def match_report(self) -> str | None:
         """Return a ``string`` of the 8-digit match ID for the game."""
         return self._match_report
 
     @property
-    def notes(self):
+    def notes(self) -> str | None:
         """Return a ``string`` of any notes that might be included with the.
 
         game.
@@ -488,10 +506,10 @@ class Schedule:
 
     def __init__(self, team_id: str | None, doc: Any | None = None) -> None:
         """Initialize the class instance."""
-        self._games = []
+        self._games: list[Game] = []
         self._pull_schedule(team_id, doc)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Game:
         """Return a specified game.
 
         Returns a specified game as requested by the index number in the array.
@@ -516,7 +534,7 @@ class Schedule:
         """
         return self._games[index]
 
-    def __call__(self, date):
+    def __call__(self, date: datetime) -> Game:
         """Return a specified game.
 
         Returns a specific game as requested by the passed datetime. The input
@@ -552,24 +570,24 @@ class Schedule:
                 return game
         raise ValueError("No games found for requested date")
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         games = [f"{game.date} - {game.opponent}".strip() for game in self._games]
         return "\n".join(games)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Game]:
         """Return an iterator of all of the games scheduled for the given team."""
         return iter(self._games)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of scheduled games for the given team."""
         return len(self._games)
 
-    def _add_games_to_schedule(self, schedule):
+    def _add_games_to_schedule(self, schedule: Any) -> None:
         """Add game information to the list of games.
 
         Create a Game instance for the given game in the schedule and add it to
@@ -587,7 +605,7 @@ class Schedule:
             game = Game(item)
             self._games.append(game)
 
-    def _pull_schedule(self, team_id, doc):
+    def _pull_schedule(self, team_id: str | None, doc: Any | None) -> None:
         """Download and create objects for the team's schedule.
 
         Given the team's abbreviation, pull the squad page and parse all of the
