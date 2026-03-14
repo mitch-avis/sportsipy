@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 from urllib.error import HTTPError
 
 from pyquery import PyQuery
@@ -168,7 +169,7 @@ class Rankings:
         self._rankings[week_value] = weekly_rankings
 
     @property
-    def current_extended(self):
+    def current_extended(self) -> Any:
         """Return a ``list`` of ``dictionaries`` of the most recent AP rankings.
 
         The list is ordered in terms of the ranking so the #1 team will be in
@@ -195,7 +196,7 @@ class Rankings:
         return ordered_dict
 
     @property
-    def current(self):
+    def current(self) -> Any:
         """Return a ``dictionary`` of the most recent rankings from the.
 
         Associated Press where each key is a ``string`` of the team's
@@ -209,7 +210,7 @@ class Rankings:
         return rankings_dict
 
     @property
-    def complete(self):
+    def complete(self) -> Any:
         """Return a ``dictionary`` where each key is a week number as an ``int``.
 
         and each value is a ``list`` of ``dictionaries`` containing the AP
@@ -392,7 +393,7 @@ class CFPRankings:
         self._rankings[week_value] = weekly_rankings
 
     @property
-    def current_extended(self):
+    def current_extended(self) -> Any:
         """Return a ``list`` of ``dictionaries`` of the most recent CFP rankings.
 
         The list is ordered in terms of the ranking so the #1 team will be in
@@ -419,7 +420,7 @@ class CFPRankings:
         return ordered_dict
 
     @property
-    def current(self):
+    def current(self) -> Any:
         """Return a ``dictionary`` of the most recent CFP rankings where.
 
         each key is a ``string`` of the team's abbreviation and each
@@ -432,7 +433,7 @@ class CFPRankings:
         return rankings_dict
 
     @property
-    def complete(self):
+    def complete(self) -> Any:
         """Return a ``dictionary`` where each key is a week number as an ``int``.
 
         and each value is a ``list`` of ``dictionaries`` containing the CFP
@@ -614,7 +615,7 @@ class CoachesRankings:
         self._rankings[week_value] = weekly_rankings
 
     @property
-    def current_extended(self):
+    def current_extended(self) -> Any:
         """Return a ``list`` of ``dictionaries`` of the most recent Coaches Poll.
 
         rankings. The list is ordered in terms of the ranking so the #1 team
@@ -641,7 +642,7 @@ class CoachesRankings:
         return ordered_dict
 
     @property
-    def current(self):
+    def current(self) -> Any:
         """Return a ``dictionary`` of the most recent Coaches Poll.
 
         rankings where each key is a ``string`` of the team's
@@ -655,7 +656,7 @@ class CoachesRankings:
         return rankings_dict
 
     @property
-    def complete(self):
+    def complete(self) -> Any:
         """Return a ``dictionary`` where each key is a week number as an ``int``.
 
         and each value is a ``list`` of ``dictionaries`` containing the Coaches
