@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 from urllib.error import HTTPError
 
 from sportsipy import utils
@@ -128,7 +129,7 @@ class Conference:
             self._teams[team_abbreviation] = team_name
 
     @property
-    def teams(self):
+    def teams(self) -> Any:
         """Return a ``dictionary`` of team names and abbreviations where each key.
 
         is a ``string`` of the team abbreviation and each value is a ``string``
@@ -260,7 +261,7 @@ class Conferences:
             self._conferences[conference_abbreviation] = conference_dict
 
     @property
-    def conferences(self):
+    def conferences(self) -> Any:
         """Return a ``dictionary`` of conference names and abbreviations where.
 
         each key is a ``string`` of the abbreviation and each value is a
@@ -284,7 +285,7 @@ class Conferences:
         return self._conferences
 
     @property
-    def team_conference(self):
+    def team_conference(self) -> Any:
         """Return a ``dictionary`` of conference abbreviations for each team.
 
         where each key is a ``string`` of the team abbreviation and each value
