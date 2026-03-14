@@ -3,7 +3,6 @@
 import os
 
 import pandas as pd
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.nfl.roster import Player, Roster
@@ -1429,9 +1428,9 @@ class TestNFLPlayer:
 class TestNFLRoster:
     """Represent TestNFLRoster."""
 
-    def test_roster_class_pulls_all_player_stats(self, *args, **kwargs):
+    def test_roster_class_pulls_all_player_stats(self, monkeypatch, *args, **kwargs):
         """Return test roster class pulls all player stats."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("NOR")
 
         assert len(roster.players) > 0
@@ -1446,9 +1445,9 @@ class TestNFLRoster:
         roster = Roster("BAD")
         assert isinstance(roster.players, list)
 
-    def test_roster_from_team_class(self, *args, **kwargs):
+    def test_roster_from_team_class(self, monkeypatch, *args, **kwargs):
         """Return test roster from team class."""
-        flexmock(Team).should_receive("_parse_team_data").and_return(None)
+        monkeypatch.setattr(Team, "_parse_team_data", lambda *_args, **_kwargs: None)
         team = Team(team_data=None, rank=1, year="2018")
         team._abbreviation = "NOR"
 
@@ -1460,17 +1459,17 @@ class TestNFLRoster:
             assert player.player_id
         team._abbreviation = None
 
-    def test_roster_class_with_slim_parameter(self, *args, **kwargs):
+    def test_roster_class_with_slim_parameter(self, monkeypatch, *args, **kwargs):
         """Return test roster class with slim parameter."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("NOR", slim=True)
 
         assert len(roster.players) > 0
         assert "BreeDr00" in roster.players
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: 2019)
 
         roster = Roster("NOR")
 
@@ -1481,9 +1480,9 @@ class TestNFLRoster:
         for player in players:
             assert player.player_id
 
-    def test_roster_class_string_representation(self, *args, **kwargs):
+    def test_roster_class_string_representation(self, monkeypatch, *args, **kwargs):
         """Return test roster class string representation."""
-        flexmock(utils).should_receive("find_year_for_season").and_return("2018")
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _: "2018")
         roster = Roster("NOR")
         rendered = repr(roster)
         assert "Drew Brees (BreeDr00)" in rendered
