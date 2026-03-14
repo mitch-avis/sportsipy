@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from functools import wraps
+from typing import Any
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -451,7 +452,7 @@ class Player(AbstractPlayer):
         return fields_to_include
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a ``pandas DataFrame`` containing all other relevant class.
 
         properties and values where each index is a different season plus the
@@ -471,7 +472,7 @@ class Player(AbstractPlayer):
         return pd.DataFrame(rows, index=[indices])
 
     @property
-    def season(self):
+    def season(self) -> Any:
         """Return a ``string`` of the season in the format 'YYYY', such as.
 
         '2017'. If no season was requested, the career stats will be returned
@@ -482,7 +483,7 @@ class Player(AbstractPlayer):
         return None
 
     @property
-    def team_abbreviation(self):
+    def team_abbreviation(self) -> Any:
         """Return a ``string`` of the team's abbreviation, such as 'PURDUE' for.
 
         the Purdue Boilermakers.
@@ -492,7 +493,7 @@ class Player(AbstractPlayer):
         return None
 
     @property
-    def position(self):
+    def position(self) -> Any:
         """Return a ``string`` of the player's primary position."""
         # If the position is left blank for the career stats, it will show
         # the player as not having a position. Since player stats default to
@@ -510,7 +511,7 @@ class Player(AbstractPlayer):
         return None
 
     @property
-    def height(self):
+    def height(self) -> Any:
         """Return a ``string`` of the player's height in the format.
 
         "feet-inches".
@@ -518,7 +519,7 @@ class Player(AbstractPlayer):
         return self._height
 
     @property
-    def weight(self):
+    def weight(self) -> Any:
         """Return an ``int`` of the player's weight in pounds."""
         if not self._weight:
             return None
@@ -528,7 +529,7 @@ class Player(AbstractPlayer):
             return None
 
     @property
-    def year(self):
+    def year(self) -> Any:
         """Return a ``string`` of the player's class designation, such as'FR' for.
 
         freshmen.
@@ -1046,7 +1047,7 @@ class Roster:
         self._coach = self._parse_coach(page)
 
     @property
-    def players(self):
+    def players(self) -> Any:
         """Return a ``list`` of player instances for each player on the requested.
 
         team's roster if the ``slim`` property is False when calling the Roster
@@ -1057,6 +1058,6 @@ class Roster:
         return self._players
 
     @property
-    def coach(self):
+    def coach(self) -> Any:
         """Return a ``string`` of the coach's name, such as 'Jeff Brohm'."""
         return self._coach
