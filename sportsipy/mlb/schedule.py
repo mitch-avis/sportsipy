@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 
@@ -32,18 +33,18 @@ class Game:
 
     def __init__(self, game_data: Any, year: int | str | None) -> None:
         """Initialize the class instance."""
-        self._game = None
+        self._game: int | None = None
         self._date: str | None = None
-        self._datetime = None
-        self._boxscore = None
+        self._datetime: datetime | None = None
+        self._boxscore: str | None = None
         self._location: str | None = None
         self._opponent_abbr: str | None = None
         self._result: str | None = None
-        self._runs_scored = None
-        self._runs_allowed = None
-        self._innings = None
+        self._runs_scored: int | None = None
+        self._runs_allowed: int | None = None
+        self._innings: int | None = None
         self._record: str | None = None
-        self._rank = None
+        self._rank: int | None = None
         self._games_behind: str | None = None
         self._winner: str | None = None
         self._loser: str | None = None
@@ -56,15 +57,15 @@ class Game:
 
         self._parse_game_data(game_data)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.date} - {self.opponent_abbr}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _parse_boxscore(self, game_data):
+    def _parse_boxscore(self, game_data: Any) -> None:
         """Parse the boxscore URI for the game.
 
         The boxscore is embedded within the HTML tag and needs a special
@@ -81,7 +82,7 @@ class Game:
         boxscore = re.sub(r"\.shtml.*", "", boxscore)
         self._boxscore = boxscore
 
-    def _parse_game_data(self, game_data):
+    def _parse_game_data(self, game_data: Any) -> None:
         """Parse a value for every attribute.
 
         The function looks through every attribute with the exception of those
@@ -111,7 +112,7 @@ class Game:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the boxscore string.
@@ -146,7 +147,7 @@ class Game:
         return pd.DataFrame([fields_to_include], index=[self._boxscore])
 
     @property
-    def dataframe_extended(self):
+    def dataframe_extended(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame representing the Boxscore class for the.
 
         game. This property provides much richer context for the selected game,
@@ -160,7 +161,7 @@ class Game:
         return self.boxscore.dataframe
 
     @int_property_decorator
-    def game(self):
+    def game(self) -> int | None:
         """Return an ``int`` of the game in the season, where 1 is the first game.
 
         of the season.
@@ -168,12 +169,12 @@ class Game:
         return self._game
 
     @property
-    def date(self):
+    def date(self) -> str | None:
         """Return a ``string`` of the date the game was played on."""
         return self._date
 
     @property
-    def datetime(self):
+    def datetime(self) -> datetime | None:
         """Return a datetime object of the month, day, year, and time the game.
 
         was played.
@@ -185,7 +186,7 @@ class Game:
         return datetime.strptime(date_string, "%A, %b %d %Y")
 
     @property
-    def game_number_for_day(self):
+    def game_number_for_day(self) -> int:
         """Return an ``int`` denoting which game is played for the team during.
 
         the given day. Default value is 1 where a team plays only one game
@@ -202,7 +203,7 @@ class Game:
         return int(game_number[0])
 
     @property
-    def boxscore(self):
+    def boxscore(self) -> Boxscore:
         """Return an instance of the Boxscore class containing more detailed.
 
         stats on the game.
@@ -210,7 +211,7 @@ class Game:
         return Boxscore(self._boxscore)
 
     @property
-    def boxscore_index(self):
+    def boxscore_index(self) -> str | None:
         """Return a ``string`` of the URI for a boxscore which can be used to.
 
         access or index a game.
@@ -218,7 +219,7 @@ class Game:
         return self._boxscore
 
     @property
-    def location(self):
+    def location(self) -> str:
         """Return a ``string`` constant to indicate whether the game was played.
 
         at home or away.
@@ -228,7 +229,7 @@ class Game:
         return HOME
 
     @property
-    def opponent_abbr(self):
+    def opponent_abbr(self) -> str | None:
         """Return a ``string`` of the opponent's 3-letter abbreviation, such as.
 
         'NYY' for the New York Yankees.
@@ -236,7 +237,7 @@ class Game:
         return self._opponent_abbr
 
     @property
-    def result(self):
+    def result(self) -> str | None:
         """Return a ``string`` constant to indicate whether the team won or lost."""
         if not self._result:
             return None
@@ -245,7 +246,7 @@ class Game:
         return LOSS
 
     @int_property_decorator
-    def runs_scored(self):
+    def runs_scored(self) -> int | None:
         """Return an ``int`` of the total number of runs that were scored by the.
 
         team.
@@ -253,24 +254,24 @@ class Game:
         return self._runs_scored
 
     @int_property_decorator
-    def runs_allowed(self):
+    def runs_allowed(self) -> int | None:
         """Return an ``int`` of the total number of runs that the team allowed."""
         return self._runs_allowed
 
     @int_property_decorator
-    def innings(self):
+    def innings(self) -> int | None:
         """Return an ``int`` of the total number of innings that were played."""
         if not self._innings:
             return 9
         return self._innings
 
     @property
-    def record(self):
+    def record(self) -> str | None:
         """Return a ``string`` of the team's record in the format 'W-L'."""
         return self._record
 
     @int_property_decorator
-    def rank(self):
+    def rank(self) -> int | None:
         """Return an ``int`` of the team's rank in the league with 1 being the.
 
         best team.
@@ -278,7 +279,7 @@ class Game:
         return self._rank
 
     @property
-    def games_behind(self):
+    def games_behind(self) -> float | None:
         """Return a ``float`` of the number of games behind the leader the team.
 
         is. 0.0 indicates the team is tied for first. Negative numbers indicate
@@ -301,17 +302,17 @@ class Game:
             return None
 
     @property
-    def winner(self):
+    def winner(self) -> str | None:
         """Return a ``string`` of the name of the winning pitcher."""
         return self._winner
 
     @property
-    def loser(self):
+    def loser(self) -> str | None:
         """Return a ``string`` of the name of the losing pitcher."""
         return self._loser
 
     @property
-    def save(self):
+    def save(self) -> str | None:
         """Return a ``string`` of the name of the pitcher credited with the save.
 
         if applicable. If no saves, returns None.
@@ -321,12 +322,12 @@ class Game:
         return self._save
 
     @property
-    def game_duration(self):
+    def game_duration(self) -> str | None:
         """Return a ``string`` of the game's total duration in the format 'H:MM'."""
         return self._game_duration
 
     @property
-    def day_or_night(self):
+    def day_or_night(self) -> str | None:
         """Return a ``string`` constant to indicate whether the game was played.
 
         during the day or night.
@@ -338,14 +339,14 @@ class Game:
         return DAY
 
     @int_property_decorator
-    def attendance(self):
+    def attendance(self) -> int | None:
         """Return an ``int`` of the total listed attendance for the game."""
         if not self._attendance:
             return None
-        return self._attendance.replace(",", "")
+        return int(self._attendance.replace(",", ""))
 
     @property
-    def streak(self):
+    def streak(self) -> str | None:
         """Return a ``string`` of the team's winning/losing streak at the.
 
         conclusion of the requested game. A winning streak is denoted by a
@@ -372,10 +373,10 @@ class Schedule:
 
     def __init__(self, abbreviation: str | None, year: int | str | None = None) -> None:
         """Initialize the class instance."""
-        self._games = []
+        self._games: list[Game] = []
         self._pull_schedule(abbreviation, year)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Game:
         """Return a specified game.
 
         Returns a specified game as requested by the index number in the array.
@@ -395,7 +396,7 @@ class Schedule:
         """
         return self._games[index]
 
-    def __call__(self, date, game_number=1):
+    def __call__(self, date: datetime, game_number: int = 1) -> Game:
         """Return a specified game.
 
         Returns a specific game as requested by the passed datetime. The input
@@ -425,33 +426,36 @@ class Schedule:
 
         """
         for game in self._games:
+            game_datetime = game.datetime
+            if game_datetime is None:
+                continue
             if (
-                game.datetime.year == date.year
-                and game.datetime.month == date.month
-                and game.datetime.day == date.day
+                game_datetime.year == date.year
+                and game_datetime.month == date.month
+                and game_datetime.day == date.day
                 and game.game_number_for_day == game_number
             ):
                 return game
         raise ValueError("No games found for requested date")
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         games = [f"{game.date} - {game.opponent_abbr}".strip() for game in self._games]
         return "\n".join(games)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Game]:
         """Return an iterator of all of the games scheduled for the given team."""
         return iter(self._games)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of scheduled games for the given team."""
         return len(self._games)
 
-    def _pull_schedule(self, abbreviation, year):
+    def _pull_schedule(self, abbreviation: str | None, year: int | str | None) -> None:
         """Download and create objects for the team's schedule.
 
         Given a team abbreviation and season, first download the team's
@@ -467,6 +471,9 @@ class Schedule:
             The requested year to pull stats from.
 
         """
+        if abbreviation is None:
+            utils.no_data_found()
+            return
         if not year:
             year = utils.find_year_for_season("mlb")
             year = utils.resolve_year_for_url(year, lambda y: SCHEDULE_URL % (abbreviation, y))
@@ -487,25 +494,27 @@ class Schedule:
             self._games.append(game)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame where each row is a representation of the.
 
         Game class. Rows are indexed by the boxscore string.
         """
-        frames = []
+        frames: list[pd.DataFrame] = []
         for game in iter(self._games):
             # If both the runs scored and allowed are None, the game hasn't
             # been played yet, and the data should not be included in the
             # DataFrame.
             if game.runs_scored is None and game.runs_allowed is None:
                 continue
-            frames.append(game.dataframe)
+            df = game.dataframe
+            if df is not None:
+                frames.append(df)
         if not frames:
             return None
         return pd.concat(frames)
 
     @property
-    def dataframe_extended(self):
+    def dataframe_extended(self) -> pd.DataFrame | None:
         """Return a pandas DataFrame where each row is a representation of the.
 
         Boxscore class for every game in the schedule. Rows are indexed by the
@@ -513,7 +522,7 @@ class Schedule:
         selected game, but takes longer to process compared to the lighter
         'dataframe' property.
         """
-        frames = []
+        frames: list[pd.DataFrame] = []
         for game in iter(self._games):
             df = game.dataframe_extended
             if df is not None:
