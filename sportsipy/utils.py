@@ -1022,9 +1022,12 @@ def pull_page(url: str | None = None, local_file: str | None = None):
 
     """
     if local_file:
-        if not os.path.exists(local_file):
+        candidate = Path(local_file)
+        if not candidate.exists():
+            candidate = Path(__file__).resolve().parents[1] / local_file
+        if not candidate.exists():
             return None
-        with open(local_file, encoding="utf-8") as file_handle:
+        with open(candidate, encoding="utf-8") as file_handle:
             return pq(file_handle.read())
     if url:
         html = get_page_source(url)
