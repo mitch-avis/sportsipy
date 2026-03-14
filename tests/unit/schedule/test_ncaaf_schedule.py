@@ -1,6 +1,7 @@
 """Provide utilities for test ncaaf schedule."""
 
 from datetime import datetime
+from typing import cast
 
 from flexmock import flexmock
 from pyquery import PyQuery
@@ -91,7 +92,7 @@ class TestNCAAFSchedule:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
         schedule = Schedule("PURDUE")
 
-        fake_game = flexmock(dataframe=None)
+        fake_game = cast(Game, flexmock(dataframe=None))
         schedule._games = [fake_game]
 
         assert schedule.dataframe is None
@@ -101,7 +102,7 @@ class TestNCAAFSchedule:
         flexmock(Schedule).should_receive("_pull_schedule").and_return(None)
         schedule = Schedule("PURDUE")
 
-        fake_game = flexmock(dataframe_extended=None)
+        fake_game = cast(Game, flexmock(dataframe_extended=None))
         schedule._games = [fake_game]
 
         assert schedule.dataframe_extended is None
