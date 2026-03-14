@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 import pandas as pd
-from flexmock import flexmock
+import pytest
 
 from sportsipy import utils
 from sportsipy.constants import AWAY
@@ -143,9 +143,12 @@ class TestNBABoxscore:
             "home_offensive_rating": 106.6,
             "home_defensive_rating": 116.3,
         }
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-
         self.boxscore = Boxscore(BOXSCORE)
+
+    @pytest.fixture(autouse=True)
+    def _patch_today(self, monkeypatch):
+        """Patch today's date used by default-year behavior."""
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
 
     def test_nba_boxscore_returns_requested_boxscore(self):
         """Return test nba boxscore returns requested boxscore."""
@@ -156,9 +159,9 @@ class TestNBABoxscore:
             "home": [36, 30, 19, 25],
         }
 
-    def test_invalid_url_yields_empty_class(self):
+    def test_invalid_url_yields_empty_class(self, monkeypatch):
         """Return test invalid url yields empty class."""
-        flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
+        monkeypatch.setattr(Boxscore, "_retrieve_html_page", lambda *_args, **_kwargs: None)
 
         boxscore = Boxscore(BOXSCORE)
 
