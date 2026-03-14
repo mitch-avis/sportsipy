@@ -3,7 +3,6 @@
 from os.path import dirname, join
 
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.ncaaf.conferences import Conference, Conferences
@@ -136,9 +135,9 @@ class TestNCAAFConferences:
         self.team_conference = team_conference
         self.conferences_result = conferences_result
 
-    def test_conferences_integration(self, *args, **kwargs):
+    def test_conferences_integration(self, monkeypatch, *args, **kwargs):
         """Return test conferences integration."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: YEAR)
 
         conferences = Conferences()
 
@@ -155,26 +154,26 @@ class TestNCAAFConferences:
         with pytest.raises(ValueError):
             Conference("BAD")
 
-    def test_conference_with_no_names_is_empty(self, *args, **kwargs):
+    def test_conference_with_no_names_is_empty(self, monkeypatch, *args, **kwargs):
         """Return test conference with no names is empty."""
-        flexmock(Conference).should_receive("_get_team_abbreviation").and_return("")
+        monkeypatch.setattr(Conference, "_get_team_abbreviation", lambda *_args, **_kwargs: "")
 
         conference = Conference("acc")
 
         assert len(conference._teams) == 0
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2019)
 
         conferences = Conferences()
 
         assert conferences.team_conference == self.team_conference
         assert conferences.conferences == self.conferences_result
 
-    def test_invalid_conference_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_conference_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid conference year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2019)
 
         conference = Conference("acc")
 
