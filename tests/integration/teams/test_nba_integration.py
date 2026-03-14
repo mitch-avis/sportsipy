@@ -4,13 +4,16 @@ import os
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.nba.teams import Team, Teams
 
 MONTH = 1
 YEAR = 2021
+
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
 
 
 def read_file(filename):
@@ -63,6 +66,15 @@ class MockDateTime:
         """Initialize the class instance."""
         self.year = year
         self.month = month
+
+
+@pytest.fixture(autouse=True)
+def _reset_utils(monkeypatch):
+    """Reset shared utils callables for isolated tests."""
+    monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+    monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+    monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+    monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
 
 
 class TestNBAIntegration:
@@ -154,7 +166,6 @@ class TestNBAIntegration:
             "LAL",
             "PHO",
         ]
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.teams = Teams()
 
@@ -202,10 +213,10 @@ class TestNBAIntegration:
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    def test_nba_empty_page_returns_no_teams(self, *args, **kwargs):
+    def test_nba_empty_page_returns_no_teams(self, monkeypatch, *args, **kwargs):
         """Return test nba empty page returns no teams."""
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        monkeypatch.setattr(utils, "no_data_found", lambda: None)
+        monkeypatch.setattr(utils, "get_stats_table", lambda *_args, **_kwargs: None)
 
         teams = Teams()
 
@@ -270,9 +281,9 @@ Cleveland Cavaliers (CLE)"""
 class TestNBAIntegrationInvalidDate:
     """Represent TestNBAIntegrationInvalidDate."""
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2022)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2022)
 
         teams = Teams()
 
