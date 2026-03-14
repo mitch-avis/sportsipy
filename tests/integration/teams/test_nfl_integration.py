@@ -1,10 +1,10 @@
 """Provide utilities for test nfl integration."""
 
 import os
+from typing import Any, cast
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.constants import LOSS
@@ -13,6 +13,10 @@ from sportsipy.nfl.teams import Team, Teams
 
 MONTH = 9
 YEAR = 2017
+
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
 
 
 def read_file(filename):
@@ -87,6 +91,14 @@ class MockSchedule:
 
 class TestNFLIntegration:
     """Represent TestNFLIntegration."""
+
+    @pytest.fixture(autouse=True)
+    def _patch_todays_date(self, monkeypatch):
+        """Patch today's date for deterministic tests."""
+        monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+        monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+        monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
 
     def setup_method(self, *args, **kwargs):
         """Return setup method."""
@@ -166,7 +178,6 @@ class TestNFLIntegration:
             "NYG",
             "CLE",
         ]
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.teams = Teams()
 
@@ -206,20 +217,20 @@ class TestNFLIntegration:
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    def test_nfl_empty_page_returns_no_teams(self, *args, **kwargs):
+    def test_nfl_empty_page_returns_no_teams(self, monkeypatch, *args, **kwargs):
         """Return test nfl empty page returns no teams."""
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        monkeypatch.setattr(utils, "no_data_found", lambda: None)
+        monkeypatch.setattr(utils, "get_stats_table", lambda *_args, **_kwargs: None)
 
         teams = Teams()
 
         assert len(teams) == 0
 
-    def test_pulling_team_directly(self, *args, **kwargs):
+    def test_pulling_team_directly(self, monkeypatch, *args, **kwargs):
         """Return test pulling team directly."""
         schedule = MockSchedule(None, None)
 
-        flexmock(Team).should_receive("schedule").and_return(schedule)
+        monkeypatch.setattr(cast(Any, Team), "schedule", property(lambda _self: schedule))
 
         kansas = Team("KAN")
         assert kansas.abbreviation == "KAN"
@@ -280,9 +291,9 @@ Cleveland Browns (CLE)"""
 class TestNFLIntegrationInvalidYear:
     """Represent TestNFLIntegrationInvalidYear."""
 
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
         """Return test invalid default year reverts to previous year."""
-        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2018)
 
         teams = Teams()
 
