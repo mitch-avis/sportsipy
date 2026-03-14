@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from functools import wraps
+from typing import Any
 from urllib.error import HTTPError
 
 import pandas as pd
@@ -202,15 +203,15 @@ class Player(AbstractPlayer):
             return
         self.find_initial_index()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.name} ({self.player_id})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _build_url(self):
+    def _build_url(self) -> str:
         """Create the player's URL to pull stats from.
 
         The player's URL requires the first letter of the player's last name
@@ -229,7 +230,7 @@ class Player(AbstractPlayer):
         first_character = self._player_id[0]
         return PLAYER_URL % (first_character, self._player_id)
 
-    def _retrieve_html_page(self):
+    def _retrieve_html_page(self) -> PyQuery | None:
         """Download the requested player's stats page.
 
         Download the requested page and strip all of the comment tags before
@@ -252,7 +253,7 @@ class Player(AbstractPlayer):
             return None
         return PyQuery(utils.remove_html_comment_tags(url_data))
 
-    def _parse_season(self, row):
+    def _parse_season(self, row: PyQuery) -> str:
         """Parse the season string from the table.
 
         The season is generally located in the first column of the stats tables
@@ -271,9 +272,15 @@ class Player(AbstractPlayer):
             as '2017-18'.
 
         """
-        return utils.parse_field(PLAYER_SCHEME, row, "season")
+        season = utils.parse_field(PLAYER_SCHEME, row, "season")
+        return "" if season is None else str(season)
 
-    def _combine_season_stats(self, table_rows, career_stats, all_stats_dict):
+    def _combine_season_stats(
+        self,
+        table_rows: Any,
+        career_stats: Any,
+        all_stats_dict: dict[str, dict[str, str]],
+    ) -> dict[str, dict[str, str]]:
         """Combine all stats for each season.
 
         Since all of the stats are spread across multiple tables, they should
@@ -319,7 +326,7 @@ class Player(AbstractPlayer):
             all_stats_dict["Career"] = {"data": str(next(career_stats))}
         return all_stats_dict
 
-    def _combine_all_stats(self, player_info):
+    def _combine_all_stats(self, player_info: PyQuery) -> dict[str, dict[str, str]]:
         """Pull stats from all tables into single data structure.
 
         Pull the stats from all of the requested tables into a dictionary that
@@ -354,7 +361,7 @@ class Player(AbstractPlayer):
             all_stats_dict = self._combine_season_stats(table_items, career_items, all_stats_dict)
         return all_stats_dict
 
-    def _parse_nationality(self, player_info):
+    def _parse_nationality(self, player_info: PyQuery) -> None:
         """Parse the player's nationality.
 
         The player's nationality is denoted by a flag in the information
@@ -370,12 +377,12 @@ class Player(AbstractPlayer):
         """
         for span in player_info("span").items():
             if 'class="f-i' in str(span):
-                nationality = span.text()
+                nationality = str(span.text() or "")
                 nationality = NATIONALITY[nationality]
                 self._nationality = nationality
                 break
 
-    def _parse_player_information(self, player_info):
+    def _parse_player_information(self, player_info: PyQuery) -> None:
         """Parse general player information.
 
         Parse general player information such as height, weight, and name. The
@@ -393,7 +400,7 @@ class Player(AbstractPlayer):
             value = utils.parse_field(PLAYER_SCHEME, player_info, short_field)
             setattr(self, field, value)
 
-    def _parse_birth_date(self, player_info):
+    def _parse_birth_date(self, player_info: PyQuery) -> None:
         """Parse the player's birth date.
 
         Pull the player's birth date from the player information and set the
@@ -406,9 +413,9 @@ class Player(AbstractPlayer):
 
         """
         date = player_info('span[itemprop="birthDate"]').attr("data-birth")
-        self._birth_date = date
+        self._birth_date = None if date is None else str(date)
 
-    def _parse_contract_headers(self, table):
+    def _parse_contract_headers(self, table: PyQuery) -> list[str]:
         """Parse the years on the contract.
 
         The years are listed as the headers on the contract. The first header
@@ -427,11 +434,11 @@ class Player(AbstractPlayer):
             such as '2017-18'.
 
         """
-        years = [i.text() for i in table("th").items()]
+        years = [str(i.text() or "") for i in table("th").items()]
         years.remove("Team")
         return years
 
-    def _parse_contract_wages(self, table):
+    def _parse_contract_wages(self, table: PyQuery) -> list[str]:
         """Parse the wages on the contract.
 
         The wages are listed as the data points in the contract table. Any
@@ -450,11 +457,14 @@ class Player(AbstractPlayer):
             the dollar amount, such as '$40,000,000'.
 
         """
-        wages = [i.text() if i.text().startswith("$") else "" for i in table("td").items()]
+        wages = [
+            text if text.startswith("$") else ""
+            for text in (str(i.text() or "") for i in table("td").items())
+        ]
         wages.remove("")
         return wages
 
-    def _combine_contract(self, years, wages):
+    def _combine_contract(self, years: list[str], wages: list[str]) -> dict[str, str]:
         """Combine the contract wages and year.
 
         Match the wages with the year and add to a dictionary representing the
@@ -483,7 +493,7 @@ class Player(AbstractPlayer):
             contract[year] = wages[i]
         return contract
 
-    def _parse_contract(self, player_info):
+    def _parse_contract(self, player_info: PyQuery) -> None:
         """Parse the player's contract.
 
         Depending on the player's contract status, a contract table is located
@@ -498,7 +508,7 @@ class Player(AbstractPlayer):
         """
         tables = player_info("table").items()
         for table in tables:
-            id_attr = table.attr("id")
+            id_attr = str(table.attr("id") or "")
             if id_attr and id_attr.startswith("contracts_"):
                 years = self._parse_contract_headers(table)
                 wages = self._parse_contract_wages(table)
@@ -510,7 +520,7 @@ class Player(AbstractPlayer):
                 self._contract = contract
                 break
 
-    def _pull_player_data(self):
+    def _pull_player_data(self) -> dict[str, dict[str, str]] | None:
         """Pull and aggregate all player information.
 
         Pull the player's HTML stats page and parse unique properties, such as
@@ -537,7 +547,7 @@ class Player(AbstractPlayer):
         self._season = list(all_stats.keys())
         return all_stats
 
-    def find_initial_index(self):
+    def find_initial_index(self) -> None:
         """Find the index of career stats.
 
         When the Player class is instantiated, the default stats to pull are
@@ -552,7 +562,7 @@ class Player(AbstractPlayer):
                     break
                 index += 1
 
-    def __call__(self, requested_season=""):
+    def __call__(self, requested_season: str = "") -> Player:
         """Specify a different season to pull stats from.
 
         A different season can be requested by passing the season string, such
@@ -582,7 +592,7 @@ class Player(AbstractPlayer):
                 index += 1
         return self
 
-    def _dataframe_fields(self):
+    def _dataframe_fields(self) -> dict[str, Any]:
         """Create a dictionary of all fields to include with DataFrame.
 
         With the result of the calls to class properties changing based on the
@@ -1388,7 +1398,7 @@ class Roster:
             self._players = []
         self._find_players_with_coach(year)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         if isinstance(self._players, dict):
             players = [f"{name} ({player_id})".strip() for player_id, name in self._players.items()]
@@ -1396,11 +1406,11 @@ class Roster:
             players = [f"{player.name} ({player.player_id})".strip() for player in self._players]
         return "\n".join(players)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _pull_team_page(self, url):
+    def _pull_team_page(self, url: str) -> PyQuery | None:
         """Download the team page.
 
         Download the requested team's season page and create a PyQuery object.
@@ -1425,7 +1435,7 @@ class Roster:
         except HTTPError:
             return None
 
-    def _create_url(self, year):
+    def _create_url(self, year: int | str | None) -> str:
         """Build the team URL.
 
         Build a URL given a team's 3-letter abbreviation and the 4-digit year.
@@ -1446,7 +1456,7 @@ class Roster:
         team = self._team.upper() if self._team else ""
         return ROSTER_URL % (team, year)
 
-    def _get_id(self, player):
+    def _get_id(self, player: PyQuery) -> str:
         """Parse the player ID.
 
         Given a PyQuery object representing a single player on the team roster,
@@ -1468,7 +1478,7 @@ class Roster:
         name = re.sub(r".*/players/./", "", str(name_tag))
         return re.sub(r"\.html.*", "", name)
 
-    def _get_name(self, player):
+    def _get_name(self, player: PyQuery) -> str:
         """Parse the player's name.
 
         Given a PyQuery object representing a single player on the team roster,
@@ -1489,7 +1499,7 @@ class Roster:
         name_tag = player('td[data-stat="player"] a')
         return str(name_tag.text() or "")
 
-    def _parse_coach(self, page):
+    def _parse_coach(self, page: PyQuery) -> str | None:
         """Parse the team's coach.
 
         Given a copy of the team's roster page, find and parse the team's
@@ -1509,11 +1519,12 @@ class Roster:
         coach_name = None
         for line in page.find("p").items():
             strong = line.find("strong")
-            if hasattr(strong, "text") and strong.text().strip() == "Coach:":
-                coach_name = line.find("a").text()
+            strong_text = str(strong.text() or "") if hasattr(strong, "text") else ""
+            if strong_text.strip() == "Coach:":
+                coach_name = str(line.find("a").text() or "") or None
         return coach_name
 
-    def _find_players_with_coach(self, year):
+    def _find_players_with_coach(self, year: int | str | None) -> None:
         """Find all player IDs for the requested team.
 
         For the requested team and year (if applicable), pull the roster table
