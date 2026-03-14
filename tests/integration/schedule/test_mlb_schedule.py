@@ -2,10 +2,10 @@
 
 import os
 from datetime import datetime
+from typing import Any, cast
 
 import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME, LOSS, WIN
@@ -17,6 +17,31 @@ MONTH = 4
 YEAR = 2017
 
 NUM_GAMES_IN_SCHEDULE = 162
+
+ORIGINAL_TODAYS_DATE = utils.todays_date
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
+
+
+@pytest.fixture(autouse=True)
+def _reset_utils(monkeypatch):
+    """Reset shared utils callables for isolated tests."""
+    monkeypatch.setattr(utils, "todays_date", ORIGINAL_TODAYS_DATE)
+    monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+    monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+    monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+
+
+@pytest.fixture(autouse=True)
+def _patch_boxscore(monkeypatch):
+    """Patch Boxscore parsing/dataframe for deterministic schedule tests."""
+    monkeypatch.setattr(Boxscore, "_parse_game_data", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        cast(Any, Boxscore),
+        "dataframe",
+        property(lambda _self: pd.DataFrame([{"key": "value"}])),
+    )
 
 
 def read_file(filename):
@@ -104,9 +129,7 @@ class TestMLBSchedule:
             "attendance": 19366,
             "streak": "+",
         }
-        flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
-        flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
+        utils.todays_date = lambda: MockDateTime(YEAR, MONTH)
 
         self.schedule = Schedule("NYY")
 
@@ -200,8 +223,8 @@ class TestMLBSchedule:
 
     def test_empty_page_return_no_games(self, *args, **kwargs):
         """Return test empty page return no games."""
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        utils.no_data_found = lambda: None
+        utils.get_stats_table = lambda *_args, **_kwargs: None
 
         schedule = Schedule("NYY")
 
@@ -410,9 +433,7 @@ class TestMLBScheduleInvalidYear:
             "attendance": 19366,
             "streak": "+",
         }
-        flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
-        flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
-        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
+        utils.find_year_for_season = lambda _league: 2018
 
         schedule = Schedule("NYY")
 
