@@ -116,7 +116,7 @@ class BoxscorePlayer(AbstractPlayer):
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a ``pandas DataFrame`` containing all other relevant.
 
         properties and values for the specified game.
@@ -161,7 +161,7 @@ class BoxscorePlayer(AbstractPlayer):
         return pd.DataFrame([fields_to_include], index=[self._player_id])
 
     @property
-    def decision(self):
+    def decision(self) -> Any:
         """Return a ``string`` denoting whether the goalie won or lost the game."""
         return self._decision
 
@@ -224,7 +224,7 @@ class BoxscorePlayer(AbstractPlayer):
         return self._shifts
 
     @property
-    def time_on_ice(self):
+    def time_on_ice(self) -> Any:
         """Return a ``string`` of the total time the player has spent on ice in.
 
         the format 'MM:SS'.
@@ -695,7 +695,7 @@ class Boxscore:
         self._away_players, self._home_players = self._find_players(boxscore)
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         """Return a pandas DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
@@ -750,7 +750,7 @@ class Boxscore:
         return pd.DataFrame([fields_to_include], index=[self._uri])
 
     @property
-    def away_players(self):
+    def away_players(self) -> Any:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the away team.
@@ -758,7 +758,7 @@ class Boxscore:
         return self._away_players
 
     @property
-    def home_players(self):
+    def home_players(self) -> Any:
         """Return a ``list`` of ``BoxscorePlayer`` class instances for each.
 
         player on the home team.
@@ -766,17 +766,17 @@ class Boxscore:
         return self._home_players
 
     @property
-    def date(self):
+    def date(self) -> Any:
         """Return a ``string`` of the date the game took place."""
         return self._date
 
     @property
-    def time(self):
+    def time(self) -> Any:
         """Return a ``string`` of the time the game started."""
         return self._time
 
     @property
-    def arena(self):
+    def arena(self) -> Any:
         """Return a ``string`` of the name of the ballpark where the game was.
 
         played.
@@ -789,12 +789,12 @@ class Boxscore:
         return self._attendance
 
     @property
-    def duration(self):
+    def duration(self) -> Any:
         """Return a ``string`` of the game's duration in the format 'H:MM'."""
         return self._duration
 
     @property
-    def playoff_round(self):
+    def playoff_round(self) -> Any:
         """Return a ``string`` denoting which round of the playoffs the game is a.
 
         part of, such as 'Western First Round', or None if the game was played
@@ -803,7 +803,7 @@ class Boxscore:
         return self._playoff_round
 
     @property
-    def winner(self):
+    def winner(self) -> Any:
         """Return a ``string`` constant indicating whether the home or away team.
 
         won.
@@ -817,7 +817,7 @@ class Boxscore:
         return AWAY
 
     @property
-    def winning_name(self):
+    def winning_name(self) -> Any:
         """Return a ``string`` of the winning team's name, such as 'Vegas Golden.
 
         Knights'.
@@ -831,7 +831,7 @@ class Boxscore:
         return ""
 
     @property
-    def winning_abbr(self):
+    def winning_abbr(self) -> Any:
         """Return a ``string`` of the winning team's abbreviation, such as 'VEG'.
 
         for the Vegas Golden Knights.
@@ -843,7 +843,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_name(self):
+    def losing_name(self) -> Any:
         """Return a ``string`` of the losing team's name, such as 'Washington.
 
         Capitals'.
@@ -857,7 +857,7 @@ class Boxscore:
         return ""
 
     @property
-    def losing_abbr(self):
+    def losing_abbr(self) -> Any:
         """Return a ``string`` of the losing team's abbreviation, such as 'WSH'.
 
         for the Washington Capitals.
@@ -969,7 +969,7 @@ class Boxscore:
         return self._away_saves
 
     @property
-    def away_save_percentage(self):
+    def away_save_percentage(self) -> Any:
         """Return a ``float`` of the percentage of shots the away team saved.
 
         Percentage ranges from 0-1.
@@ -1091,7 +1091,7 @@ class Boxscore:
         return self._home_saves
 
     @property
-    def home_save_percentage(self):
+    def home_save_percentage(self) -> Any:
         """Return a ``float`` of the percentage of shots the home team saved.
 
         Percentage ranges from 0-1.
@@ -1150,7 +1150,7 @@ class Boxscores:
         return self.__str__()
 
     @property
-    def games(self):
+    def games(self) -> Any:
         """Return a ``dictionary`` object representing all of the games played on.
 
         the requested day. Dictionary is in the following format::
