@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 import pandas as pd
@@ -90,15 +91,20 @@ class Team:
             team_data = self._retrieve_team_data(year, team_name, season_page)
         self._parse_team_data(team_data)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.name} ({self.abbreviation}) - {self._year}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def _retrieve_team_data(self, year, team_name, season_page):
+    def _retrieve_team_data(
+        self,
+        year: int | str | None,
+        team_name: str,
+        season_page: str | None,
+    ) -> Any:
         """Pull all stats for a specific team.
 
         By first retrieving a dictionary containing all information for all
@@ -132,7 +138,7 @@ class Team:
             rank += 1
         return None
 
-    def _parse_team_data(self, team_data):
+    def _parse_team_data(self, team_data: Any) -> None:
         """Parse a value for every attribute.
 
         This function looks through every attribute with the exception of
@@ -461,7 +467,7 @@ class Teams:
         teams_list, year = _retrieve_all_teams(year, season_page)
         self._instantiate_teams(teams_list, year)
 
-    def __getitem__(self, abbreviation):
+    def __getitem__(self, abbreviation: str) -> Team:
         """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
@@ -489,7 +495,7 @@ class Teams:
                 return team
         raise ValueError(f"Team abbreviation {abbreviation} not found")
 
-    def __call__(self, abbreviation):
+    def __call__(self, abbreviation: str) -> Team:
         """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
@@ -509,24 +515,24 @@ class Teams:
         """
         return self.__getitem__(abbreviation)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the class."""
         teams = [f"{team.name} ({team.abbreviation})".strip() for team in self._teams]
         return "\n".join(teams)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the class."""
         return self.__str__()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Team]:
         """Return an iterator of all of the NHL teams for a given season."""
         return iter(self._teams)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of NHL teams for a given season."""
         return len(self._teams)
 
-    def _instantiate_teams(self, teams_list, year):
+    def _instantiate_teams(self, teams_list: Any, year: int | str | None) -> None:
         """Create a Team instance for all teams.
 
         Once all team information has been pulled from the various webpages,
