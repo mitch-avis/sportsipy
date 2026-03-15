@@ -117,7 +117,8 @@ issue.
 In general, all Python code should follow the Python Enhanced Proposals (PEPs).
 The continuous integration tool used to qualify the project runs `ruff check`
 and `ruff format --check .` to enforce style and formatting requirements. Type
-checking is performed with `pyright`. If a specific rule needs an exception,
+checking is performed with `pyright`, and documentation links/wording are
+validated with `python scripts/check_docs_links.py`. If a specific rule needs an exception,
 it should be handled on a case-by-case basis with a clear justification.
 Otherwise, all code must pass `ruff check`, `ruff format --check .`, and
 `pyright` prior to being merged with upstream code.
