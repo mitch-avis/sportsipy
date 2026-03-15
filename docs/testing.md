@@ -49,11 +49,12 @@ Before committing, run the full validation suite in order:
 ```bash
 ruff format .
 ruff check .
+python scripts/check_docs_links.py
 pyright .
 pytest tests/unit/ tests/integration/ -q
 ```
 
-All four must pass cleanly before merging or sharing code on the `big-update`
+All five must pass cleanly before merging or sharing code on the `big-update`
 branch.
 
 ## Offline Fixture System
