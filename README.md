@@ -64,9 +64,9 @@ pip install dist/*.whl
 The following are a few examples showcasing how easy it can be to collect an
 abundance of metrics and information from all of the tracked leagues. The
 examples below are only a miniscule subset of the total number of statistics
-that can be pulled using sportsipy. Visit the documentation on
-[Read The Docs](http://sportsipy.readthedocs.io/en/latest/) for a complete list
-of all information exposed by the API.
+that can be pulled using sportsipy. Visit the local documentation in
+[`docs/index.md`](docs/index.md) and [`docs/api.md`](docs/api.md) for a
+complete list of all information exposed by the API.
 
 ### Get instances of all NHL teams for the 2018 season
 
@@ -144,8 +144,8 @@ The second post in particular is a great guide for getting started with
 `sportsipy` and is highly recommended for anyone who is new to the package.
 
 Complete documentation is hosted on
-[Read The Docs](http://sportsipy.readthedocs.io/en/latest/). The documentation
-is auto-generated using Sphinx based on the docstrings in the sportsipy package.
+[`docs/index.md`](docs/index.md) and organized by sport in
+[`docs/api.md`](docs/api.md).
 
 ## Development checks
 
