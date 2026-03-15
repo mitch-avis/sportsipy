@@ -398,7 +398,7 @@ class SquadPlayer:
             "times_dribbled_past": self.times_dribbled_past,
         }
         # Polars stubs can trip Pyright/Pylance here; runtime is correct.
-        return pl.DataFrame([fields_to_include])  # pyright: ignore[reportGeneralTypeIssues]
+        return pl.DataFrame([fields_to_include])
 
     @property
     def name(self) -> Any:
