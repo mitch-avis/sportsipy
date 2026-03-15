@@ -89,7 +89,7 @@ def mock_pyquery(url, timeout=None):
     if "404" in url:
         return MockPQ("This is bad", 404)
     if "exception" in url:
-        raise Exception
+        raise requests.RequestException
     return MockPQ("This is good", 200)
 
 
@@ -786,11 +786,10 @@ class TestUtils:
         assert "footer" in str(next(footer_rows))
         assert "body" in str(next(body_rows))
 
-    def test_no_data_found_returns_false_and_prints(self, capsys):
-        """Return test no data found returns false and prints."""
-        assert not utils.no_data_found()
-        captured = capsys.readouterr()
-        assert "no data" in captured.out.lower()
+    def test_no_data_found_returns_false_and_warns(self):
+        """Return test no data found returns false and warns."""
+        with pytest.warns(UserWarning, match="no data"):
+            assert not utils.no_data_found()
 
     def test_get_page_source_playwright_fallback_success(self, monkeypatch):
         """Return test get page source playwright fallback success."""

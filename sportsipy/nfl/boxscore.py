@@ -1719,7 +1719,7 @@ class Boxscores:
                 if parent.attr("id") == "header_scores":
                     return False
                 current = parent
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return False
         return True
 

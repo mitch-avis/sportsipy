@@ -5,10 +5,12 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import logging
 import os
 import re
 import threading
 import time
+import warnings
 from collections.abc import Callable, Generator
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +22,7 @@ from pyquery import PyQuery
 
 from sportsipy.constants import RATE_LIMIT_INTERVAL
 
+_LOGGER = logging.getLogger(__name__)
 _RATE_LIMIT_LOCK = threading.Lock()
 _LAST_REQUEST_TIME = 0.0
 _FIXTURE_MAP: dict | list | None = None
@@ -701,7 +704,7 @@ def url_exists(url: str) -> bool:
             new_response = _request_with_retries("GET", url, timeout=10)
             return bool(new_response and new_response.status_code < 400)
         return bool(response.status_code < 400)
-    except Exception:
+    except (requests.RequestException, RuntimeError, ValueError, TypeError):
         return False
 
 
@@ -1038,7 +1041,7 @@ def pull_page(url: str | None = None, local_file: str | None = None):
 
 
 def no_data_found() -> bool:
-    """Print a message that no data could be found on the page.
+    """Emit a warning message when no data could be found on the page.
 
     Occasionally, such as right before the beginning of a season, a page will
     return a valid response but will have no data outside of the default
@@ -1046,10 +1049,11 @@ def no_data_found() -> bool:
     can't parse any information and should indicate the lack of data and return
     safely.
     """
-    print(
+    warnings.warn(
         "The requested page returned a valid response, but no data could be "
         "found. Has the season begun, and is the data available on "
-        "www.sports-reference.com?"
+        "www.sports-reference.com?",
+        stacklevel=2,
     )
     # Tests only assert falsy behavior
     return False
@@ -1091,7 +1095,7 @@ def get_page_source(url: str) -> str | None:
                 html = page.content()
                 browser.close()
                 return html
-        except Exception as exc:
-            print(f"Playwright fetch failed: {exc}")
+        except (RuntimeError, OSError, TimeoutError, ValueError) as exc:
+            _LOGGER.warning("Playwright fetch failed for %s: %s", url, exc)
             return None
     return None

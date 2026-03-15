@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from difflib import get_close_matches
 
 from sportsipy.fb.squad_ids import SQUAD_IDS
@@ -90,12 +91,11 @@ def lookup_squad_id(name: str, quiet: bool = False) -> str | dict[str, str]:
     closest_matches = get_close_matches(filtered_name, SQUAD_IDS.keys(), 5)
     squad_match_ids = {}
     output = "Exact match not found - Printing closest matches:\n"
-    print(closest_matches)
     for team in closest_matches:
         output += team.title() + " - " + SQUAD_IDS[team] + "\n"
         squad_match_ids[team.title()] = SQUAD_IDS[team]
     if not quiet:
-        print(output)
+        warnings.warn(output, stacklevel=2)
     return squad_match_ids
 
 

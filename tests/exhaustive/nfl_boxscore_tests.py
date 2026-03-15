@@ -121,7 +121,7 @@ def get_page_source(url: str):
             html = page.content()
             logging.info(f"Page content successfully retrieved! URL: {url}")
             return html
-        except Exception as e:
+        except (RuntimeError, TimeoutError, OSError, ValueError) as e:
             logging.error(f"Error occurred: {str(e)}")
             return None
         finally:
@@ -713,7 +713,7 @@ class Boxscore:
         for column in game_info("th").items():
             if column.text():
                 abbreviations.append(column.text())
-        print(abbreviations)
+        logging.info(abbreviations)
         if not abbreviations:
             return None, None
         return abbreviations

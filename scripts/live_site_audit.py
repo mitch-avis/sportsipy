@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import sys
 import time
@@ -24,6 +25,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AuditError(RuntimeError):
@@ -871,7 +874,14 @@ def _run_case(case: AuditCase) -> AuditResult:
             summary=summary,
             details=details,
         )
-    except Exception as exc:
+    except (
+        AuditError,
+        AttributeError,
+        KeyError,
+        TypeError,
+        ValueError,
+        RuntimeError,
+    ) as exc:
         return AuditResult(
             case_id=case.case_id,
             sport=case.sport,
@@ -886,12 +896,12 @@ def _run_case(case: AuditCase) -> AuditResult:
 
 def _print_case_list(cases: list[AuditCase]) -> None:
     for case in cases:
-        print(f"{case.case_id:24} {case.sport:6} {case.area:12} {case.description}")
+        LOGGER.info(f"{case.case_id:24} {case.sport:6} {case.area:12} {case.description}")
 
 
 def _print_results(results: list[AuditResult]) -> None:
     for result in results:
-        print(
+        LOGGER.info(
             f"[{result.status.upper():4}] {result.case_id:24} "
             f"{result.elapsed_seconds:6.2f}s  {result.summary}"
         )
@@ -945,6 +955,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     """Run the requested live audit cases and report pass or fail status."""
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     parser = _build_parser()
     args = parser.parse_args()
     runtime = _load_runtime()
@@ -962,14 +973,14 @@ def main() -> int:
         args.max_retries,
     )
 
-    print(
+    LOGGER.info(
         f"Running {len(cases)} live audit cases with {args.rate_limit_seconds:.1f}s request spacing"
     )
     results: list[AuditResult] = []
     for case in cases:
         result = _run_case(case)
         results.append(result)
-        print(
+        LOGGER.info(
             f"[{result.status.upper():4}] {case.case_id:24} "
             f"{result.elapsed_seconds:6.2f}s  {result.summary}"
         )
@@ -980,13 +991,13 @@ def main() -> int:
         _write_json(args.json_out, results)
 
     failures = [result for result in results if result.status == "fail"]
-    print()
-    print(
+    LOGGER.info("")
+    LOGGER.info(
         f"Completed {len(results)} cases: "
         f"{len(results) - len(failures)} passed, {len(failures)} failed"
     )
     if failures:
-        print("Failed cases:")
+        LOGGER.info("Failed cases:")
         _print_results(failures)
         return 1
     return 0

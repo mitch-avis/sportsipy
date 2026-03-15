@@ -33,20 +33,20 @@ performed during a game or throughout a season.
 your requirements:
 
 ```bash
-pip install git+https://github.com/mitch-avis/sportsipy@master
+pip install git+https://github.com/mitch-avis/sportsipy
 ```
 
-If the bleeding-edge source version of `sportsipy` is desired, clone this
-repository using git and install all of the package requirements with pip:
+If the source version of `sportsipy` is desired, clone this repository and
+install development dependencies:
 
 ```bash
 git clone https://github.com/mitch-avis/sportsipy
 cd sportsipy
-pip install -r requirements.txt
+uv pip install -r requirements.txt -r requirements-dev.txt
+pip install -e .
 ```
 
-Once complete, create a Python wheel for your default version of Python by
-running the following command:
+Create a wheel with:
 
 ```bash
 python -m build
@@ -147,29 +147,41 @@ Complete documentation is hosted on
 [Read The Docs](http://sportsipy.readthedocs.io/en/latest/). The documentation
 is auto-generated using Sphinx based on the docstrings in the sportsipy package.
 
+## Development checks
+
+Run formatter/linter/type checks with:
+
+```bash
+ruff format .
+ruff check .
+pyright .
+```
+
 ## Testing
 
 Sportsipy contains a testing suite which aims to test all major portions of
-code for proper functionality. To run the test suite against your environment,
-ensure all of the requirements are installed by running:
+code for proper functionality.
+
+Run the fast local suite:
 
 ```bash
-pip install -r requirements.txt
+pytest tests/unit/ -v
+pytest tests/integration/ -v
 ```
 
-Next, start the tests by running `pytest` while optionally including coverage
-flags which identify the amount of production code covered by the testing
-framework:
+Run full coverage locally:
 
 ```bash
-pytest --cov=sportsipy --cov-report term-missing tests/
+pytest tests/unit/ tests/integration/ --cov=sportsipy --cov-report=term-missing
 ```
 
-If the tests are successful, it will return a green line with a message at the
-end of the output similar to the following:
+Integration tests are fixture-driven and run offline by default. Fixture URL
+mapping is stored in `tests/integration/url_map.json`.
+
+If tests are successful, pytest prints a final summary similar to:
 
 ```text
-======================= 778 passed in 239.89s (0:03:59) ========================
+======================= 799 passed in 137.20s (0:02:17) ========================
 ```
 
 If a test fails, it will show the number of failed tests and what went wrong.

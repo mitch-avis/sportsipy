@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
+import logging
 import re
 import time
 from dataclasses import asdict, dataclass
@@ -41,6 +42,8 @@ VOLATILE_TEXT_PATTERNS = (
     re.compile(r"data-append-csv=\"[^\"]+\"", re.IGNORECASE),
 )
 WHITESPACE_RE = re.compile(r"\s+")
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -369,7 +372,7 @@ def _fetch_first_live(
         try:
             response = fixture_tools._http_get(session, url, timeout_seconds)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
-            print(f"  network error fetching {url}: {exc}")
+            LOGGER.info(f"  network error fetching {url}: {exc}")
             last_failure = LiveFetchFailure(url=url, reason=f"Network error: {exc}")
             continue
         if response.status_code < 400:
@@ -413,7 +416,7 @@ def _refresh_stale_fixtures(
         target = target_lookup.get(report.path)
         if target is None:
             failed += 1
-            print(f"REFRESH-FAIL {report.path}: no matching target metadata found")
+            LOGGER.info(f"REFRESH-FAIL {report.path}: no matching target metadata found")
             continue
         try:
             ok, message = fixture_tools._capture_one(
@@ -425,17 +428,17 @@ def _refresh_stale_fixtures(
                 allow_non_200=False,
                 timeout_seconds=timeout_seconds,
             )
-        except Exception as exc:
+        except (requests.RequestException, OSError, ValueError, RuntimeError) as exc:
             failed += 1
-            print(f"REFRESH-FAIL {report.path}: {exc}")
+            LOGGER.info(f"REFRESH-FAIL {report.path}: {exc}")
             continue
 
         if ok:
             refreshed += 1
-            print(f"REFRESH {report.path} <- {target.urls[0]}")
+            LOGGER.info(f"REFRESH {report.path} <- {target.urls[0]}")
         else:
             failed += 1
-            print(f"REFRESH-FAIL {report.path}: {message}")
+            LOGGER.info(f"REFRESH-FAIL {report.path}: {message}")
 
         if index + 1 < len(stale_reports):
             time.sleep(max(delay_seconds, 0.0))
@@ -443,7 +446,7 @@ def _refresh_stale_fixtures(
 
 
 def _print_report(report: FixtureReport) -> None:
-    print(
+    LOGGER.info(
         f"[{report.status.upper():14}] {report.path} | "
         f"html={report.html_ratio:.4f} text={report.text_ratio:.4f} "
         f"tables={report.table_jaccard:.4f} data-stat={report.data_stat_jaccard:.4f}"
@@ -452,12 +455,13 @@ def _print_report(report: FixtureReport) -> None:
 
 def main() -> int:
     """Compare live pages against mapped fixtures and print a staleness report."""
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     args = _parse_args()
     session = fixture_tools._build_session()
     targets = _select_targets(args)
     target_lookup = {target.path.as_posix(): target for target in targets}
     if not targets:
-        print("No fixtures matched the requested filters.")
+        LOGGER.info("No fixtures matched the requested filters.")
         return 1
 
     reports: list[FixtureReport] = []
@@ -549,8 +553,8 @@ def main() -> int:
         "stale": sum(1 for report in reports if report.status == "stale"),
         "fetch-failed": sum(1 for report in reports if report.status == "fetch-failed"),
     }
-    print()
-    print(
+    LOGGER.info("")
+    LOGGER.info(
         f"Compared {len(reports)} fixtures: {summary['fresh']} fresh, "
         f"{summary['cosmetic-drift']} cosmetic-drift, {summary['stale']} stale, "
         f"{summary['fetch-failed']} fetch-failed"
@@ -565,7 +569,7 @@ def main() -> int:
         args.json_out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     if args.refresh_stale and summary["stale"]:
-        print()
+        LOGGER.info("")
         refresh_summary = _refresh_stale_fixtures(
             reports=reports,
             target_lookup=target_lookup,
@@ -573,8 +577,8 @@ def main() -> int:
             timeout_seconds=args.timeout_seconds,
             delay_seconds=args.delay_seconds,
         )
-        print()
-        print(
+        LOGGER.info("")
+        LOGGER.info(
             "Refresh summary: "
             f"refreshed={refresh_summary.refreshed}, failed={refresh_summary.failed}"
         )

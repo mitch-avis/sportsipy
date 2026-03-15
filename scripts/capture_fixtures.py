@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import logging
 import os
 import re
 import time
@@ -29,6 +30,8 @@ DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 def _load_map(path: Path) -> dict[str, str] | list[dict[str, str]]:
@@ -284,12 +287,12 @@ def _refresh_from_map(
 
         urls = _entry_urls(entry, fixtures_dir)
         if not urls:
-            print(f"SKIP {rel_key}: unable to determine canonical URL")
+            LOGGER.info(f"SKIP {rel_key}: unable to determine canonical URL")
             skipped += 1
             continue
 
         if dry_run:
-            print(f"DRY-RUN {rel_key} <- {urls[0]}")
+            LOGGER.info(f"DRY-RUN {rel_key} <- {urls[0]}")
             refreshed += 1
         else:
             try:
@@ -304,14 +307,14 @@ def _refresh_from_map(
                 )
             except requests.RequestException as exc:
                 failed += 1
-                print(f"FAIL {rel_key}: {exc}")
+                LOGGER.info(f"FAIL {rel_key}: {exc}")
                 continue
             if ok:
                 refreshed += 1
-                print(f"REFRESH {rel_key} <- {urls[0]}")
+                LOGGER.info(f"REFRESH {rel_key} <- {urls[0]}")
             else:
                 failed += 1
-                print(f"FAIL {rel_key}: {message}")
+                LOGGER.info(f"FAIL {rel_key}: {message}")
 
             # Respect crawl-delay and avoid session jail/429 responses.
             time.sleep(delay_seconds)
@@ -319,7 +322,7 @@ def _refresh_from_map(
         if limit is not None and refreshed >= limit:
             break
 
-    print(
+    LOGGER.info(
         "Summary: "
         f"refreshed={refreshed}, skipped={skipped}, failed={failed}, unique_paths={len(seen_paths)}"
     )
@@ -328,6 +331,7 @@ def _refresh_from_map(
 
 def main() -> int:
     """Return main."""
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     parser = argparse.ArgumentParser(
         description="Capture a fixture from a live URL and update the fixture map."
     )
@@ -388,7 +392,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if not os.environ.get("SPORTSIPY_CAPTURE_FIXTURES"):
-        print("Set SPORTSIPY_CAPTURE_FIXTURES=1 to enable fixture capture.")
+        LOGGER.info("Set SPORTSIPY_CAPTURE_FIXTURES=1 to enable fixture capture.")
         return 2
 
     fixtures_dir = Path(args.fixtures_dir)
@@ -396,7 +400,7 @@ def main() -> int:
 
     if args.refresh_map:
         if args.delay < 3.0:
-            print("--delay must be at least 3.0 seconds to respect crawl-delay.")
+            LOGGER.info("--delay must be at least 3.0 seconds to respect crawl-delay.")
             return 7
         return _refresh_from_map(
             fixtures_dir=fixtures_dir,
@@ -409,7 +413,7 @@ def main() -> int:
         )
 
     if not args.url or not args.path:
-        print("Provide --url and --path, or use --refresh-map.")
+        LOGGER.info("Provide --url and --path, or use --refresh-map.")
         return 8
 
     rel_path = Path(args.path)
@@ -425,18 +429,18 @@ def main() -> int:
             timeout_seconds=args.timeout,
         )
     except requests.RequestException as exc:
-        print(f"Request failed: {exc}")
+        LOGGER.info(f"Request failed: {exc}")
         return 3
     if not ok:
-        print(message)
+        LOGGER.info(message)
         return 4
-    print(message)
+    LOGGER.info(message)
 
     mapping = _load_map(map_path)
     mapping = _upsert_map_entry(mapping, url=args.url, rel_path=rel_path)
     _save_map(map_path, mapping)
 
-    print(f"Updated map at {map_path}")
+    LOGGER.info(f"Updated map at {map_path}")
     return 0
 
 

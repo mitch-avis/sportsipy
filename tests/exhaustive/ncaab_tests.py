@@ -1,5 +1,6 @@
 """Provide utilities for ncaab tests."""
 
+import logging
 import os
 import sys
 
@@ -8,19 +9,22 @@ from sportsipy.ncaab.conferences import Conferences
 from sportsipy.ncaab.rankings import Rankings
 from sportsipy.ncaab.teams import Teams
 
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+LOGGER = logging.getLogger(__name__)
+
 for team in Teams():
-    print(team.name)
+    LOGGER.info(team.name)
     for player in team.roster.players:
-        print(player.name.encode("utf-8"))
+        LOGGER.info(player.name.encode("utf-8"))
     for game in team.schedule:
-        print(game.dataframe)
-        print(game.dataframe_extended)
+        LOGGER.info(game.dataframe)
+        LOGGER.info(game.dataframe_extended)
 
 conferences = Conferences()
-print(conferences.conferences)
-print(conferences.team_conference)
+LOGGER.info(conferences.conferences)
+LOGGER.info(conferences.team_conference)
 
 rankings = Rankings()
-print(rankings.current)
-print(rankings.current_extended)
-print(rankings.complete)
+LOGGER.info(rankings.current)
+LOGGER.info(rankings.current_extended)
+LOGGER.info(rankings.complete)
