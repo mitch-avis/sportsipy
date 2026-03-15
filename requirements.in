@@ -1,6 +1,7 @@
 certifi
 charset-normalizer
 cssselect
+curl_cffi
 idna
 jinja2
 lxml
