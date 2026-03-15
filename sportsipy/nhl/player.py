@@ -112,6 +112,14 @@ class AbstractPlayer:
 
         self._parse_player_data(player_data)
 
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
+        return f"{self.name} ({self.player_id})"
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return self.__str__()
+
     def _parse_value(self, stats: PyQuery, field: str) -> str | None:
         """Pull the specified value from the HTML contents.
 

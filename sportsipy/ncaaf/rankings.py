@@ -269,6 +269,14 @@ class CFPRankings:
 
         self._find_rankings(year)
 
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
+        return "NCAAF CFP Rankings"
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return self.__str__()
+
     def _pull_rankings_page(self, year: int | str | None) -> PyQuery | None:
         """Download the rankings page.
 
@@ -490,6 +498,14 @@ class CoachesRankings:
         self._rankings = {}
 
         self._find_rankings(year)
+
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
+        return "NCAAF Coaches Rankings"
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return self.__str__()
 
     def _pull_rankings_page(self, year: int | str | None) -> PyQuery | None:
         """Download the rankings page.

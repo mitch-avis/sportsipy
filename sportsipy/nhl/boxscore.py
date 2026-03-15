@@ -116,6 +116,14 @@ class BoxscorePlayer(AbstractPlayer):
         self._shifts = None
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
+        return f"{self.name} ({self.player_id})"
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return self.__str__()
+
     @property
     def dataframe(self) -> pl.DataFrame:
         """Return a ``polars DataFrame`` containing all other relevant.
