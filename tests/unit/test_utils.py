@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 from typing import Any, cast
-from unittest.mock import patch
 
 import pytest
 import requests
@@ -77,7 +76,7 @@ class MockHtml:
         return Html(self.html_string, self.item_list)
 
 
-def mock_pyquery(url, timeout=None):
+def mock_pyquery(url, timeout=None, **kwargs):
     """Return mock pyquery."""
 
     class MockPQ:
@@ -316,21 +315,25 @@ class TestUtils:
 
         assert i == 2
 
-    @patch("requests.head", side_effect=mock_pyquery)
-    def test_valid_url_returns_true(self, *args, **kwargs):
+    def test_valid_url_returns_true(self, monkeypatch):
         """Return test valid url returns true."""
+        monkeypatch.setattr(utils, "get_page_source", lambda _url: "<html>ok</html>")
         response = utils.url_exists("http://www.good_url.com/this/is/valid")
 
         assert response
 
-    @patch("requests.head", side_effect=mock_pyquery)
-    def test_404_url_returns_false(self, *args, **kwargs):
+    def test_404_url_returns_false(self, monkeypatch):
         """Return test 404 url returns false."""
+        monkeypatch.setattr(utils, "get_page_source", lambda _url: None)
         assert not utils.url_exists("http://www.404.com/doesnt/exist")
 
-    @patch("requests.head", side_effect=mock_pyquery)
-    def test_invalid_url_exception_returns_false(self, *args, **kwargs):
+    def test_invalid_url_exception_returns_false(self, monkeypatch):
         """Return test invalid url exception returns false."""
+
+        def raise_runtime(_url):
+            raise RuntimeError("connection error")
+
+        monkeypatch.setattr(utils, "get_page_source", raise_runtime)
         assert not utils.url_exists("http://www.exception.com")
 
     def test_no_data_found_returns_safely(self, *args, **kwargs):
@@ -575,6 +578,8 @@ class TestUtils:
         responses = iter([Response(429, "1"), Response(200)])
         sleeps = []
 
+        # Disable curl_cffi so the mock on utils.requests.get is actually used.
+        monkeypatch.setattr(utils, "_CURL_CFFI_AVAILABLE", False)
         monkeypatch.setattr(utils.requests, "get", lambda *_args, **_kwargs: next(responses))
         monkeypatch.setattr(utils.time, "sleep", lambda seconds: sleeps.append(seconds))
 
@@ -584,17 +589,10 @@ class TestUtils:
         assert sleeps
 
     def test_url_exists_handles_301_follow_up(self, monkeypatch):
-        """Return test url exists handles 301 follow up."""
-
-        class Response:
-            def __init__(self, status_code):
-                self.status_code = status_code
-
-        responses = iter([Response(301), Response(200)])
-        monkeypatch.setattr(
-            utils, "_request_with_retries", lambda *_args, **_kwargs: next(responses)
-        )
-
+        """Return test url exists returns True when get_page_source returns HTML."""
+        # url_exists() now delegates to get_page_source(); redirect handling is
+        # transparent inside the HTTP client, not done by url_exists() itself.
+        monkeypatch.setattr(utils, "get_page_source", lambda _url: "<html>redirected</html>")
         assert utils.url_exists("https://example.com")
 
     def test_get_page_source_paths(self, monkeypatch):
@@ -794,16 +792,23 @@ class TestUtils:
     def test_get_page_source_playwright_fallback_success(self, monkeypatch):
         """Return test get page source playwright fallback success."""
 
-        class Browser:
+        class Page:
+            def add_init_script(self, *_args, **_kwargs):
+                return None
+
+            def goto(self, *_args, **_kwargs):
+                return None
+
+            def content(self):
+                return "<html>playwright</html>"
+
+        class BrowserContext:
             def new_page(self):
-                class Page:
-                    def goto(self, *_args, **_kwargs):
-                        return None
-
-                    def content(self):
-                        return "<html>playwright</html>"
-
                 return Page()
+
+        class Browser:
+            def new_context(self, **_kwargs):
+                return BrowserContext()
 
             def close(self):
                 return None
@@ -825,7 +830,6 @@ class TestUtils:
         monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
         monkeypatch.setenv("SPORTSIPY_ENABLE_PLAYWRIGHT", "1")
         monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
-        monkeypatch.setattr(utils, "_request_with_retries", lambda *_args, **_kwargs: None)
         monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
         monkeypatch.setattr(utils, "sync_playwright", lambda: Context())
 
@@ -1009,6 +1013,9 @@ class TestUtils:
         assert response is not None
         assert response.status_code == 500
 
+        # Disable Playwright so the None response from _request_with_retries
+        # is not silently masked by a fallback browser attempt.
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", False)
         monkeypatch.setattr(utils, "_request_with_retries", lambda *_args, **_kwargs: None)
         assert not utils.url_exists("https://example.com")
 
@@ -1017,3 +1024,325 @@ class TestUtils:
 
         monkeypatch.setattr(utils, "_request_with_retries", raise_exc)
         assert not utils.url_exists("https://example.com")
+
+
+# ---------------------------------------------------------------------------
+# Tests for the bot-detection layer (1.6.1–1.6.6)
+# ---------------------------------------------------------------------------
+
+_CLEAN_HTML = "<html><head><title>Stats</title></head><body><table></table></body></html>"
+
+# Minimal Cloudflare challenge snippets — enough to trigger each signal.
+_CHALLENGE_BODIES = {
+    "just_a_moment": "<html><head><title>Just a moment...</title></head></html>",
+    "challenges_src": (
+        '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>'
+    ),
+    "enable_js": "<html><body>Enable JavaScript and cookies to continue</body></html>",
+    "cf_browser": '<div id="cf-browser-verification">verification</div>',
+    "checking_connection": "<p>Checking if the site connection is secure</p>",
+    "please_wait": "<p>Please wait while we verify your browser access to the site.</p>",
+    "ddos_guard": "<meta name='ddos-guard' content='1'>",
+}
+
+
+class TestBotDetectionLayer:
+    """Tests for _is_bot_challenge(), BotChallengeError, _http_get(), and url_exists()."""
+
+    # ------------------------------------------------------------------
+    # _is_bot_challenge() — positive cases (one per signal keyword)
+    # ------------------------------------------------------------------
+
+    def test_is_bot_challenge_just_a_moment(self):
+        """Return True for a 'Just a moment...' Cloudflare challenge page."""
+        assert utils._is_bot_challenge(_CHALLENGE_BODIES["just_a_moment"])
+
+    def test_is_bot_challenge_challenges_src(self):
+        """Return True when html contains challenges.cloudflare.com script src."""
+        assert utils._is_bot_challenge(_CHALLENGE_BODIES["challenges_src"])
+
+    def test_is_bot_challenge_enable_js(self):
+        """Return True for 'Enable JavaScript and cookies to continue' body."""
+        assert utils._is_bot_challenge(_CHALLENGE_BODIES["enable_js"])
+
+    def test_is_bot_challenge_cf_browser(self):
+        """Return True for pages containing cf-browser-verification attribute."""
+        assert utils._is_bot_challenge(_CHALLENGE_BODIES["cf_browser"])
+
+    def test_is_bot_challenge_checking_connection(self):
+        """Return True for 'Checking if the site connection is secure' text."""
+        assert utils._is_bot_challenge(_CHALLENGE_BODIES["checking_connection"])
+
+    def test_is_bot_challenge_please_wait(self):
+        """Return True for 'please wait while we verify' text."""
+        assert utils._is_bot_challenge(_CHALLENGE_BODIES["please_wait"])
+
+    def test_is_bot_challenge_ddos_guard(self):
+        """Return True for DDoS-Guard challenge pages."""
+        assert utils._is_bot_challenge(_CHALLENGE_BODIES["ddos_guard"])
+
+    def test_is_bot_challenge_case_insensitive(self):
+        """Return True regardless of signal capitalisation."""
+        assert utils._is_bot_challenge("JUST A MOMENT...")
+        assert utils._is_bot_challenge("DDOS-GUARD")
+
+    # ------------------------------------------------------------------
+    # _is_bot_challenge() — negative cases
+    # ------------------------------------------------------------------
+
+    def test_is_bot_challenge_normal_html_returns_false(self):
+        """Return False for ordinary stats HTML."""
+        assert not utils._is_bot_challenge(_CLEAN_HTML)
+
+    def test_is_bot_challenge_empty_string_returns_false(self):
+        """Return False for an empty string."""
+        assert not utils._is_bot_challenge("")
+
+    # ------------------------------------------------------------------
+    # BotChallengeError
+    # ------------------------------------------------------------------
+
+    def test_bot_challenge_error_carries_url(self):
+        """BotChallengeError.url attribute equals the URL passed to the constructor."""
+        err = utils.BotChallengeError("https://example.com/test")
+        assert err.url == "https://example.com/test"
+
+    def test_bot_challenge_error_message_contains_url(self):
+        """BotChallengeError message string includes the offending URL."""
+        url = "https://example.com/test"
+        err = utils.BotChallengeError(url)
+        assert url in str(err)
+
+    def test_bot_challenge_error_is_runtime_error(self):
+        """BotChallengeError is a RuntimeError subclass."""
+        assert isinstance(utils.BotChallengeError("https://x.com"), RuntimeError)
+
+    def test_bot_challenge_error_is_importable(self):
+        """BotChallengeError is publicly importable from sportsipy.utils."""
+        from sportsipy.utils import BotChallengeError
+
+        assert BotChallengeError is utils.BotChallengeError
+
+    # ------------------------------------------------------------------
+    # _http_get() routing — curl_cffi vs. requests fallback
+    # ------------------------------------------------------------------
+
+    def test_http_get_uses_requests_when_curl_cffi_unavailable(self, monkeypatch):
+        """_http_get() calls requests.get when _CURL_CFFI_AVAILABLE is False."""
+
+        class FakeResponse:
+            status_code = 200
+            text = "ok"
+
+        calls = []
+
+        def fake_get(url, **kwargs):
+            calls.append(url)
+            return FakeResponse()
+
+        monkeypatch.setattr(utils, "_CURL_CFFI_AVAILABLE", False)
+        monkeypatch.setattr(utils.requests, "get", fake_get)
+
+        result = utils._http_get("https://example.com/test")
+
+        assert result is not None
+        assert result.status_code == 200
+        assert calls == ["https://example.com/test"]
+
+    def test_http_get_uses_curl_cffi_when_available(self, monkeypatch):
+        """_http_get() calls _cffi_requests.get when _CURL_CFFI_AVAILABLE is True."""
+
+        class FakeCffiResponse:
+            status_code = 200
+            text = "cffi"
+
+        cffi_calls = []
+        requests_calls = []
+
+        class FakeCffiRequests:
+            @staticmethod
+            def get(url, **kwargs):
+                cffi_calls.append(url)
+                assert kwargs.get("impersonate") == "chrome124"
+                return FakeCffiResponse()
+
+        monkeypatch.setattr(utils, "_CURL_CFFI_AVAILABLE", True)
+        monkeypatch.setattr(utils, "_cffi_requests", FakeCffiRequests())
+        monkeypatch.setattr(utils.requests, "get", lambda *_a, **_kw: requests_calls.append(1))
+
+        result = utils._http_get("https://example.com/test")
+
+        assert result is not None
+        assert result.status_code == 200
+        assert cffi_calls == ["https://example.com/test"]
+        assert requests_calls == []  # requests.get should NOT be called
+
+    def test_http_get_falls_back_to_requests_on_curl_cffi_exception(self, monkeypatch):
+        """_http_get() falls back to requests.get when curl_cffi raises."""
+
+        class FakeResponse:
+            status_code = 200
+            text = "fallback"
+
+        class FakeCffiRequests:
+            @staticmethod
+            def get(url, **kwargs):
+                raise OSError("curl_cffi failure")
+
+        monkeypatch.setattr(utils, "_CURL_CFFI_AVAILABLE", True)
+        monkeypatch.setattr(utils, "_cffi_requests", FakeCffiRequests())
+        monkeypatch.setattr(utils.requests, "get", lambda *_a, **_kw: FakeResponse())
+
+        result = utils._http_get("https://example.com/test")
+
+        assert result is not None
+        assert result.status_code == 200
+        assert result.text == "fallback"
+
+    def test_http_get_merges_browser_headers(self, monkeypatch):
+        """_http_get() merges _BROWSER_HEADERS into the outbound request."""
+        captured = {}
+
+        def fake_get(url, headers=None, **kwargs):
+            captured["headers"] = headers
+            return type("R", (), {"status_code": 200, "text": "ok"})()
+
+        monkeypatch.setattr(utils, "_CURL_CFFI_AVAILABLE", False)
+        monkeypatch.setattr(utils.requests, "get", fake_get)
+
+        utils._http_get("https://example.com/test")
+
+        assert "User-Agent" in captured["headers"]
+        assert "Chrome" in captured["headers"]["User-Agent"]
+
+    # ------------------------------------------------------------------
+    # get_page_source() — challenge-detection pipeline
+    # ------------------------------------------------------------------
+
+    def test_get_page_source_returns_none_on_challenge_without_playwright(self, monkeypatch):
+        """get_page_source() returns None when the response is a bot challenge."""
+
+        class Response:
+            status_code = 200
+            text = _CHALLENGE_BODIES["just_a_moment"]
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: Response())
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", False)
+
+        assert utils.get_page_source("https://example.com") is None
+
+    def test_get_page_source_challenge_triggers_playwright_fallback(self, monkeypatch):
+        """When curl_cffi returns a challenge body, Playwright is tried automatically."""
+
+        class ChallengeResponse:
+            status_code = 200
+            text = _CHALLENGE_BODIES["just_a_moment"]
+
+        class Page:
+            def add_init_script(self, *_a, **_kw):
+                return None
+
+            def goto(self, *_a, **_kw):
+                return None
+
+            def content(self):
+                return _CLEAN_HTML
+
+        class BrowserContext:
+            def new_page(self):
+                return Page()
+
+        class Browser:
+            def new_context(self, **_kw):
+                return BrowserContext()
+
+            def close(self):
+                return None
+
+        class Chromium:
+            def launch(self, headless=True):
+                return Browser()
+
+        class PlaywrightSession:
+            chromium = Chromium()
+
+        class Context:
+            def __enter__(self):
+                return PlaywrightSession()
+
+            def __exit__(self, *_a):
+                return False
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setenv("SPORTSIPY_DISABLE_PLAYWRIGHT", "")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_cache_write", lambda *_a, **_kw: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: ChallengeResponse())
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(utils, "sync_playwright", lambda: Context())
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result == _CLEAN_HTML
+
+    def test_get_page_source_disable_playwright_suppresses_fallback(self, monkeypatch):
+        """SPORTSIPY_DISABLE_PLAYWRIGHT=1 prevents Playwright auto-fallback on challenge."""
+        playwright_called = []
+
+        class ChallengeResponse:
+            status_code = 200
+            text = _CHALLENGE_BODIES["just_a_moment"]
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setenv("SPORTSIPY_DISABLE_PLAYWRIGHT", "1")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: ChallengeResponse())
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(
+            utils, "_fetch_with_playwright", lambda _url: playwright_called.append(1) or _CLEAN_HTML
+        )
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result is None  # challenge, no bypass
+        assert playwright_called == []  # Playwright was never called
+
+    def test_get_page_source_clean_html_not_treated_as_challenge(self, monkeypatch):
+        """Normal HTML is returned as-is; _is_bot_challenge() must not fire."""
+
+        class Response:
+            status_code = 200
+            text = _CLEAN_HTML
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_cache_write", lambda *_a, **_kw: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: Response())
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", False)
+
+        assert utils.get_page_source("https://example.com") == _CLEAN_HTML
+
+    # ------------------------------------------------------------------
+    # url_exists() — GET-based behaviour
+    # ------------------------------------------------------------------
+
+    def test_url_exists_returns_true_when_page_source_returns_html(self, monkeypatch):
+        """url_exists() returns True when get_page_source() returns non-None HTML."""
+        monkeypatch.setattr(utils, "get_page_source", lambda _url: _CLEAN_HTML)
+        assert utils.url_exists("https://example.com/page")
+
+    def test_url_exists_returns_false_when_page_source_returns_none(self, monkeypatch):
+        """url_exists() returns False when get_page_source() returns None."""
+        monkeypatch.setattr(utils, "get_page_source", lambda _url: None)
+        assert not utils.url_exists("https://example.com/missing")
+
+    def test_url_exists_returns_false_on_runtime_error(self, monkeypatch):
+        """url_exists() catches RuntimeError from get_page_source() and returns False."""
+
+        def raise_runtime(_url):
+            raise RuntimeError("fetch failed")
+
+        monkeypatch.setattr(utils, "get_page_source", raise_runtime)
+        assert not utils.url_exists("https://example.com/error")
