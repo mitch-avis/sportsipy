@@ -5,7 +5,7 @@ code. Each module below links to its dedicated documentation page with usage
 examples and module-level descriptions.
 
 | Sport | Module | Documentation |
-|-------|--------|---------------|
+| ----- | ------ | ------------- |
 | Soccer/Football | `sportsipy.fb` | [fb.md](fb.md) |
 | Baseball (MLB) | `sportsipy.mlb` | [mlb.md](mlb.md) |
 | Basketball (NBA) | `sportsipy.nba` | [nba.md](nba.md) |

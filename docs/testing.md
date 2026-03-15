@@ -34,7 +34,7 @@ pytest tests/unit/ tests/integration/ --cov=sportsipy --cov-report=term-missing
 
 Successful output ends with a summary similar to:
 
-```
+```text
 799 passed in 137.28s (0:02:17)
 ```
 
