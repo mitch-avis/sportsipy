@@ -14,6 +14,7 @@ import warnings
 from collections.abc import Callable, Generator
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -22,10 +23,151 @@ from pyquery import PyQuery
 
 from sportsipy.constants import RATE_LIMIT_INTERVAL
 
+if TYPE_CHECKING:
+    from curl_cffi.requests.models import Response as CurlResponse
+    from playwright.sync_api import Page
+
 _LOGGER = logging.getLogger(__name__)
 _RATE_LIMIT_LOCK = threading.Lock()
 _LAST_REQUEST_TIME = 0.0
 _FIXTURE_MAP: dict | list | None = None
+
+# ---------------------------------------------------------------------------
+# Optional curl_cffi import — provides TLS fingerprint spoofing to bypass
+# Cloudflare bot detection.  Falls back to plain requests when not installed.
+# ---------------------------------------------------------------------------
+try:
+    from curl_cffi import requests as _cffi_requests
+
+    _CURL_CFFI_AVAILABLE = True
+except ImportError:
+    _cffi_requests = None
+    _CURL_CFFI_AVAILABLE = False
+
+# ---------------------------------------------------------------------------
+# Optional Playwright import — used as a final fallback when bot-challenge
+# detection fires and curl_cffi alone is insufficient.
+# ---------------------------------------------------------------------------
+try:
+    from playwright.sync_api import sync_playwright
+except ImportError:
+    sync_playwright = None
+
+_PLAYWRIGHT_AVAILABLE = sync_playwright is not None
+
+# ---------------------------------------------------------------------------
+# Browser-like request headers used for all outbound HTTP requests.
+# These reduce false-positive bot flags from simple user-agent checks.
+# ---------------------------------------------------------------------------
+_BROWSER_HEADERS: dict[str, str] = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": (
+        "text/html,application/xhtml+xml,application/xml;q=0.9,"
+        "image/avif,image/webp,image/apng,*/*;q=0.8"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Sec-CH-UA": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+    "Sec-CH-UA-Mobile": "?0",
+    "Sec-CH-UA-Platform": '"Linux"',
+    "Upgrade-Insecure-Requests": "1",
+    "Cache-Control": "max-age=0",
+}
+
+# ---------------------------------------------------------------------------
+# Playwright stealth init-script — injected before every page navigation to
+# suppress the most common headless-browser detection signals.
+# ---------------------------------------------------------------------------
+_PLAYWRIGHT_STEALTH_SCRIPT = """
+Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+window.chrome = { runtime: {} };
+Object.defineProperty(Notification, 'permission', { get: () => 'default' });
+"""
+
+
+class BotChallengeError(RuntimeError):
+    """Raised when a URL responds with a bot-challenge page (e.g. Cloudflare).
+
+    Parameters
+    ----------
+    url : str
+        The URL that returned a bot-challenge response.
+
+    """
+
+    def __init__(self, url: str) -> None:
+        """Initialize BotChallengeError with the offending URL.
+
+        Parameters
+        ----------
+        url : str
+            The URL that returned a bot-challenge response.
+
+        """
+        self.url = url
+        super().__init__(
+            f"Bot challenge detected for URL: {url}. "
+            "Install curl_cffi (`pip install curl_cffi`) and/or ensure "
+            "Playwright browser binaries are installed "
+            "(`playwright install chromium`) to bypass Cloudflare protection."
+        )
+
+
+def _is_bot_challenge(html_text: str) -> bool:
+    """Return True when the HTML body appears to be a Cloudflare bot challenge.
+
+    Checks for several well-known Cloudflare challenge fingerprints without
+    relying on any external dependency.
+
+    Parameters
+    ----------
+    html_text : str
+        Raw HTML string from an HTTP response.
+
+    Returns
+    -------
+    bool
+        ``True`` when the response looks like a bot-challenge page.
+
+    """
+    if not html_text:
+        return False
+    lower = html_text.lower()
+    cloudflare_signals = (
+        "just a moment",
+        "challenges.cloudflare.com",
+        "enable javascript and cookies to continue",
+        "cf-browser-verification",
+        "checking if the site connection is secure",
+        "please wait while we verify",
+        "ddos-guard",
+    )
+    return any(signal in lower for signal in cloudflare_signals)
+
+
+def _apply_playwright_stealth(page: Page) -> None:
+    """Inject anti-detection init scripts into a Playwright page.
+
+    Parameters
+    ----------
+    page : playwright.sync_api.Page
+        A Playwright synchronous page object.
+
+    """
+    try:
+        page.add_init_script(_PLAYWRIGHT_STEALTH_SCRIPT)
+    except Exception as exc:
+        _LOGGER.debug("Playwright stealth injection failed: %s", exc)
 
 
 # Backward-compatible callable matching prior usage: utils.pq(...)
@@ -53,14 +195,6 @@ def pq(*args: object, **kwargs: object) -> PyQuery:
         return PyQuery("")
     return PyQuery(*args, **kwargs)
 
-
-# Try optional Playwright (only used if explicitly falling back for dynamic pages)
-try:
-    from playwright.sync_api import sync_playwright  # type: ignore[import-untyped]
-except ImportError:
-    sync_playwright = None
-
-_PLAYWRIGHT_AVAILABLE = sync_playwright is not None
 
 # {
 #   league name: {
@@ -630,6 +764,51 @@ def _fallback_fixture_by_context(root: Path, url: str) -> Path | None:
     return None
 
 
+def _http_get(
+    url: str,
+    timeout: float = 20,
+    **kwargs: Any,
+) -> requests.Response | CurlResponse | None:
+    """Perform a GET request using curl_cffi when available, else plain requests.
+
+    curl_cffi spoofs a real Chrome TLS fingerprint (JA3/JA4), which bypasses
+    Cloudflare's common bot detection layer.  If curl_cffi is not installed
+    the function transparently falls back to the standard requests library.
+
+    Parameters
+    ----------
+    url : str
+        The URL to fetch.
+    timeout : float, optional
+        Request timeout in seconds (default 20).
+    **kwargs : Any
+        Additional keyword arguments forwarded to the underlying HTTP client.
+
+    Returns
+    -------
+    requests.Response | curl_cffi.requests.models.Response | None
+        The HTTP response, or ``None`` on fatal error.
+
+    """
+    merged_headers = dict(_BROWSER_HEADERS)
+    if "headers" in kwargs:
+        merged_headers.update(kwargs.pop("headers"))
+
+    if _CURL_CFFI_AVAILABLE and _cffi_requests is not None:
+        try:
+            return _cffi_requests.get(
+                url,
+                headers=merged_headers,
+                timeout=timeout,
+                impersonate="chrome124",
+                **kwargs,
+            )
+        except Exception as exc:
+            _LOGGER.debug("curl_cffi GET failed for %s (%s), falling back to requests", url, exc)
+
+    return requests.get(url, headers=merged_headers, timeout=timeout, **kwargs)
+
+
 def _request_with_retries(method: str, url: str, **kwargs):
     max_retries_value = os.environ.get("SPORTSIPY_MAX_RETRIES", "2")
     try:
@@ -641,10 +820,20 @@ def _request_with_retries(method: str, url: str, **kwargs):
     for attempt in range(max_retries + 1):
         _rate_limit_wait()
         try:
-            if method.upper() == "HEAD":
-                response = requests.head(url, timeout=timeout_value, **request_kwargs)
-            elif method.upper() == "GET":
-                response = requests.get(url, timeout=timeout_value, **request_kwargs)
+            if method.upper() == "GET":
+                response = _http_get(url, timeout=timeout_value, **request_kwargs)
+            elif method.upper() == "HEAD":
+                # Prefer GET over HEAD — HEAD requests are blocked more aggressively
+                # by Cloudflare; the response body is discarded by callers anyway.
+                merged_headers = dict(_BROWSER_HEADERS)
+                if "headers" in request_kwargs:
+                    merged_headers.update(request_kwargs.pop("headers"))
+                response = requests.head(
+                    url,
+                    headers=merged_headers,
+                    timeout=timeout_value,
+                    **request_kwargs,
+                )
             else:
                 response = requests.request(
                     method,
@@ -655,6 +844,11 @@ def _request_with_retries(method: str, url: str, **kwargs):
         except requests.RequestException as exc:
             if attempt >= max_retries:
                 raise exc
+            time.sleep(min(2**attempt, 10))
+            continue
+        if response is None:
+            if attempt >= max_retries:
+                return None
             time.sleep(min(2**attempt, 10))
             continue
         if response.status_code in {429} or response.status_code >= 500:
@@ -682,6 +876,13 @@ def url_exists(url: str) -> bool:
     validated prior to continuing any code to ensure no unhandled exceptions
     occur.
 
+    Uses GET rather than HEAD so that:
+
+    - The response content is cached for the subsequent ``pull_page()`` call,
+      avoiding a redundant round-trip.
+    - Cloudflare and similar protections that block bare HEAD requests are not
+      triggered.
+
     Parameters
     ----------
     url : string
@@ -690,21 +891,16 @@ def url_exists(url: str) -> bool:
     Returns
     -------
     bool
-        Evaluates to True when the URL exists and is valid, otherwise returns
-        False.
+        Evaluates to True when the URL exists and returns usable content,
+        otherwise returns False.
 
     """
     try:
         if _env_flag("SPORTSIPY_OFFLINE"):
             return _fixture_for_url(url) is not None
-        response = _request_with_retries("HEAD", url, timeout=10)
-        if response is None:
-            return False
-        if response.status_code == 301:
-            new_response = _request_with_retries("GET", url, timeout=10)
-            return bool(new_response and new_response.status_code < 400)
-        return bool(response.status_code < 400)
-    except (requests.RequestException, RuntimeError, ValueError, TypeError):
+        html_text = get_page_source(url)
+        return html_text is not None
+    except (RuntimeError, ValueError, TypeError):
         return False
 
 
@@ -1062,9 +1258,31 @@ def no_data_found() -> bool:
 def get_page_source(url: str) -> str | None:
     """Fetch and return a page's HTML source.
 
-    Tries fixture mode and disk cache first, then performs a live HTTP fetch.
-    If the request path fails and Playwright is available, uses a headless
-    browser as a fallback.
+    Fetch pipeline (each tier only runs if the previous one fails or returns a
+    bot-challenge body):
+
+    1. **Offline fixture** — if ``SPORTSIPY_OFFLINE`` is set, return the
+       matching fixture file immediately.
+    2. **Disk cache** — return cached content when a valid cached copy exists.
+    3. **curl_cffi GET** (primary) — sends a Chrome-impersonated TLS request
+       which bypasses Cloudflare TLS-fingerprint detection.  Falls back to
+       plain requests when ``curl_cffi`` is not installed.
+    4. **Playwright** (auto-fallback) — launched automatically when step 3
+       returns a bot-challenge body.  Suppressed by setting
+       ``SPORTSIPY_DISABLE_PLAYWRIGHT=1``.  Can also be forced on for every
+       request via ``SPORTSIPY_ENABLE_PLAYWRIGHT=1``.
+
+    Parameters
+    ----------
+    url : str
+        The URL to fetch.
+
+    Returns
+    -------
+    str | None
+        Raw HTML string, or ``None`` if the page could not be retrieved or
+        returned a bot-challenge response that could not be bypassed.
+
     """
     if _env_flag("SPORTSIPY_OFFLINE"):
         return _fixture_for_url(url)
@@ -1073,29 +1291,86 @@ def get_page_source(url: str) -> str | None:
     if cached is not None:
         return cached
 
-    try:
-        resp = _request_with_retries("GET", url, timeout=20)
-        if resp is not None and resp.status_code == 200:
-            _cache_write(url, resp.text)
-            return resp.text
-    except requests.RequestException:
-        pass
+    html_text: str | None = None
 
-    # Optional dynamic fallback (rarely needed for test fixtures)
-    if (
+    # ------------------------------------------------------------------
+    # Tier 1: curl_cffi / requests fetch
+    # ------------------------------------------------------------------
+    if not _env_flag("SPORTSIPY_ENABLE_PLAYWRIGHT"):
+        try:
+            resp = _request_with_retries("GET", url, timeout=20)
+            if resp is not None and resp.status_code == 200:
+                html_text = resp.text
+        except requests.RequestException:
+            pass
+
+    # ------------------------------------------------------------------
+    # Tier 2: Playwright (auto-triggered on challenge, or forced via env)
+    # ------------------------------------------------------------------
+    use_playwright = (
         _PLAYWRIGHT_AVAILABLE
         and sync_playwright is not None
-        and _env_flag("SPORTSIPY_ENABLE_PLAYWRIGHT")
-    ):
-        try:
-            with sync_playwright() as playwright_session:
-                browser = playwright_session.chromium.launch(headless=True)
-                page = browser.new_page()
-                page.goto(url, timeout=60000)
-                html = page.content()
-                browser.close()
-                return html
-        except (RuntimeError, OSError, TimeoutError, ValueError) as exc:
-            _LOGGER.warning("Playwright fetch failed for %s: %s", url, exc)
-            return None
+        and not _env_flag("SPORTSIPY_DISABLE_PLAYWRIGHT")
+        and (
+            _env_flag("SPORTSIPY_ENABLE_PLAYWRIGHT")
+            or html_text is None
+            or _is_bot_challenge(html_text)
+        )
+    )
+    if use_playwright:
+        if html_text is not None and _is_bot_challenge(html_text):
+            _LOGGER.info(
+                "Bot challenge detected for %s; retrying with Playwright headless browser", url
+            )
+        playwright_html = _fetch_with_playwright(url)
+        if playwright_html is not None:
+            html_text = playwright_html
+
+    if html_text is not None and not _is_bot_challenge(html_text):
+        _cache_write(url, html_text)
+        return html_text
+
+    if html_text is not None:
+        _LOGGER.warning(
+            "Bot challenge could not be bypassed for %s. "
+            "Install curl_cffi and ensure Playwright browser binaries are available.",
+            url,
+        )
     return None
+
+
+def _fetch_with_playwright(url: str) -> str | None:
+    """Fetch a URL using a stealth Playwright headless browser session.
+
+    Parameters
+    ----------
+    url : str
+        The URL to fetch.
+
+    Returns
+    -------
+    str | None
+        Raw HTML string, or ``None`` on any failure.
+
+    """
+    if sync_playwright is None:
+        return None
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True)
+            try:
+                context = browser.new_context(
+                    viewport={"width": 1280, "height": 800},
+                    user_agent=_BROWSER_HEADERS["User-Agent"],
+                    locale="en-US",
+                )
+                page = context.new_page()
+                _apply_playwright_stealth(page)
+                page.goto(url, timeout=60000, wait_until="domcontentloaded")
+                content = page.content()
+                return content
+            finally:
+                browser.close()
+    except Exception as exc:
+        _LOGGER.warning("Playwright fetch failed for %s: %s", url, exc)
+        return None
