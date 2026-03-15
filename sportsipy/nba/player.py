@@ -26,9 +26,9 @@ def _cleanup(prop):
 def _int_property_decorator(func):
     @property
     @wraps(func)
-    def wrapper(*args):
-        index = args[0]._index
-        prop = func(*args)
+    def wrapper(self):
+        index = self._index
+        prop = func(self)
         try:
             value = _cleanup(prop[index])
             return int(value)
@@ -42,9 +42,9 @@ def _int_property_decorator(func):
 def _float_property_decorator(func):
     @property
     @wraps(func)
-    def wrapper(*args):
-        index = args[0]._index
-        prop = func(*args)
+    def wrapper(self):
+        index = self._index
+        prop = func(self)
         try:
             value = _cleanup(prop[index])
             return float(value)

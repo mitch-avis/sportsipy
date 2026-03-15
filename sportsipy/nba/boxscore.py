@@ -129,7 +129,7 @@ class BoxscorePlayer(AbstractPlayer):
         return pl.DataFrame([fields_to_include])
 
     @property
-    def minutes_played(self) -> float | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def minutes_played(self) -> float | None:
         """Return a ``float`` of the number of game minutes the player was on the.
 
         court for.
