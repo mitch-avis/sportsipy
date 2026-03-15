@@ -51,7 +51,7 @@ class MockName:
         return self._name
 
 
-def mock_pyquery(url, timeout=None):
+def mock_pyquery(url, timeout=None, **kwargs):
     """Return mock pyquery."""
 
     class MockPQ:

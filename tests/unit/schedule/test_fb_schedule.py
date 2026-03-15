@@ -12,7 +12,7 @@ from sportsipy.constants import AWAY, DRAW, HOME, LOSS, NEUTRAL, WIN
 from sportsipy.fb.schedule import Game, Schedule
 
 
-def mock_httperror(url, timeout=None):
+def mock_httperror(url, timeout=None, **kwargs):
     """Return mock httperror."""
 
     class MockPQ:

@@ -10,7 +10,7 @@ from sportsipy.mlb.player import _cleanup as _cleanup_player
 from sportsipy.mlb.roster import Player, _cleanup
 
 
-def mock_pyquery(url, timeout=None):
+def mock_pyquery(url, timeout=None, **kwargs):
     """Return mock pyquery."""
 
     class MockPQ:

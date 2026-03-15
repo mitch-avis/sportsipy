@@ -8,7 +8,7 @@ from sportsipy import utils
 from sportsipy.nba.nba_utils import _retrieve_all_teams
 
 
-def mock_pyquery(url, timeout=None):
+def mock_pyquery(url, timeout=None, **kwargs):
     """Return mock pyquery."""
 
     class MockPQ:

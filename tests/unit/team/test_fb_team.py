@@ -10,7 +10,7 @@ from sportsipy.fb.schedule import Schedule
 from sportsipy.fb.team import Team
 
 
-def mock_httperror(url, timeout=None):
+def mock_httperror(url, timeout=None, **kwargs):
     """Return mock httperror."""
 
     class MockPQ:

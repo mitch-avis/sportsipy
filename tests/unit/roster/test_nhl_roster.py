@@ -8,7 +8,7 @@ from sportsipy.nhl.player import AbstractPlayer
 from sportsipy.nhl.roster import Player
 
 
-def mock_pyquery(url, timeout=None):
+def mock_pyquery(url, timeout=None, **kwargs):
     """Return mock pyquery."""
 
     class MockPQ:

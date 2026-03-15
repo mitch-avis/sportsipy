@@ -23,7 +23,7 @@ class MockSquadPlayer:
         return PyQuery("<tr></tr>")
 
 
-def mock_httperror(url, timeout=None):
+def mock_httperror(url, timeout=None, **kwargs):
     """Return mock httperror."""
 
     class MockPQ:
