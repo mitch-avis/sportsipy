@@ -332,7 +332,7 @@ RANKINGS_SCHEME = {
     "week": 'th[data-stat="week_poll"]',
 }
 
-SEASON_PAGE_URL = "http://www.sports-reference.com/cfb/years/%s-standings.html"
+SEASON_PAGE_URL = "https://www.sports-reference.com/cfb/years/%s-standings.html"
 
 OFFENSIVE_STATS_URL = "https://www.sports-reference.com/cfb/years/%s-team-offense.html"
 DEFENSIVE_STATS_URL = "https://www.sports-reference.com/cfb/years/%s-team-defense.html"
