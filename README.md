@@ -1,5 +1,17 @@
 # Sportsipy: A free sports API for Python
 
+## Table of Contents
+
+- [Development status](#development-status)
+- [Background](#background)
+- [Installation](#installation)
+- [Examples](#examples)
+- [Documentation](#documentation)
+- [Development checks](#development-checks)
+- [Testing](#testing)
+- [Responsible scraping](#responsible-scraping)
+- [Fork lineage and credits](#fork-lineage-and-credits)
+
 ## Development status
 
 Started in early 2023, this project is an active fork of
