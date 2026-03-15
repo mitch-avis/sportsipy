@@ -49,6 +49,45 @@ This creates a `.whl` file in the `dist/` directory which can then be installed:
 pip install dist/*.whl
 ```
 
+## Optional: Bot-Evasion Extras
+
+`sportsipy` includes an optional bot-detection and evasion layer for live
+scraping against Cloudflare-protected sites (e.g. NFL, FBref). Two packages
+unlock extra capabilities:
+
+| Package | Purpose |
+|---------|---------|
+| `curl_cffi` | Chrome TLS fingerprint impersonation via `libcurl-impersonate`; defeats most TLS-fingerprint-based blocks without a browser |
+| `playwright` | Headless browser fallback; used automatically whenever `curl_cffi` still gets a Cloudflare JS-challenge response |
+
+Install both at once:
+
+```bash
+pip install "sportsipy[bot-evasion]"
+```
+
+Or install them individually:
+
+```bash
+pip install curl_cffi playwright
+```
+
+If `playwright` is installed, also download the browser binary:
+
+```bash
+playwright install chromium
+```
+
+### Environment Variables
+
+| Variable | Effect |
+|----------|--------|
+| `SPORTSIPY_ENABLE_PLAYWRIGHT=1` | Enable Playwright for *every* request (full-browser mode; slower but most compatible) |
+| `SPORTSIPY_DISABLE_PLAYWRIGHT=1` | Suppress Playwright even when a Cloudflare JS-challenge is detected (useful in CI or restricted environments) |
+
+With neither env var set, Playwright is used *automatically* only when
+`curl_cffi` still receives a bot-challenge HTTP response.
+
 ## Credits
 
 This fork builds on the original

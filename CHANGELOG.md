@@ -21,6 +21,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bot-detection & live-site compatibility layer** (`utils.py`):
+  - `BotChallengeError(RuntimeError)` — public exception raised when a URL
+    returns a Cloudflare challenge body; carries the challenged URL for
+    debuggability.
+  - `_is_bot_challenge(html)` — detects Cloudflare JS-challenge responses from
+    known fingerprints (`"Just a moment…"`, `challenges.cloudflare.com`,
+    `"Enable JavaScript and cookies to continue"`, `cf-browser-verification`,
+    `"Checking if the site connection is secure"`).
+  - `_http_get()` routing function: uses `curl_cffi` (Chrome TLS fingerprint
+    impersonation) when installed, falls back to `requests` automatically.
+  - `_BROWSER_HEADERS` — realistic Chrome/Linux headers sent on every HTTP
+    request to reduce user-agent-based blocking.
+  - Playwright stealth auto-fallback: if `curl_cffi` returns a challenge body,
+    `get_page_source()` automatically retries with a headless Playwright browser
+    (no `SPORTSIPY_ENABLE_PLAYWRIGHT=1` required for this path).
+  - `_apply_playwright_stealth(page)` — injects anti-detection scripts into
+    every Playwright page (masks `navigator.webdriver`, `chrome.runtime`,
+    `permissions`, `plugins`; randomises `navigator.languages`).
+  - `SPORTSIPY_DISABLE_PLAYWRIGHT=1` env var — suppresses Playwright even on
+    challenge detection (useful for CI or restricted environments).
+- `curl_cffi` and `playwright` added as optional `[bot-evasion]` extras in
+  `pyproject.toml`; install with `pip install sportsipy[bot-evasion]`.
+
 - Full type annotations (PEP 484 / PEP 526) across all sport modules: `fb`,
   `mlb`, `nba`, `ncaab`, `ncaaf`, `nfl`, `nhl`, and shared `utils` /
   `decorators`. Types are verified by `pyright` in strict-ish mode.
@@ -61,6 +84,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requirements, and development workflow.
 
 ### Fixed
+
+- `url_exists()` now uses GET via `get_page_source()` instead of HEAD requests,
+  fixing Cloudflare 403 blocks on NCAAB and NCAAF conference/rankings pages.
+  The fetched response is cached so a subsequent `pull_page()` call for the
+  same URL is a no-op (eliminates double-fetch on conference iterations).
+- NCAAF `SEASON_PAGE_URL` changed from `http://` to `https://` to match all
+  other NCAAF constants.
 
 - `utils.py` `local_file` path resolution now falls back to package root
   correctly, fixing fixture loading for installed packages outside the project
