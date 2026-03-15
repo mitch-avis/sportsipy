@@ -3,7 +3,7 @@
 import os
 from datetime import datetime
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -180,10 +180,10 @@ class TestNCAABBoxscore:
         """Return test ncaab boxscore dataframe returns dataframe of all values."""
         dataframe = self.boxscore.dataframe
 
-        assert isinstance(dataframe, pd.DataFrame)
-        assert list(dataframe.index) == [BOXSCORE]
-        assert dataframe.loc[BOXSCORE, "winning_name"] == self.results["winning_name"]
-        assert dataframe.loc[BOXSCORE, "losing_name"] == self.results["losing_name"]
+        assert isinstance(dataframe, pl.DataFrame)
+        assert dataframe.height == 1
+        assert dataframe["winning_name"][0] == self.results["winning_name"]
+        assert dataframe["losing_name"][0] == self.results["losing_name"]
 
     def test_ncaab_boxscore_players(self):
         """Return test ncaab boxscore players."""
@@ -191,9 +191,9 @@ class TestNCAABBoxscore:
         assert len(self.boxscore.away_players) == 7
 
         for player in self.boxscore.home_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
         for player in self.boxscore.away_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
 
     def test_ncaab_boxscore_string_representation(self):
         """Return test ncaab boxscore string representation."""

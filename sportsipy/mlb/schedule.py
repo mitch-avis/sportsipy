@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 
-import pandas as pd
+import polars as pl
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME, LOSS, WIN
@@ -112,8 +112,8 @@ class Game:
             setattr(self, field, value)
 
     @property
-    def dataframe(self) -> pd.DataFrame | None:
-        """Return a pandas DataFrame containing all other class properties and.
+    def dataframe(self) -> pl.DataFrame | None:
+        """Return a polars DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the boxscore string.
         """
@@ -144,11 +144,11 @@ class Game:
             "streak": self.streak,
             "winner": self.winner,
         }
-        return pd.DataFrame([fields_to_include], index=[self._boxscore])
+        return pl.DataFrame([fields_to_include])
 
     @property
-    def dataframe_extended(self) -> pd.DataFrame | None:
-        """Return a pandas DataFrame representing the Boxscore class for the.
+    def dataframe_extended(self) -> pl.DataFrame | None:
+        """Return a polars DataFrame representing the Boxscore class for the.
 
         game. This property provides much richer context for the selected game,
         but takes longer to process compared to the lighter 'dataframe'
@@ -494,12 +494,12 @@ class Schedule:
             self._games.append(game)
 
     @property
-    def dataframe(self) -> pd.DataFrame | None:
-        """Return a pandas DataFrame where each row is a representation of the.
+    def dataframe(self) -> pl.DataFrame | None:
+        """Return a polars DataFrame where each row is a representation of the.
 
         Game class. Rows are indexed by the boxscore string.
         """
-        frames: list[pd.DataFrame] = []
+        frames: list[pl.DataFrame] = []
         for game in iter(self._games):
             # If both the runs scored and allowed are None, the game hasn't
             # been played yet, and the data should not be included in the
@@ -511,22 +511,22 @@ class Schedule:
                 frames.append(df)
         if not frames:
             return None
-        return pd.concat(frames)
+        return pl.concat(frames, how="diagonal_relaxed")
 
     @property
-    def dataframe_extended(self) -> pd.DataFrame | None:
-        """Return a pandas DataFrame where each row is a representation of the.
+    def dataframe_extended(self) -> pl.DataFrame | None:
+        """Return a polars DataFrame where each row is a representation of the.
 
         Boxscore class for every game in the schedule. Rows are indexed by the
         boxscore string. This property provides much richer context for the
         selected game, but takes longer to process compared to the lighter
         'dataframe' property.
         """
-        frames: list[pd.DataFrame] = []
+        frames: list[pl.DataFrame] = []
         for game in iter(self._games):
             df = game.dataframe_extended
             if df is not None:
                 frames.append(df)
         if not frames:
             return None
-        return pd.concat(frames)
+        return pl.concat(frames, how="diagonal_relaxed")

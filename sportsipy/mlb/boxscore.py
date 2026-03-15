@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import Any
 from urllib.error import HTTPError
 
-import pandas as pd
+import polars as pl
 from pyquery import PyQuery
 
 from sportsipy import utils
@@ -102,8 +102,8 @@ class BoxscorePlayer(AbstractPlayer):
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
     @property
-    def dataframe(self) -> pd.DataFrame:
-        """Return a ``pandas DataFrame`` containing all other relevant class.
+    def dataframe(self) -> pl.DataFrame:
+        """Return a ``polars DataFrame`` containing all other relevant class.
 
         properties and values for the specified game.
         """
@@ -153,7 +153,7 @@ class BoxscorePlayer(AbstractPlayer):
             "win_probability_for_offensive_player": self.win_probability_for_offensive_player,
             "win_probability_subtracted": self.win_probability_subtracted,
         }
-        return pd.DataFrame([fields_to_include], index=[self._player_id])
+        return pl.DataFrame([fields_to_include])
 
     @_float_property_decorator
     def average_leverage_index(self) -> float | None:
@@ -852,8 +852,8 @@ class Boxscore:
         self._away_players, self._home_players = self._find_players(boxscore)
 
     @property
-    def dataframe(self) -> pd.DataFrame | None:
-        """Return a pandas DataFrame containing all other class properties and.
+    def dataframe(self) -> pl.DataFrame | None:
+        """Return a polars DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
         instantiate the class, such as 'BOS201806070'.
@@ -947,7 +947,7 @@ class Boxscore:
             "home_win_probability_by_pitcher": self.home_win_probability_by_pitcher,
             "home_base_out_runs_saved": self.home_base_out_runs_saved,
         }
-        return pd.DataFrame([fields_to_include], index=[self._uri])
+        return pl.DataFrame([fields_to_include])
 
     @property
     def away_players(self) -> list[BoxscorePlayer] | None:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any, cast
 
-import pandas as pd
+import polars as pl
 
 from sportsipy import utils
 from sportsipy.decorators import float_property_decorator, int_property_decorator
@@ -187,8 +187,8 @@ class Team:
             setattr(self, field, value)
 
     @property
-    def dataframe(self) -> pd.DataFrame:
-        """Return a pandas DataFrame containing all other class properties and.
+    def dataframe(self) -> pl.DataFrame:
+        """Return a polars DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string abbreviation of the
         team, such as 'DET'.
@@ -245,7 +245,7 @@ class Team:
             "two_point_field_goal_percentage": self.two_point_field_goal_percentage,
             "two_point_field_goals": self.two_point_field_goals,
         }
-        return pd.DataFrame([fields_to_include], index=[self._abbreviation])
+        return pl.DataFrame([fields_to_include])
 
     @int_property_decorator
     def rank(self) -> int | None:
@@ -784,12 +784,12 @@ class Teams:
             self._teams.append(team)
 
     @property
-    def dataframes(self) -> pd.DataFrame:
-        """Return a pandas DataFrame where each row is a representation of the.
+    def dataframes(self) -> pl.DataFrame:
+        """Return a polars DataFrame where each row is a representation of the.
 
         Team class. Rows are indexed by the team abbreviation.
         """
         frames = []
         for team in iter(self._teams):
             frames.append(team.dataframe)
-        return pd.concat(frames)
+        return pl.concat(frames, how="diagonal_relaxed")

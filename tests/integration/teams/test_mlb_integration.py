@@ -257,17 +257,17 @@ class TestMLBIntegration:
         teams = Teams()
         houston = teams("HOU")
 
-        assert not houston.dataframe.empty
+        assert not houston.dataframe.is_empty()
         assert "wins" in houston.dataframe.columns
         assert "losses" in houston.dataframe.columns
 
     def test_mlb_integration_all_teams_dataframe_returns_dataframe(self, *args, **kwargs):
         """Return test mlb integration all teams dataframe returns dataframe."""
         teams = Teams()
-        result = teams.dataframes.drop_duplicates(keep=False)
+        result = teams.dataframes.unique(keep="none")
 
         assert len(result) == len(self.abbreviations)
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
     def test_pulling_team_directly(self, *args, **kwargs):
         """Return test pulling team directly."""

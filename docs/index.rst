@@ -74,7 +74,7 @@ Print the number of interceptions by the away team in a NCAA Football game
     championship_game = Boxscore('2018-01-08-georgia')
     print(championship_game.away_interceptions)
 
-Get a Pandas DataFrame of all stats for a MLB game
+Get a Polars DataFrame of all stats for a MLB game
 --------------------------------------------------
 
 .. code-block:: python

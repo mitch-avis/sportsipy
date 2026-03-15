@@ -2,7 +2,7 @@
 
 import os
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -187,26 +187,25 @@ class TestNBAIntegration:
 
     def test_nba_integration_dataframe_returns_dataframe(self):
         """Return test nba integration dataframe returns dataframe."""
-        df = pd.DataFrame([self.results], index=["DET"])
+        df = pl.DataFrame([self.results])
 
         detroit = self.teams("DET")
-        # Pandas doesn't natively allow comparisons of DataFrames.
+        # Polars doesn't natively allow comparisons of DataFrames.
         # Concatenating the two DataFrames (the one generated during the test
         # and the expected one above) and dropping duplicate rows leaves only
         # the rows that are unique between the two frames. This allows a quick
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
-        frames = [df, detroit.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df1 = pl.concat([df, detroit.dataframe.select(df.columns)]).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_nba_integration_all_teams_dataframe_returns_dataframe(self):
         """Return test nba integration all teams dataframe returns dataframe."""
-        result = self.teams.dataframes.drop_duplicates(keep=False)
+        result = self.teams.dataframes.unique(keep="none")
 
         assert len(result) == len(self.abbreviations)
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
     def test_nba_invalid_team_name_raises_value_error(self):
         """Return test nba invalid team name raises value error."""

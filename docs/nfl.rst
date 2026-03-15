@@ -22,7 +22,7 @@ information on retrieving game-specific information).
     game_data = Boxscore('201802040nwe')
     print(game_data.home_points)  # Prints 33
     print(game_data.away_points)  # Prints 41
-    df = game_data.dataframe  # Returns a Pandas DataFrame of game metrics
+    df = game_data.dataframe  # Returns a Polars DataFrame of game metrics
 
 The Boxscore module also contains a ``Boxscores`` class which searches for all
 games played on a particular day and returns a dictionary of matchups between
@@ -86,7 +86,7 @@ career information for Drew Brees.
     brees = Player('BreeDr00')
     print(brees.name)  # Prints 'Drew Brees'
     print(brees.passing_yards)  # Prints Brees' career passing yards
-    # Prints a Pandas DataFrame of all relevant stats per season for Brees
+    # Prints a Polars DataFrame of all relevant stats per season for Brees
     print(brees.dataframe)
 
 By default, the player's career stats are returned whenever a property is
@@ -190,7 +190,7 @@ calling Team class.
     kansas = Team('KAN')
 
 Each Team instance contains a link to the ``Schedule`` class which enables easy
-iteration over all games for a particular team. A Pandas DataFrame can also be
+iteration over all games for a particular team. A Polars DataFrame can also be
 queried to easily grab all stats for all games.
 
 .. code-block:: python
@@ -200,7 +200,7 @@ queried to easily grab all stats for all games.
     teams = Teams()
     for team in teams:
         schedule = team.schedule  # Returns a Schedule instance for each team
-        # Returns a Pandas DataFrame of all metrics for all game Boxscores for
+        # Returns a Polars DataFrame of all metrics for all game Boxscores for
         # a season.
         df = team.schedule.dataframe_extended
 

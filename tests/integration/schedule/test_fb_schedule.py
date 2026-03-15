@@ -3,7 +3,7 @@
 from datetime import datetime
 from os import path
 
-import pandas as pd
+import polars as pl
 import pytest
 from pyquery import PyQuery
 
@@ -152,9 +152,9 @@ class TestFBSchedule:
         match_two = self.schedule[1]
         df = match_two.dataframe
 
-        assert isinstance(df, pd.DataFrame)
-        assert not df.empty
-        assert "a4ba771e" in df.index
+        assert isinstance(df, pl.DataFrame)
+        assert not df.is_empty()
+        assert "a4ba771e" in df["match_report"].to_list()
         for attribute in CORE_MATCH_FIELDS:
             assert attribute in df.columns
 

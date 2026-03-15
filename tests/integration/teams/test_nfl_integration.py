@@ -3,7 +3,7 @@
 import os
 from typing import Any, cast
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -201,16 +201,17 @@ class TestNFLIntegration:
     def test_nfl_integration_dataframe_returns_dataframe(self, *args, **kwargs):
         """Return test nfl integration dataframe returns dataframe."""
         kansas = self.teams("KAN")
-        assert isinstance(kansas.dataframe, pd.DataFrame)
-        assert list(kansas.dataframe.index) == ["KAN"]
-        assert kansas.dataframe.loc["KAN", "name"] == "Kansas City Chiefs"
+        assert isinstance(kansas.dataframe, pl.DataFrame)
+        assert kansas.dataframe.height == 1
+        assert kansas.dataframe["abbreviation"][0] == "KAN"
+        assert kansas.dataframe["name"][0] == "Kansas City Chiefs"
 
     def test_nfl_integration_all_teams_dataframe_returns_dataframe(self, *args, **kwargs):
         """Return test nfl integration all teams dataframe returns dataframe."""
-        result = self.teams.dataframes.drop_duplicates(keep=False)
+        result = self.teams.dataframes.unique(keep="none")
 
         assert len(result) == len(self.abbreviations)
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
     def test_nfl_invalid_team_name_raises_value_error(self, *args, **kwargs):
         """Return test nfl invalid team name raises value error."""

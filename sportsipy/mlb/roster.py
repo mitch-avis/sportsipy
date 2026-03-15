@@ -7,7 +7,7 @@ from functools import wraps
 from typing import Any
 from urllib.error import HTTPError
 
-import pandas as pd
+import polars as pl
 from pyquery import PyQuery
 
 from sportsipy import utils
@@ -718,8 +718,8 @@ class Player(AbstractPlayer):
         return fields_to_include
 
     @property
-    def dataframe(self) -> pd.DataFrame:
-        """Return a ``pandas DataFrame`` containing all other relevant class.
+    def dataframe(self) -> pl.DataFrame:
+        """Return a ``polars DataFrame`` containing all other relevant class.
 
         properties and values where each index is a different season plus the
         career stats.
@@ -733,7 +733,7 @@ class Player(AbstractPlayer):
                 rows.append(self._dataframe_fields())
                 indices.append(season)
         self._index = temp_index
-        return pd.DataFrame(rows, index=[indices])
+        return pl.DataFrame(rows)
 
     @property
     def season(self) -> str | None:

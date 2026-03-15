@@ -22,7 +22,7 @@ retrieving game-specific information).
     game_data = Boxscore('201806080CLE')
     print(game_data.away_points)  # Prints 108
     print(game_data.home_points)  # Prints 85
-    df = game_data.dataframe  # Returns a Pandas DataFrame of game metrics
+    df = game_data.dataframe  # Returns a Polars DataFrame of game metrics
 
 The Boxscore module also contains a ``Boxscores`` class which searches for all
 games played on a particular day and returns a dictionary of matchups between
@@ -88,7 +88,7 @@ career information for James Harden:
     james_harden = Player('hardeja01')
     print(james_harden.name)  # Prints 'James Harden'
     print(james_harden.points)  # Prints Harden's career points total
-    # Prints a Pandas DataFrame of all relevant Harden stats per season
+    # Prints a Polars DataFrame of all relevant Harden stats per season
     print(james_harden.dataframe)
     print(james_harden.salary)  # Prints Harden's career earnings
     print(james_harden.contract)  # Prints Harden's contract by yearly wages
@@ -193,7 +193,7 @@ calling Team class.
     houston = Team('HOU')
 
 Each Team instance contains a link to the ``Schedule`` class which enables easy
-iteration over all games for a particular team. A Pandas DataFrame can also be
+iteration over all games for a particular team. A Polars DataFrame can also be
 queried to easily grab all stats for all games.
 
 .. code-block:: python
@@ -203,7 +203,7 @@ queried to easily grab all stats for all games.
     teams = Teams()
     for team in teams:
         schedule = team.schedule  # Returns a Schedule instance for each team
-        # Returns a Pandas DataFrame of all metrics for all game Boxscores for
+        # Returns a Polars DataFrame of all metrics for all game Boxscores for
         # a season.
         df = team.schedule.dataframe_extended
 

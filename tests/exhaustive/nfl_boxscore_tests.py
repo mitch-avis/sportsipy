@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from functools import wraps
 
-import pandas as pd
+import polars as pl
 from playwright.sync_api import sync_playwright
 from pyquery import PyQuery
 
@@ -720,7 +720,7 @@ class Boxscore:
 
     @property
     def dataframe(self):
-        """Return a pandas DataFrame containing all other class properties and.
+        """Return a polars DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
         instantiate the class, such as '201802040nwe'.
@@ -795,7 +795,7 @@ class Boxscore:
             "winning_name": self.winning_name,
             "won_toss": self.won_toss,
         }
-        return pd.DataFrame([fields_to_include], index=[self._uri])
+        return pl.DataFrame([fields_to_include])
 
     @property
     def away_players(self):
@@ -1370,4 +1370,4 @@ if __name__ == "__main__":
     boxscore = Boxscore("202502090phi")
     dataframe = boxscore.dataframe
     if dataframe is not None:
-        dataframe.to_csv("test_boxscores.csv", index=False)
+        dataframe.write_csv("test_boxscores.csv")

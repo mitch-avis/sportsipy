@@ -3,7 +3,7 @@
 import os
 from datetime import datetime
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -1118,7 +1118,7 @@ class TestNBAPlayer:
                 "height": "6-5",
                 "true_shooting_percentage": 0.619,
                 "small_forward_percentage": 6,
-                "minutes_played": 2551,
+                "minutes_played": 2551.0,
                 "on_court_plus_minus": 10.5,
                 "games_started": 72,
                 "win_shares_per_48_minutes": 0.289,
@@ -1209,7 +1209,7 @@ class TestNBAPlayer:
                 "height": "6-5",
                 "true_shooting_percentage": 0.598,
                 "small_forward_percentage": 26,
-                "minutes_played": 2189,
+                "minutes_played": 2189.0,
                 "on_court_plus_minus": 5.5,
                 "games_started": 5,
                 "win_shares_per_48_minutes": 0.156,
@@ -1252,30 +1252,17 @@ class TestNBAPlayer:
                 "three_point_shot_percentage_from_corner": 0.356,
             },
         ]
-        indices = [
-            "2013-14",
-            "Career",
-            "2014-15",
-            "2016-17",
-            "2009-10",
-            "2015-16",
-            "2011-12",
-            "2012-13",
-            "2017-18",
-            "2010-11",
-        ]
 
-        df = pd.DataFrame(dataframe, index=indices)
+        df = pl.DataFrame(dataframe)
         player = self.player("")
 
-        # Pandas doesn't natively allow comparisons of DataFrames.
+        # Polars doesn't natively allow comparisons of DataFrames.
         # Concatenating the two DataFrames (the one generated during the test
         # and the expected one above) and dropping duplicate rows leaves only
         # the rows that are unique between the two frames. This allows a quick
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
-        frames = [df, player.dataframe]
-        pd.concat(frames).drop_duplicates(keep=False)
+        pl.concat([df, player.dataframe.select(df.columns)]).unique(keep="none")
 
     def test_nba_player_with_no_stats_handled_without_error(self, *args, **kwargs):
         """Return test nba player with no stats handled without error."""

@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any
 from urllib.error import HTTPError
 
-import pandas as pd
+import polars as pl
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, DRAW, HOME, LOSS, NEUTRAL, WIN
@@ -187,8 +187,8 @@ class Game:
             setattr(self, field, value)
 
     @property
-    def dataframe(self) -> pd.DataFrame | None:
-        """Return a pandas ``DataFrame`` containing all other class properties.
+    def dataframe(self) -> pl.DataFrame | None:
+        """Return a polars ``DataFrame`` containing all other class properties.
 
         and values. The index for the DataFrame is the match report ID.
         """
@@ -219,7 +219,7 @@ class Game:
             "match_report": self.match_report,
             "notes": self.notes,
         }
-        return pd.DataFrame([fields_to_include], index=[self.match_report])
+        return pl.DataFrame([fields_to_include])
 
     @property
     def competition(self) -> str | None:

@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from typing import Any, cast
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -40,7 +40,7 @@ def _patch_boxscore(monkeypatch):
     monkeypatch.setattr(
         cast(Any, Boxscore),
         "dataframe",
-        property(lambda _self: pd.DataFrame([{"key": "value"}])),
+        property(lambda _self: pl.DataFrame([{"key": "value"}])),
     )
 
 
@@ -185,29 +185,29 @@ class TestMLBSchedule:
         match_two = self.schedule[1]
         df = match_two.dataframe
 
-        assert isinstance(df, pd.DataFrame)
-        assert not df.empty
+        assert isinstance(df, pl.DataFrame)
+        assert not df.is_empty()
         assert "boxscore_index" in df.columns
 
     def test_mlb_schedule_dataframe_extended_returns_dataframe(self):
         """Return test mlb schedule dataframe extended returns dataframe."""
-        df = pd.DataFrame([{"key": "value"}])
+        df = pl.DataFrame([{"key": "value"}])
 
         result = self.schedule[1].dataframe_extended
 
         frames = [df, result]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df1 = pl.concat(frames).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_mlb_schedule_all_dataframe_returns_dataframe(self):
         """Return test mlb schedule all dataframe returns dataframe."""
         df = self.schedule.dataframe
         assert df is not None
-        result = df.drop_duplicates(keep=False)
+        result = df.unique(keep="none")
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
     def test_mlb_schedule_all_dataframe_extended_returns_dataframe(self):
         """Return test mlb schedule all dataframe extended returns dataframe."""

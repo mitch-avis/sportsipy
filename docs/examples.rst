@@ -40,7 +40,7 @@ and height in inches.
 Writing To CSV and Pickle
 -------------------------
 To prevent re-pulling data from datasets that won't change, such as completed
-games with fixed statistics, the pandas DataFrame can be saved to the local
+games with fixed statistics, the polars DataFrame can be saved to the local
 filesystem for re-use later on. Two common file types for this are CSV files and
 the high-performing Pickle files. CSV files are a common file type that many
 tools and editors support and save an interpretation of the DataFrame, while a

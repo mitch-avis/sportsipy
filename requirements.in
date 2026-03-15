@@ -6,7 +6,7 @@ jinja2
 lxml
 markupsafe
 numpy
-pandas
+polars
 playwright
 py-cpuinfo
 pyquery

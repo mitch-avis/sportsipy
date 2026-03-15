@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from typing import Any, cast
 from urllib.error import HTTPError
 
-import pandas as pd
+import polars as pl
 from pyquery import PyQuery
 
 from sportsipy import utils
@@ -252,7 +252,7 @@ class SquadPlayer:
 
     @property
     def dataframe(self) -> Any:
-        """Return a pandas ``DataFame`` containing all other class properties.
+        """Return a polars ``DataFrame`` containing all other class properties.
 
         and values. The index for the DataFrame is the player ID.
         """
@@ -397,8 +397,8 @@ class SquadPlayer:
             "tackle_percentage": self.tackle_percentage,
             "times_dribbled_past": self.times_dribbled_past,
         }
-        # Pandas stubs can trip Pyright/Pylance here; runtime is correct.
-        return pd.DataFrame([fields_to_include], index=[self.player_id])  # pyright: ignore[reportGeneralTypeIssues]
+        # Polars stubs can trip Pyright/Pylance here; runtime is correct.
+        return pl.DataFrame([fields_to_include])  # pyright: ignore[reportGeneralTypeIssues]
 
     @property
     def name(self) -> Any:

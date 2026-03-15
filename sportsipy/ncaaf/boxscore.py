@@ -9,7 +9,7 @@ from functools import wraps
 from typing import Any
 from urllib.error import HTTPError
 
-import pandas as pd
+import polars as pl
 from pyquery import PyQuery
 
 from sportsipy import utils
@@ -117,8 +117,8 @@ class BoxscorePlayer(AbstractPlayer):
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
     @property
-    def dataframe(self) -> pd.DataFrame:
-        """Return a ``pandas DataFrame`` containing all other relevant class.
+    def dataframe(self) -> pl.DataFrame:
+        """Return a ``polars DataFrame`` containing all other relevant class.
 
         properties and value for the specified game.
         """
@@ -177,7 +177,7 @@ class BoxscorePlayer(AbstractPlayer):
             "punting_yards": self.punting_yards,
             "punting_yards_per_punt": self.punting_yards_per_attempt,
         }
-        return pd.DataFrame([fields_to_include], index=[self._player_id])
+        return pl.DataFrame([fields_to_include])
 
     @_float_property_decorator
     def pass_yards_per_attempt(self) -> float | None:
@@ -788,8 +788,8 @@ class Boxscore:
         self._away_players, self._home_players = self._find_players(boxscore)
 
     @property
-    def dataframe(self) -> pd.DataFrame | None:
-        """Return a pandas DataFrame containing all other class properties and.
+    def dataframe(self) -> pl.DataFrame | None:
+        """Return a polars DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
         instantiate the class, such as '2018-01-08-georgia'.
@@ -839,7 +839,7 @@ class Boxscore:
             "winning_abbr": self.winning_abbr,
             "winning_name": self.winning_name,
         }
-        return pd.DataFrame([fields_to_include], index=[self._uri])
+        return pl.DataFrame([fields_to_include])
 
     @property
     def away_players(self) -> list[BoxscorePlayer]:

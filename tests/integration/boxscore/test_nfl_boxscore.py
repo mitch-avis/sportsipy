@@ -3,7 +3,7 @@
 import os
 from datetime import datetime
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -150,18 +150,17 @@ class TestNFLBoxscore:
 
     def test_nfl_boxscore_dataframe_returns_dataframe_of_all_values(self):
         """Return test nfl boxscore dataframe returns dataframe of all values."""
-        df = pd.DataFrame([self.results], index=[BOXSCORE])
+        df = pl.DataFrame([self.results])
 
-        # Pandas doesn't natively allow comparisons of DataFrames.
+        # Polars doesn't natively allow comparisons of DataFrames.
         # Concatenating the two DataFrames (the one generated during the test
         # and the expected one above) and dropping duplicate rows leaves only
         # the rows that are unique between the two frames. This allows a quick
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
-        frames = [df, self.boxscore.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df1 = pl.concat([df, self.boxscore.dataframe.select(df.columns)]).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_nfl_boxscore_players(self):
         """Return test nfl boxscore players."""
@@ -169,9 +168,9 @@ class TestNFLBoxscore:
         assert len(self.boxscore.away_players) == 28
 
         for player in self.boxscore.home_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
         for player in self.boxscore.away_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
 
     def test_nfl_boxscore_string_representation(self):
         """Return test nfl boxscore string representation."""

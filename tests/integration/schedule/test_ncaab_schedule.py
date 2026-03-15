@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from typing import Any, cast
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -39,7 +39,7 @@ def _patch_boxscore(monkeypatch):
     monkeypatch.setattr(
         cast(Any, Boxscore),
         "dataframe",
-        property(lambda _self: pd.DataFrame([{"key": "value"}])),
+        property(lambda _self: pl.DataFrame([{"key": "value"}])),
     )
 
 
@@ -143,39 +143,39 @@ class TestNCAABSchedule:
 
     def test_ncaab_schedule_dataframe_returns_dataframe(self):
         """Return test ncaab schedule dataframe returns dataframe."""
-        df = pd.DataFrame([self.results], index=["KANSAS"])
+        df = pl.DataFrame([self.results])
 
         match_two = self.schedule[1]
-        # Pandas doesn't natively allow comparisons of DataFrames.
+        # Polars doesn't natively allow comparisons of DataFrames.
         # Concatenating the two DataFrames (the one generated during the test
         # and the expected one above) and dropping duplicate rows leaves only
         # the rows that are unique between the two frames. This allows a quick
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
-        frames = [df, match_two.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        assert match_two.dataframe is not None
+        df1 = pl.concat([df, match_two.dataframe.select(df.columns)]).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_ncaab_schedule_dataframe_extended_returns_dataframe(self):
         """Return test ncaab schedule dataframe extended returns dataframe."""
-        df = pd.DataFrame([{"key": "value"}])
+        df = pl.DataFrame([{"key": "value"}])
 
         result = self.schedule[1].dataframe_extended
+        assert result is not None
 
-        frames = [df, result]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df1 = pl.concat([df, result.select(df.columns)]).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_ncaab_schedule_all_dataframe_returns_dataframe(self):
         """Return test ncaab schedule all dataframe returns dataframe."""
         df = self.schedule.dataframe
         assert df is not None
-        result = df.drop_duplicates(keep=False)
+        result = df.unique(keep="none")
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
     def test_ncaab_schedule_all_dataframe_extended_returns_dataframe(self):
         """Return test ncaab schedule all dataframe extended returns dataframe."""

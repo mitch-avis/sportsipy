@@ -2,7 +2,7 @@
 
 from os import path
 
-import pandas as pd
+import polars as pl
 from pyquery import PyQuery
 
 from sportsipy.fb.roster import Roster
@@ -386,9 +386,9 @@ class TestFBRoster:
         harry_kane = self.roster("Harry Kane")
         df = harry_kane.dataframe
 
-        assert isinstance(df, pd.DataFrame)
-        assert not df.empty
-        assert "21a66f6a" in df.index
+        assert isinstance(df, pl.DataFrame)
+        assert not df.is_empty()
+        assert "21a66f6a" in df["player_id"].to_list()
         for attribute in OUTFIELD_CORE_STATS:
             assert attribute in df.columns
 

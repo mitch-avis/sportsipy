@@ -4,7 +4,7 @@ import os
 from typing import Any, cast
 from unittest import mock
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -518,9 +518,9 @@ class TestMLBPlayer:
         player = self.player("")
         result = player.dataframe
 
-        assert isinstance(result, pd.DataFrame)
-        assert not result.empty
-        assert "Career" in {str(index) for index in result.index.get_level_values(0)}
+        assert isinstance(result, pl.DataFrame)
+        assert not result.is_empty()
+        assert "Career" in result["season"].to_list()
         assert set(dataframe[0].keys()).issubset(set(result.columns))
 
     def test_player_contract_returns_contract(self):
@@ -1046,9 +1046,9 @@ class TestMLBPitcher:
         player = self.player("")
         result = player.dataframe
 
-        assert isinstance(result, pd.DataFrame)
-        assert not result.empty
-        assert "Career" in {str(index) for index in result.index.get_level_values(0)}
+        assert isinstance(result, pl.DataFrame)
+        assert not result.is_empty()
+        assert "Career" in result["season"].to_list()
         assert set(dataframe[0].keys()).issubset(set(result.columns))
 
     def test_player_contract_returns_contract(self):

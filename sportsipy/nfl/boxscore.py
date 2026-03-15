@@ -9,7 +9,7 @@ from functools import wraps
 from typing import Any
 from urllib.error import HTTPError
 
-import pandas as pd
+import polars as pl
 from lxml.etree import ParserError, XMLSyntaxError
 from pyquery import PyQuery
 
@@ -110,8 +110,8 @@ class BoxscorePlayer(AbstractPlayer):
         AbstractPlayer.__init__(self, player_id, player_name, player_data)
 
     @property
-    def dataframe(self) -> pd.DataFrame:
-        """Return a ``pandas DataFrame`` containing all other relevant class.
+    def dataframe(self) -> pl.DataFrame:
+        """Return a ``polars DataFrame`` containing all other relevant class.
 
         properties and values for the specified game.
         """
@@ -170,7 +170,7 @@ class BoxscorePlayer(AbstractPlayer):
             "yards_per_punt": self.yards_per_punt,
             "longest_punt": self.longest_punt,
         }
-        return pd.DataFrame([fields_to_include], index=[self._player_id])
+        return pl.DataFrame([fields_to_include])
 
     @_int_property_decorator
     def yards_lost_from_sacks(self) -> int | None:
@@ -844,7 +844,7 @@ class Boxscore:
 
     @property
     def dataframe(self) -> Any:
-        """Return a pandas DataFrame containing all other class properties and.
+        """Return a polars DataFrame containing all other class properties and.
 
         values. The index for the DataFrame is the string URI that is used to
         instantiate the class, such as '201802040nwe'.
@@ -919,7 +919,7 @@ class Boxscore:
             "winning_name": self.winning_name,
             "won_toss": self.won_toss,
         }
-        return pd.DataFrame([fields_to_include], index=[self._uri])
+        return pl.DataFrame([fields_to_include])
 
     @property
     def away_players(self) -> Any:

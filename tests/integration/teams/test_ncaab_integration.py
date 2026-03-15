@@ -2,7 +2,7 @@
 
 import os
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from sportsipy import utils
@@ -971,18 +971,19 @@ class TestNCAABIntegration:
     def test_ncaab_integration_dataframe_returns_dataframe(self):
         """Return test ncaab integration dataframe returns dataframe."""
         purdue = self.teams("PURDUE")
-        assert isinstance(purdue.dataframe, pd.DataFrame)
-        assert list(purdue.dataframe.index) == ["PURDUE"]
-        assert set(self.results.keys()).issubset(set(purdue.dataframe.columns.values))
-        assert purdue.dataframe.loc["PURDUE", "conference"] == self.results["conference"]
-        assert purdue.dataframe.loc["PURDUE", "name"] == self.results["name"]
+        assert isinstance(purdue.dataframe, pl.DataFrame)
+        assert purdue.dataframe.height == 1
+        assert purdue.dataframe["abbreviation"][0] == "PURDUE"
+        assert set(self.results.keys()).issubset(set(purdue.dataframe.columns))
+        assert purdue.dataframe["conference"][0] == self.results["conference"]
+        assert purdue.dataframe["name"][0] == self.results["name"]
 
     def test_ncaab_integration_all_teams_dataframe_returns_dataframe(self):
         """Return test ncaab integration all teams dataframe returns dataframe."""
-        result = self.teams.dataframes.drop_duplicates(keep=False)
+        result = self.teams.dataframes.unique(keep="none")
 
         assert len(result) == len(self.abbreviations)
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
     def test_ncaab_invalid_team_name_raises_value_error(self):
         """Return test ncaab invalid team name raises value error."""

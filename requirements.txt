@@ -29,13 +29,13 @@ markupsafe==3.0.3
     #   -r requirements.in
     #   jinja2
 numpy==2.4.1
-    # via
-    #   -r requirements.in
-    #   pandas
-pandas==3.0.0
     # via -r requirements.in
 playwright==1.57.0
     # via -r requirements.in
+polars==1.39.0
+    # via -r requirements.in
+polars-runtime-32==1.39.0
+    # via polars
 py-cpuinfo==9.0.0
     # via -r requirements.in
 pyee==13.0.0
@@ -43,9 +43,7 @@ pyee==13.0.0
 pyquery==2.0.1
     # via -r requirements.in
 python-dateutil==2.9.0.post0
-    # via
-    #   -r requirements.in
-    #   pandas
+    # via -r requirements.in
 pytz==2025.2
     # via -r requirements.in
 requests==2.32.5
