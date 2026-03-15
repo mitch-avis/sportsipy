@@ -31,6 +31,9 @@ jobs:
     - name: Lint with ruff
       run: |
         ruff check sportsipy/ tests/
+    - name: Validate documentation links and wording
+      run: |
+        python scripts/check_docs_links.py
     - name: Type check with pyright (non-blocking)
       continue-on-error: true
       run: |
