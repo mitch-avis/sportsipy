@@ -12,9 +12,9 @@ import threading
 import time
 import warnings
 from collections.abc import Callable, Generator
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -233,6 +233,50 @@ def todays_date() -> datetime:
 def _env_flag(name: str) -> bool:
     value = os.environ.get(name, "")
     return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int, minimum: int = 0) -> int:
+    """Return an integer environment variable with bounds and fallback."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return max(int(value), minimum)
+    except ValueError:
+        return default
+
+
+def _playwright_headless() -> bool:
+    """Return whether Playwright should run headless.
+
+    Uses ``SPORTSIPY_PLAYWRIGHT_HEADLESS`` when set (default true).
+    """
+    value = os.environ.get("SPORTSIPY_PLAYWRIGHT_HEADLESS", "1")
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _playwright_wait_until() -> Literal["load", "domcontentloaded", "networkidle", "commit"]:
+    """Return Playwright navigation wait mode with validation."""
+    wait_until = os.environ.get("SPORTSIPY_PLAYWRIGHT_WAIT_UNTIL", "networkidle")
+    if wait_until == "load":
+        return "load"
+    if wait_until == "domcontentloaded":
+        return "domcontentloaded"
+    if wait_until == "commit":
+        return "commit"
+    return "networkidle"
+
+
+def _playwright_debug_path(dir_env_var: str, url: str, suffix: str) -> Path | None:
+    """Build a per-URL debug artifact path under an optional directory env var."""
+    output_dir = os.environ.get(dir_env_var)
+    if not output_dir:
+        return None
+    path = Path(output_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    return path / f"{timestamp}_{digest}.{suffix}"
 
 
 def offline_mode() -> bool:
@@ -1355,22 +1399,78 @@ def _fetch_with_playwright(url: str) -> str | None:
     """
     if sync_playwright is None:
         return None
+    settle_ms = _env_int("SPORTSIPY_PLAYWRIGHT_SETTLE_MS", 2500, minimum=0)
+    timeout_ms = _env_int("SPORTSIPY_PLAYWRIGHT_TIMEOUT_MS", 90000, minimum=1000)
+    wait_until = _playwright_wait_until()
+    storage_state_path = os.environ.get("SPORTSIPY_PLAYWRIGHT_STORAGE_STATE")
+    user_data_dir = os.environ.get("SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR")
     try:
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
-            try:
-                context = browser.new_context(
+            browser = None
+            context = None
+            if user_data_dir:
+                context = pw.chromium.launch_persistent_context(
+                    user_data_dir,
+                    headless=_playwright_headless(),
                     viewport={"width": 1280, "height": 800},
                     user_agent=_BROWSER_HEADERS["User-Agent"],
                     locale="en-US",
                 )
-                page = context.new_page()
+            else:
+                browser = pw.chromium.launch(headless=_playwright_headless())
+                context_kwargs: dict[str, Any] = {
+                    "viewport": {"width": 1280, "height": 800},
+                    "user_agent": _BROWSER_HEADERS["User-Agent"],
+                    "locale": "en-US",
+                }
+                if storage_state_path and Path(storage_state_path).exists():
+                    context_kwargs["storage_state"] = storage_state_path
+                context = browser.new_context(**context_kwargs)
+
+            try:
+                existing_pages = getattr(context, "pages", None)
+                page = existing_pages[0] if existing_pages else context.new_page()
                 _apply_playwright_stealth(page)
-                page.goto(url, timeout=60000, wait_until="domcontentloaded")
+                page.goto(url, timeout=timeout_ms, wait_until=wait_until)
+                if settle_ms and hasattr(page, "wait_for_timeout"):
+                    page.wait_for_timeout(settle_ms)
                 content = page.content()
+                final_url = getattr(page, "url", "")
+                try:
+                    page_title = page.title()
+                except Exception:
+                    page_title = ""
+
+                if _is_bot_challenge(content):
+                    _LOGGER.warning(
+                        "Playwright still received bot challenge for %s (final_url=%s, title=%s)",
+                        url,
+                        final_url,
+                        page_title,
+                    )
+                else:
+                    _LOGGER.info(
+                        "Playwright fetch succeeded for %s (final_url=%s, title=%s)",
+                        url,
+                        final_url,
+                        page_title,
+                    )
+
+                html_dump = _playwright_debug_path("SPORTSIPY_BOT_DEBUG_HTML_DIR", url, "html")
+                if html_dump is not None:
+                    html_dump.write_text(content, encoding="utf-8")
+                screenshot_dump = _playwright_debug_path(
+                    "SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR", url, "png"
+                )
+                if screenshot_dump is not None:
+                    page.screenshot(path=str(screenshot_dump), full_page=True)
+
                 return content
             finally:
-                browser.close()
+                if hasattr(context, "close"):
+                    context.close()
+                if browser is not None:
+                    browser.close()
     except Exception as exc:
         _LOGGER.warning("Playwright fetch failed for %s: %s", url, exc)
         return None
