@@ -56,13 +56,23 @@ class Rankings:
             Returns a PyQuery object of the rankings HTML page.
 
         """
-        try:
-            page_source = utils.get_page_source(url=RANKINGS_URL % year)
-            if not page_source:
-                return None
-            return utils.pq(page_source)
-        except HTTPError:
+        if year is None:
             return None
+        primary_url = RANKINGS_URL % year
+        fallback_url = primary_url.replace("-polls-old.html", "-polls.html")
+        candidates = [primary_url]
+        if fallback_url != primary_url:
+            candidates.append(fallback_url)
+
+        for candidate in candidates:
+            try:
+                page_source = utils.get_page_source(url=candidate)
+                if not page_source:
+                    continue
+                return utils.pq(page_source)
+            except HTTPError:
+                continue
+        return None
 
     def _parse_table_columns(self, page: Any) -> dict[int, dict[str, str]]:
         """Build metadata for each week column in the rankings table."""
@@ -213,6 +223,8 @@ class Rankings:
                           move have 0 (int)
             }
         """
+        if not self._rankings:
+            return []
         latest_week = max(self._rankings.keys())
         ordered_dict = sorted(self._rankings[latest_week], key=lambda k: k["rank"])
         return ordered_dict
