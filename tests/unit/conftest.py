@@ -23,3 +23,19 @@ def disable_curl_cffi(monkeypatch: pytest.MonkeyPatch) -> None:
     inside their own body.
     """
     monkeypatch.setattr(utils, "_CURL_CFFI_AVAILABLE", False)
+
+
+@pytest.fixture(autouse=True)
+def disable_playwright(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Disable Playwright fallback for unit tests.
+
+    Unit tests primarily exercise parser and control-flow logic with mocked
+    HTTP calls. If Playwright fallback is enabled, a mocked empty/invalid
+    response can trigger a real browser navigation, introducing network
+    nondeterminism and flaky failures.
+
+    Tests that explicitly validate Playwright behavior can opt back in by
+    monkeypatching ``_PLAYWRIGHT_AVAILABLE`` and ``sync_playwright``.
+    """
+    monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", False)
+    monkeypatch.setattr(utils, "sync_playwright", None)
