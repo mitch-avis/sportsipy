@@ -69,7 +69,10 @@ class Rankings:
                 page_source = utils.get_page_source(url=candidate)
                 if not page_source:
                     continue
-                return utils.pq(page_source)
+                page = utils.pq(page_source)
+                if not page("table#ap-polls tbody tr"):
+                    continue
+                return page
             except HTTPError:
                 continue
         return None
