@@ -854,6 +854,63 @@ class TestUtils:
 
         assert utils.get_page_source("https://example.com") is None
 
+    def test_fetch_with_playwright_cdp_attach_success(self, monkeypatch):
+        """Reuse an existing Chrome session through CDP when configured."""
+
+        class Page:
+            def goto(self, *_args, **_kwargs):
+                return None
+
+            def wait_for_timeout(self, *_args, **_kwargs):
+                return None
+
+            def content(self):
+                return _CLEAN_HTML
+
+            def title(self):
+                return "Example"
+
+            def close(self):
+                return None
+
+        class BrowserContext:
+            def __init__(self):
+                self.headers = None
+                self.cookies = None
+
+            def set_extra_http_headers(self, headers):
+                self.headers = headers
+
+            def add_cookies(self, cookies):
+                self.cookies = cookies
+
+            def new_page(self):
+                return Page()
+
+        class Browser:
+            def __init__(self):
+                self.contexts = [BrowserContext()]
+
+        class Chromium:
+            def connect_over_cdp(self, _endpoint):
+                return Browser()
+
+        class PlaywrightSession:
+            chromium = Chromium()
+
+        class Context:
+            def __enter__(self):
+                return PlaywrightSession()
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        monkeypatch.setenv("SPORTSIPY_PLAYWRIGHT_CDP_URL", "http://127.0.0.1:9222")
+        monkeypatch.setattr(utils, "sync_playwright", lambda: Context())
+        monkeypatch.setattr(utils, "_resolve_cookies", lambda _url: {"cf_clearance": "token"})
+
+        assert utils._fetch_with_playwright("https://example.com") == _CLEAN_HTML
+
     def test_rate_limit_and_cache_error_branches(self, monkeypatch, tmp_path):
         """Return test rate limit and cache error branches."""
         monkeypatch.setenv("SPORTSIPY_RATE_LIMIT_SECONDS", "BAD")
