@@ -90,6 +90,7 @@ playwright install chromium
 | `SPORTSIPY_PLAYWRIGHT_TIMEOUT_MS=90000` | Per-navigation timeout in milliseconds |
 | `SPORTSIPY_PLAYWRIGHT_STORAGE_STATE=/path/state.json` | Reuse a previously saved Playwright storage-state file (cookies/local storage) |
 | `SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR=/path/profile` | Launch a persistent Chromium profile directory and reuse browser session state |
+| `SPORTSIPY_PLAYWRIGHT_CDP_URL=http://127.0.0.1:9222` | Attach Playwright to an already running Chrome instance via DevTools Protocol and reuse that live browser session |
 | `SPORTSIPY_BOT_DEBUG_HTML_DIR=/path/debug-html` | Save fetched Playwright HTML pages for challenge diagnostics |
 | `SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR=/path/debug-shots` | Save Playwright screenshots for challenge diagnostics |
 
@@ -104,6 +105,10 @@ Recommended troubleshooting flow for Cloudflare-gated pages:
 3. Enable debug dumps (`SPORTSIPY_BOT_DEBUG_HTML_DIR`,
  `SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR`) to inspect what content is actually
  returned when parsing fails.
+4. If the site works in your normal Chrome session but not in automated
+ Chrome windows, start Chrome with remote debugging enabled and point
+ `SPORTSIPY_PLAYWRIGHT_CDP_URL` at it so sportsipy can reuse the live,
+ already-trusted browser session.
 
 ## Credits
 
