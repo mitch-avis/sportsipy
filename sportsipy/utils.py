@@ -281,6 +281,17 @@ def _playwright_channel() -> str:
     return os.environ.get("SPORTSIPY_PLAYWRIGHT_CHANNEL", "chrome")
 
 
+def _playwright_cdp_url() -> str:
+    """Return an optional Chrome DevTools endpoint for Playwright attachment.
+
+    When set, Playwright attaches to an already-running Chrome instance via
+    CDP instead of launching a fresh automated browser. This is useful when a
+    user can browse a site manually in Chrome but fresh automation contexts are
+    still challenged by Cloudflare.
+    """
+    return os.environ.get("SPORTSIPY_PLAYWRIGHT_CDP_URL", "").strip()
+
+
 def _camoufox_geoip_enabled() -> bool:
     """Return whether Camoufox geoip emulation should be enabled.
 
@@ -1745,12 +1756,12 @@ def _fetch_with_camoufox(url: str) -> str | None:
             extra_cookies = _resolve_cookies(url)
             host = urlparse(url).hostname
             if extra_cookies and host and hasattr(context, "add_cookies"):
+                cookie_url = f"{'https' if url.startswith('https://') else 'http'}://{host}/"
                 cookie_items = [
                     {
                         "name": name,
                         "value": value,
-                        "domain": host,
-                        "path": "/",
+                        "url": cookie_url,
                         "secure": url.startswith("https://"),
                         "httpOnly": False,
                     }
@@ -1868,18 +1879,39 @@ def _fetch_with_playwright(url: str) -> str | None:
     timeout_ms = _env_int("SPORTSIPY_PLAYWRIGHT_TIMEOUT_MS", 30000, minimum=1000)
     wait_until = _playwright_wait_until()
     channel = _playwright_channel()
+    cdp_url = _playwright_cdp_url()
     storage_state_path = os.environ.get("SPORTSIPY_PLAYWRIGHT_STORAGE_STATE")
     user_data_dir = os.environ.get("SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR")
     try:
         with sync_playwright() as pw:
             browser = None
             context = None
-            _launch_args: list[str] = []
+            page = None
+            owns_page = False
+            managed_browser = False
+            managed_context = False
+            _launch_args: list[str] = ["--disable-blink-features=AutomationControlled"]
+            browser_headers = _browser_headers()
+            browser_user_agent = browser_headers.get("User-Agent")
+            context_extra_headers = {
+                key: value for key, value in browser_headers.items() if key.lower() != "user-agent"
+            }
             # Suppress both automation-advertisement flags.  --no-sandbox is
             # added by Playwright in sandboxed/WSL environments; it shows a
             # warning banner inside Chrome that is itself a Cloudflare signal.
             _ignore_default = ["--enable-automation", "--no-sandbox"]
-            if user_data_dir:
+            if cdp_url:
+                browser = pw.chromium.connect_over_cdp(cdp_url)
+                contexts = getattr(browser, "contexts", [])
+                if contexts:
+                    context = contexts[0]
+                else:
+                    context = browser.new_context(
+                        viewport={"width": 1280, "height": 800},
+                        locale="en-US",
+                    )
+                    managed_context = True
+            elif user_data_dir and hasattr(pw.chromium, "launch_persistent_context"):
                 if channel:
                     context = pw.chromium.launch_persistent_context(
                         user_data_dir,
@@ -1889,6 +1921,8 @@ def _fetch_with_playwright(url: str) -> str | None:
                         ignore_default_args=_ignore_default,
                         viewport={"width": 1280, "height": 800},
                         locale="en-US",
+                        user_agent=browser_user_agent,
+                        extra_http_headers=context_extra_headers,
                     )
                 else:
                     context = pw.chromium.launch_persistent_context(
@@ -1898,7 +1932,10 @@ def _fetch_with_playwright(url: str) -> str | None:
                         ignore_default_args=_ignore_default,
                         viewport={"width": 1280, "height": 800},
                         locale="en-US",
+                        user_agent=browser_user_agent,
+                        extra_http_headers=context_extra_headers,
                     )
+                managed_context = True
             else:
                 if channel:
                     browser = pw.chromium.launch(
@@ -1913,24 +1950,31 @@ def _fetch_with_playwright(url: str) -> str | None:
                         args=_launch_args,
                         ignore_default_args=_ignore_default,
                     )
+                managed_browser = True
                 context_kwargs: dict[str, Any] = {
                     "viewport": {"width": 1280, "height": 800},
                     "locale": "en-US",
+                    "user_agent": browser_user_agent,
+                    "extra_http_headers": context_extra_headers,
                 }
                 if storage_state_path and Path(storage_state_path).exists():
                     context_kwargs["storage_state"] = storage_state_path
                 context = browser.new_context(**context_kwargs)
+                managed_context = True
 
             try:
+                if cdp_url and context_extra_headers and hasattr(context, "set_extra_http_headers"):
+                    context.set_extra_http_headers(cast(Any, context_extra_headers))
+
                 extra_cookies = _resolve_cookies(url)
                 host = urlparse(url).hostname
                 if extra_cookies and host and hasattr(context, "add_cookies"):
+                    cookie_url = f"{'https' if url.startswith('https://') else 'http'}://{host}/"
                     cookie_items = [
                         {
                             "name": name,
                             "value": value,
-                            "domain": host,
-                            "path": "/",
+                            "url": cookie_url,
                             "secure": url.startswith("https://"),
                             "httpOnly": False,
                         }
@@ -1938,8 +1982,13 @@ def _fetch_with_playwright(url: str) -> str | None:
                     ]
                     context.add_cookies(cast(Any, cookie_items))
 
-                existing_pages = getattr(context, "pages", None)
-                page = existing_pages[0] if existing_pages else context.new_page()
+                if cdp_url:
+                    page = context.new_page()
+                    owns_page = True
+                else:
+                    existing_pages = getattr(context, "pages", None)
+                    page = existing_pages[0] if existing_pages else context.new_page()
+                    owns_page = not bool(existing_pages)
                 wait_modes: list[Literal["load", "domcontentloaded", "networkidle", "commit"]] = []
                 for mode in (wait_until, "domcontentloaded", "load", "commit"):
                     if mode not in wait_modes:
@@ -2038,9 +2087,11 @@ def _fetch_with_playwright(url: str) -> str | None:
 
                 return content
             finally:
-                if hasattr(context, "close"):
+                if owns_page and page is not None and hasattr(page, "close"):
+                    page.close()
+                if managed_context and hasattr(context, "close"):
                     context.close()
-                if browser is not None:
+                if managed_browser and browser is not None:
                     browser.close()
     except Exception as exc:
         if _disable_sync_browser_fallback_if_loop_error(exc):
