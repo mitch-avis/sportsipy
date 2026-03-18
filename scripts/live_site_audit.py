@@ -199,6 +199,8 @@ def _first_from_players(players: Any) -> Any:
 
 
 def _named_summary(entity: Any) -> str:
+    if isinstance(entity, str):
+        return entity
     for attribute in ("name", "short_name", "abbreviation"):
         value = _as_text(getattr(entity, attribute, None))
         if value:
@@ -257,11 +259,14 @@ def _run_roster(constructor: Any) -> tuple[str, dict[str, Any]]:
 
 def _run_player(constructor: Any) -> tuple[str, dict[str, Any]]:
     player = constructor()
-    name = _named_summary(player)
-    _require(bool(name), "player name is empty")
+    name = _as_text(getattr(player, "name", None))
+    player_id = _as_text(getattr(player, "player_id", None))
+    summary = name or player_id or _named_summary(player)
+    _require(bool(summary), "player identity is empty")
+    _require(summary != "Player", "player identity fell back to generic class name")
     dataframe = getattr(player, "dataframe", None)
     _require(dataframe is not None, "player dataframe is missing")
-    return name, {"sample": name}
+    return summary, {"sample": summary}
 
 
 def _run_boxscore(constructor: Any) -> tuple[str, dict[str, Any]]:
@@ -488,7 +493,7 @@ def _cases(runtime: dict[str, Any]) -> list[AuditCase]:
             "mlb",
             "roster",
             "MLB team roster page",
-            _roster_runner(mlb_roster, "HOU", year=2017),
+            _roster_runner(mlb_roster, "HOU", year=2017, slim=True),
         ),
         AuditCase(
             "mlb-player",
@@ -537,7 +542,7 @@ def _cases(runtime: dict[str, Any]) -> list[AuditCase]:
             "nba",
             "roster",
             "NBA team roster page",
-            _roster_runner(nba_roster, "HOU", year=2018),
+            _roster_runner(nba_roster, "HOU", year=2018, slim=True),
         ),
         AuditCase(
             "nba-player",
@@ -586,7 +591,7 @@ def _cases(runtime: dict[str, Any]) -> list[AuditCase]:
             "nfl",
             "roster",
             "NFL team roster page",
-            _roster_runner(nfl_roster, "NOR", year=2018),
+            _roster_runner(nfl_roster, "NOR", year=2018, slim=True),
         ),
         AuditCase(
             "nfl-player",
@@ -635,7 +640,7 @@ def _cases(runtime: dict[str, Any]) -> list[AuditCase]:
             "nhl",
             "roster",
             "NHL team roster page",
-            _roster_runner(nhl_roster, "DET", year=2018),
+            _roster_runner(nhl_roster, "DET", year=2018, slim=True),
         ),
         AuditCase(
             "nhl-player",
@@ -684,7 +689,7 @@ def _cases(runtime: dict[str, Any]) -> list[AuditCase]:
             "ncaab",
             "roster",
             "NCAAB team roster page",
-            _roster_runner(ncaab_roster, "PURDUE", year=2018),
+            _roster_runner(ncaab_roster, "PURDUE", year=2018, slim=True),
         ),
         AuditCase(
             "ncaab-player",
@@ -754,14 +759,14 @@ def _cases(runtime: dict[str, Any]) -> list[AuditCase]:
             "ncaaf",
             "roster",
             "NCAAF team roster page",
-            _roster_runner(ncaaf_roster, "PURDUE", year=2017),
+            _roster_runner(ncaaf_roster, "PURDUE", year=2017, slim=True),
         ),
         AuditCase(
             "ncaaf-player",
             "ncaaf",
             "player",
             "NCAAF player page",
-            _player_runner(ncaaf_player, "david-blough-1", "2017"),
+            _player_runner(ncaaf_player, "elijah-sindelar-1", "2017"),
         ),
         AuditCase(
             "ncaaf-conferences",
@@ -830,7 +835,6 @@ def _configure_environment(
     playwright_headless: bool,
     playwright_wait_until: str,
     playwright_settle_ms: int,
-    playwright_stealth: bool,
     playwright_user_data_dir: str | None,
     playwright_storage_state: str | None,
     playwright_challenge_timeout_seconds: float,
@@ -841,6 +845,7 @@ def _configure_environment(
     user_agent: str | None,
     chrome_cookies: bool = False,
     chrome_profile: str = "Default",
+    disable_camoufox: bool = False,
 ) -> None:
     for variable in (
         "SPORTSIPY_OFFLINE",
@@ -853,13 +858,13 @@ def _configure_environment(
         "SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR",
         "SPORTSIPY_PLAYWRIGHT_STORAGE_STATE",
         "SPORTSIPY_PLAYWRIGHT_CHANNEL",
-        "SPORTSIPY_PLAYWRIGHT_STEALTH",
         "SPORTSIPY_EXTRA_COOKIES",
         "SPORTSIPY_USER_AGENT",
         "SPORTSIPY_CHROME_COOKIES",
         "SPORTSIPY_CHROME_PROFILE",
         "SPORTSIPY_BOT_DEBUG_HTML_DIR",
         "SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR",
+        "SPORTSIPY_DISABLE_CAMOUFOX",
     ):
         os.environ.pop(variable, None)
     os.environ["SPORTSIPY_FORCE_RATE_LIMIT"] = "1"
@@ -870,7 +875,6 @@ def _configure_environment(
     os.environ["SPORTSIPY_PLAYWRIGHT_HEADLESS"] = "1" if playwright_headless else "0"
     os.environ["SPORTSIPY_PLAYWRIGHT_WAIT_UNTIL"] = playwright_wait_until
     os.environ["SPORTSIPY_PLAYWRIGHT_SETTLE_MS"] = str(max(playwright_settle_ms, 0))
-    os.environ["SPORTSIPY_PLAYWRIGHT_STEALTH"] = "1" if playwright_stealth else "0"
     os.environ["SPORTSIPY_PLAYWRIGHT_CHALLENGE_TIMEOUT_MS"] = str(
         int(max(playwright_challenge_timeout_seconds, 0) * 1000)
     )
@@ -898,8 +902,11 @@ def _configure_environment(
         os.environ["SPORTSIPY_BOT_DEBUG_HTML_DIR"] = bot_debug_html_dir
     if bot_debug_screenshot_dir:
         os.environ["SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR"] = bot_debug_screenshot_dir
+    if disable_camoufox:
+        os.environ["SPORTSIPY_DISABLE_CAMOUFOX"] = "1"
     utils_module._FIXTURE_MAP = None
     utils_module._CHROME_COOKIE_CACHE = None
+    utils_module._CHROME_USER_AGENT = None
 
 
 def _select_cases(args: argparse.Namespace, runtime: dict[str, Any]) -> list[AuditCase]:
@@ -1024,14 +1031,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Extra delay after navigation before reading HTML. Defaults to 2500 ms.",
     )
     parser.add_argument(
-        "--playwright-stealth",
-        action="store_true",
-        help=(
-            "Enable aggressive Playwright JS stealth spoofing. Disabled by default because "
-            "it can create inconsistent fingerprints and worsen Turnstile loops."
-        ),
-    )
-    parser.add_argument(
         "--playwright-user-data-dir",
         help="Persistent Chromium profile directory for challenge/session reuse.",
     )
@@ -1099,6 +1098,16 @@ def _build_parser() -> argparse.ArgumentParser:
         default="Default",
         help=("Chrome profile directory name for --chrome-cookies. Defaults to 'Default'."),
     )
+    parser.add_argument(
+        "--camoufox",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Enable the Camoufox (hardened Firefox) auto-fallback tier for bot-challenge "
+            "bypass. Enabled by default when the camoufox package is installed. "
+            "Use --no-camoufox to disable."
+        ),
+    )
     parser.add_argument("--json-out", type=Path, help="Write a machine-readable JSON report.")
     return parser
 
@@ -1124,7 +1133,6 @@ def main() -> int:
         playwright_headless=not args.playwright_headed,
         playwright_wait_until=args.playwright_wait_until,
         playwright_settle_ms=args.playwright_settle_ms,
-        playwright_stealth=args.playwright_stealth,
         playwright_user_data_dir=args.playwright_user_data_dir,
         playwright_storage_state=args.playwright_storage_state,
         playwright_challenge_timeout_seconds=args.playwright_challenge_timeout_seconds,
@@ -1135,6 +1143,7 @@ def main() -> int:
         user_agent=args.user_agent,
         chrome_cookies=args.chrome_cookies,
         chrome_profile=args.chrome_profile,
+        disable_camoufox=not args.camoufox,
     )
 
     LOGGER.info(
