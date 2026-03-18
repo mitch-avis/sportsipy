@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import html
 import json
@@ -25,13 +26,15 @@ from sportsipy.constants import RATE_LIMIT_INTERVAL
 
 if TYPE_CHECKING:
     from curl_cffi.requests.models import Response as CurlResponse
-    from playwright.sync_api import Page
 
 _LOGGER = logging.getLogger(__name__)
 _RATE_LIMIT_LOCK = threading.Lock()
 _LAST_REQUEST_TIME = 0.0
 _FIXTURE_MAP: dict | list | None = None
 _CHROME_COOKIE_CACHE: dict[str, dict[str, str]] | None = None
+_CHROME_USER_AGENT: str | None = None
+_CURL_CFFI_IMPERSONATE: str = "chrome124"
+_SYNC_BROWSER_FALLBACK_DISABLED = False
 
 # ---------------------------------------------------------------------------
 # Optional curl_cffi import — provides TLS fingerprint spoofing to bypass
@@ -45,6 +48,18 @@ except ImportError:
     _cffi_requests = None
     _CURL_CFFI_AVAILABLE = False
 
+# Sorted list of Chrome major versions that curl_cffi can impersonate.
+# Used by _best_impersonate_target() to pick the closest TLS fingerprint.
+_CFFI_CHROME_VERSIONS: list[int] = []
+if _CURL_CFFI_AVAILABLE:
+    from curl_cffi.requests import BrowserType
+
+    for _name in dir(BrowserType):
+        _m = re.match(r"^chrome(\d+)$", _name)
+        if _m:
+            _CFFI_CHROME_VERSIONS.append(int(_m.group(1)))
+    _CFFI_CHROME_VERSIONS.sort()
+
 # ---------------------------------------------------------------------------
 # Optional Playwright import — used as a final fallback when bot-challenge
 # detection fires and curl_cffi alone is insufficient.
@@ -55,6 +70,19 @@ except ImportError:
     sync_playwright = None
 
 _PLAYWRIGHT_AVAILABLE = sync_playwright is not None
+
+# ---------------------------------------------------------------------------
+# Optional camoufox import — hardened Firefox fork with engine-level
+# fingerprint patching.  More effective than Playwright/Chromium at bypassing
+# Cloudflare Turnstile because it avoids CDP signals entirely.
+# ---------------------------------------------------------------------------
+try:
+    from camoufox.sync_api import Camoufox as _CamoufoxContext
+
+    _CAMOUFOX_AVAILABLE = True
+except ImportError:
+    _CamoufoxContext = None  # type: ignore[assignment, misc]
+    _CAMOUFOX_AVAILABLE = False
 
 # ---------------------------------------------------------------------------
 # Browser-like request headers used for all outbound HTTP requests.
@@ -82,77 +110,6 @@ _BROWSER_HEADERS: dict[str, str] = {
     "Upgrade-Insecure-Requests": "1",
     "Cache-Control": "max-age=0",
 }
-
-# ---------------------------------------------------------------------------
-# Playwright stealth init-script — injected before every page navigation to
-# suppress the most common headless-browser detection signals.
-# ---------------------------------------------------------------------------
-_PLAYWRIGHT_STEALTH_SCRIPT = """
-// Remove the primary webdriver signal.
-Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-
-// Delete CDP-injected window markers that Cloudflare Turnstile probes for.
-// These are injected by Chrome DevTools when a CDP session is active.
-(function() {
-    const cdcRe = /^cdc_[a-z0-9]+_/;
-    for (const key of Object.getOwnPropertyNames(window)) {
-        if (cdcRe.test(key)) {
-            try { delete window[key]; } catch(e) {}
-        }
-    }
-    // Also delete the specific well-known markers by name pattern.
-    const known = [
-        'cdc_adoQpoasnfa76pfcZLmcfl_Array',
-        'cdc_adoQpoasnfa76pfcZLmcfl_Promise',
-        'cdc_adoQpoasnfa76pfcZLmcfl_Symbol',
-    ];
-    for (const k of known) { try { delete window[k]; } catch(e) {} }
-})();
-
-// Realistic language and plugin arrays.
-Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-Object.defineProperty(navigator, 'plugins', {
-  get: () => {
-    const arr = [{ name: 'Chrome PDF Plugin' }, { name: 'Chrome PDF Viewer' },
-                 { name: 'Native Client' }];
-    arr.__proto__ = PluginArray.prototype;
-    return arr;
-  },
-});
-
-// Make window.chrome look genuine.
-window.chrome = {
-  app: { isInstalled: false },
-  runtime: {
-    onConnect: null, onMessage: null,
-    connect: function(){}, sendMessage: function(){},
-  },
-  loadTimes: function() {},
-  csi: function() {},
-};
-
-// Notifications default to 'default', not 'denied'.
-try {
-  Object.defineProperty(Notification, 'permission', { get: () => 'default' });
-} catch(e) {}
-
-// Permissions API — return a realistic 'prompt' state for notifications.
-const origQuery = window.navigator.permissions.query.bind(navigator.permissions);
-navigator.permissions.query = (params) =>
-  params.name === 'notifications'
-    ? Promise.resolve({ state: Notification.permission, onchange: null })
-    : origQuery(params);
-
-// Mask hardware concurrency / memory as plausible desktop values.
-Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
-try {
-  Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 });
-} catch(e) {}
-
-// Timezone, platform, vendor.
-Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
-Object.defineProperty(navigator, 'vendor', { get: () => 'Google Inc.' });
-"""
 
 
 class BotChallengeError(RuntimeError):
@@ -213,21 +170,6 @@ def _is_bot_challenge(html_text: str) -> bool:
         "ddos-guard",
     )
     return any(signal in lower for signal in cloudflare_signals)
-
-
-def _apply_playwright_stealth(page: Page) -> None:
-    """Inject anti-detection init scripts into a Playwright page.
-
-    Parameters
-    ----------
-    page : playwright.sync_api.Page
-        A Playwright synchronous page object.
-
-    """
-    try:
-        page.add_init_script(_PLAYWRIGHT_STEALTH_SCRIPT)
-    except Exception as exc:
-        _LOGGER.debug("Playwright stealth injection failed: %s", exc)
 
 
 # Backward-compatible callable matching prior usage: utils.pq(...)
@@ -339,16 +281,40 @@ def _playwright_channel() -> str:
     return os.environ.get("SPORTSIPY_PLAYWRIGHT_CHANNEL", "chrome")
 
 
-def _playwright_stealth_enabled() -> bool:
-    """Return whether Playwright stealth init-script should be injected.
+def _camoufox_geoip_enabled() -> bool:
+    """Return whether Camoufox geoip emulation should be enabled.
 
-    Defaults to off because aggressive spoofing can create inconsistent
-    fingerprints (UA/client-hints/platform/plugins) that make Cloudflare
-    Turnstile more likely to loop.  Set
-    ``SPORTSIPY_PLAYWRIGHT_STEALTH=1`` to force-enable.
+    Disabled by default so ``camoufox[geoip]`` is not a hard requirement.
+    Set ``SPORTSIPY_CAMOUFOX_GEOIP=1`` to opt in.
     """
-    value = os.environ.get("SPORTSIPY_PLAYWRIGHT_STEALTH", "0")
-    return value.lower() in {"1", "true", "yes", "on"}
+    return _env_flag("SPORTSIPY_CAMOUFOX_GEOIP")
+
+
+def _sync_browser_fallback_allowed() -> bool:
+    """Return whether sync browser fallbacks are safe to run in this process."""
+    if _SYNC_BROWSER_FALLBACK_DISABLED:
+        return False
+    if _env_flag("SPORTSIPY_FORCE_SYNC_BROWSER_FALLBACK"):
+        return True
+    try:
+        loop = asyncio.get_running_loop()
+        return not loop.is_running()
+    except RuntimeError:
+        return True
+
+
+def _disable_sync_browser_fallback_if_loop_error(exc: Exception) -> bool:
+    """Disable sync browser fallbacks for this process on loop-incompat errors."""
+    message = str(exc)
+    if "Playwright Sync API inside the asyncio loop" not in message:
+        return False
+    global _SYNC_BROWSER_FALLBACK_DISABLED
+    if not _SYNC_BROWSER_FALLBACK_DISABLED:
+        _SYNC_BROWSER_FALLBACK_DISABLED = True
+        _LOGGER.info(
+            "Disabling sync browser fallbacks for this process due to asyncio loop incompatibility."
+        )
+    return True
 
 
 def _extra_cookies_from_env() -> dict[str, str]:
@@ -392,13 +358,18 @@ def _load_chrome_cookies() -> dict[str, dict[str, str]]:
 
     Returns a domain-keyed dict (e.g. ``{".pro-football-reference.com": {"cf_clearance": "..."}}``).
     Results are cached for the lifetime of the process to avoid repeated SQLite reads.
+
+    When cookies containing ``cf_clearance`` are found, the installed Chrome
+    version is detected and stored in ``_CHROME_USER_AGENT`` so that
+    ``_browser_headers()`` can send requests with the matching User-Agent
+    (Cloudflare binds ``cf_clearance`` to the exact UA).
     """
-    global _CHROME_COOKIE_CACHE  # noqa: PLW0603
+    global _CHROME_COOKIE_CACHE, _CHROME_USER_AGENT  # noqa: PLW0603
     if _CHROME_COOKIE_CACHE is not None:
         return _CHROME_COOKIE_CACHE
 
     try:
-        from sportsipy.chrome_cookies import get_cloudflare_cookies
+        from sportsipy.chrome_cookies import detect_chrome_user_agent, get_cloudflare_cookies
 
         profile = os.environ.get("SPORTSIPY_CHROME_PROFILE", "Default")
         _CHROME_COOKIE_CACHE = get_cloudflare_cookies(profile=profile)
@@ -410,6 +381,24 @@ def _load_chrome_cookies() -> dict[str, dict[str, str]]:
                 cookie_count,
                 ", ".join(d.lstrip(".") for d in domains_found),
             )
+            # cf_clearance is bound to the exact User-Agent.  Auto-detect
+            # Chrome's version so _browser_headers() sends the matching UA.
+            has_clearance = any("cf_clearance" in dc for dc in _CHROME_COOKIE_CACHE.values())
+            if has_clearance and not os.environ.get("SPORTSIPY_USER_AGENT"):
+                detected_ua = detect_chrome_user_agent()
+                if detected_ua:
+                    _CHROME_USER_AGENT = detected_ua
+                    _LOGGER.info(
+                        "Auto-detected Chrome User-Agent for cf_clearance: %s",
+                        detected_ua,
+                    )
+                else:
+                    _LOGGER.warning(
+                        "Could not detect Chrome version. cf_clearance cookies "
+                        "may be rejected if the User-Agent doesn't match. "
+                        "Set SPORTSIPY_USER_AGENT or pass --user-agent with "
+                        "your exact Chrome UA."
+                    )
         else:
             _LOGGER.info(
                 "No Cloudflare cookies found in Chrome. Visit a protected site "
@@ -491,20 +480,83 @@ def _resolve_cookies(url: str) -> dict[str, str]:
 def _browser_headers() -> dict[str, str]:
     """Return browser-like headers with optional user-agent override.
 
-    When ``SPORTSIPY_USER_AGENT`` is set, the header bundle is reduced to
-    standard browser headers only and drops static client-hint fields to avoid
-    mismatches with the supplied UA/version.
+    Priority for User-Agent selection:
+
+    1. ``SPORTSIPY_USER_AGENT`` environment variable (explicit override).
+    2. ``_CHROME_USER_AGENT`` (auto-detected from Chrome when chrome-cookies
+       extracted a ``cf_clearance`` token).
+    3. Built-in default from ``_BROWSER_HEADERS``.
+
+    When a non-default UA is applied, static ``Sec-CH-UA*`` headers are
+    dropped to avoid fingerprint mismatches.
     """
     headers = dict(_BROWSER_HEADERS)
-    user_agent = os.environ.get("SPORTSIPY_USER_AGENT")
+    user_agent = os.environ.get("SPORTSIPY_USER_AGENT") or _CHROME_USER_AGENT
     if not user_agent:
         return headers
 
     headers["User-Agent"] = user_agent
-    headers.pop("Sec-CH-UA", None)
+    # Rebuild Sec-CH-UA to match the detected version.
+    match = re.search(r"Chrome/(\d+)", user_agent)
+    if match:
+        major = match.group(1)
+        headers["Sec-CH-UA"] = (
+            f'"Chromium";v="{major}", "Google Chrome";v="{major}", "Not-A.Brand";v="99"'
+        )
+    else:
+        headers.pop("Sec-CH-UA", None)
     headers.pop("Sec-CH-UA-Mobile", None)
     headers.pop("Sec-CH-UA-Platform", None)
     return headers
+
+
+def _best_impersonate_target() -> str:
+    """Return the curl_cffi impersonation target closest to the detected Chrome version.
+
+    When ``_CHROME_USER_AGENT`` has been set (i.e. Chrome cookies with
+    ``cf_clearance`` are in use), this picks the curl_cffi ``BrowserType``
+    whose TLS fingerprint most closely matches the real browser that
+    created the cookie.  Cloudflare binds ``cf_clearance`` to the TLS
+    fingerprint, so a mismatch causes a 403.
+
+    Falls back to ``_CURL_CFFI_IMPERSONATE`` (default ``"chrome124"``) when
+    version detection is unavailable or the available impersonation list is
+    empty.
+
+    Returns
+    -------
+    str
+        A curl_cffi impersonation identifier like ``"chrome142"``.
+
+    """
+    ua = os.environ.get("SPORTSIPY_USER_AGENT") or _CHROME_USER_AGENT
+    if not ua or not _CFFI_CHROME_VERSIONS:
+        return _CURL_CFFI_IMPERSONATE
+
+    match = re.search(r"Chrome/(\d+)", ua)
+    if not match:
+        return _CURL_CFFI_IMPERSONATE
+
+    target_major = int(match.group(1))
+
+    # Pick the highest version that does not exceed the real Chrome version.
+    # If none qualifies (real version older than all options), use the lowest.
+    best = _CFFI_CHROME_VERSIONS[0]
+    for v in _CFFI_CHROME_VERSIONS:
+        if v <= target_major:
+            best = v
+        else:
+            break
+
+    result = f"chrome{best}"
+    if result != _CURL_CFFI_IMPERSONATE:
+        _LOGGER.debug(
+            "curl_cffi impersonate: %s (Chrome %d detected, closest target %d)",
+            result,
+            target_major,
+            best,
+        )
+    return result
 
 
 def _playwright_debug_path(dir_env_var: str, url: str, suffix: str) -> Path | None:
@@ -1074,10 +1126,9 @@ def _http_get(
         The HTTP response, or ``None`` on fatal error.
 
     """
-    merged_headers = _browser_headers()
-    if "headers" in kwargs:
-        merged_headers.update(kwargs.pop("headers"))
-
+    # Resolve cookies first — _resolve_cookies() triggers _load_chrome_cookies()
+    # which sets _CHROME_USER_AGENT.  _browser_headers() must be called after so
+    # the auto-detected UA is available on the first request.
     request_cookies = kwargs.pop("cookies", None)
     merged_cookies = _resolve_cookies(url)
     if isinstance(request_cookies, dict):
@@ -1089,13 +1140,18 @@ def _http_get(
     if merged_cookies:
         kwargs["cookies"] = merged_cookies
 
+    merged_headers = _browser_headers()
+    if "headers" in kwargs:
+        merged_headers.update(kwargs.pop("headers"))
+
     if _CURL_CFFI_AVAILABLE and _cffi_requests is not None:
         try:
+            impersonate_target: Any = _best_impersonate_target()
             return _cffi_requests.get(
                 url,
                 headers=merged_headers,
                 timeout=timeout,
-                impersonate="chrome124",
+                impersonate=impersonate_target,
                 **kwargs,
             )
         except Exception as exc:
@@ -1562,8 +1618,12 @@ def get_page_source(url: str) -> str | None:
     3. **curl_cffi GET** (primary) — sends a Chrome-impersonated TLS request
        which bypasses Cloudflare TLS-fingerprint detection.  Falls back to
        plain requests when ``curl_cffi`` is not installed.
-    4. **Playwright** (auto-fallback) — launched automatically when step 3
-       returns a bot-challenge body.  Suppressed by setting
+    4. **Camoufox** (auto-fallback) — hardened Firefox fork with engine-level
+       fingerprint patching.  Launched automatically when step 3 returns a
+       bot-challenge body and ``camoufox`` is installed.  Suppressed by setting
+       ``SPORTSIPY_DISABLE_CAMOUFOX=1``.
+    5. **Playwright** (final fallback) — launched automatically when step 4
+       is unavailable or still returns a challenge.  Suppressed by setting
        ``SPORTSIPY_DISABLE_PLAYWRIGHT=1``.  Can also be forced on for every
        request via ``SPORTSIPY_ENABLE_PLAYWRIGHT=1``.
 
@@ -1600,11 +1660,29 @@ def get_page_source(url: str) -> str | None:
             pass
 
     # ------------------------------------------------------------------
-    # Tier 2: Playwright (auto-triggered on challenge, or forced via env)
+    # Tier 2: Camoufox (auto-triggered on challenge)
+    # ------------------------------------------------------------------
+    use_camoufox = (
+        _CAMOUFOX_AVAILABLE
+        and _sync_browser_fallback_allowed()
+        and not _env_flag("SPORTSIPY_DISABLE_CAMOUFOX")
+        and not _env_flag("SPORTSIPY_ENABLE_PLAYWRIGHT")
+        and (html_text is None or _is_bot_challenge(html_text))
+    )
+    if use_camoufox:
+        if html_text is not None and _is_bot_challenge(html_text):
+            _LOGGER.info("Bot challenge detected for %s; retrying with Camoufox browser", url)
+        camoufox_html = _fetch_with_camoufox(url)
+        if camoufox_html is not None:
+            html_text = camoufox_html
+
+    # ------------------------------------------------------------------
+    # Tier 3: Playwright (auto-triggered on challenge, or forced via env)
     # ------------------------------------------------------------------
     use_playwright = (
         _PLAYWRIGHT_AVAILABLE
         and sync_playwright is not None
+        and _sync_browser_fallback_allowed()
         and not _env_flag("SPORTSIPY_DISABLE_PLAYWRIGHT")
         and (
             _env_flag("SPORTSIPY_ENABLE_PLAYWRIGHT")
@@ -1628,14 +1706,150 @@ def get_page_source(url: str) -> str | None:
     if html_text is not None:
         _LOGGER.warning(
             "Bot challenge could not be bypassed for %s. "
-            "Install curl_cffi and ensure Playwright browser binaries are available.",
+            "Install curl_cffi/camoufox and ensure Playwright browser binaries are available.",
             url,
         )
     return None
 
 
+def _fetch_with_camoufox(url: str) -> str | None:
+    """Fetch a URL using a Camoufox (hardened Firefox) browser session.
+
+    Camoufox patches fingerprint signals at the engine level, making it far
+    more effective than Chromium-based stealth scripts against Cloudflare
+    Turnstile.  It exposes a standard Playwright API, so cookie injection and
+    page interaction work identically to ``_fetch_with_playwright()``.
+
+    Parameters
+    ----------
+    url : str
+        The URL to fetch.
+
+    Returns
+    -------
+    str | None
+        Raw HTML string, or ``None`` on any failure.
+
+    """
+    if _CamoufoxContext is None:
+        return None
+    settle_ms = _env_int("SPORTSIPY_PLAYWRIGHT_SETTLE_MS", 2500, minimum=0)
+    timeout_ms = _env_int("SPORTSIPY_PLAYWRIGHT_TIMEOUT_MS", 30000, minimum=1000)
+    headless = _playwright_headless()
+    try:
+        with _CamoufoxContext(
+            headless=headless,
+            geoip=_camoufox_geoip_enabled(),
+            humanize=True,
+        ) as context:
+            extra_cookies = _resolve_cookies(url)
+            host = urlparse(url).hostname
+            if extra_cookies and host and hasattr(context, "add_cookies"):
+                cookie_items = [
+                    {
+                        "name": name,
+                        "value": value,
+                        "domain": host,
+                        "path": "/",
+                        "secure": url.startswith("https://"),
+                        "httpOnly": False,
+                    }
+                    for name, value in extra_cookies.items()
+                ]
+                cast(Any, context).add_cookies(cookie_items)
+
+            existing_pages = getattr(context, "pages", None)
+            page = existing_pages[0] if existing_pages else context.new_page()
+
+            wait_modes: list[Literal["load", "domcontentloaded", "networkidle", "commit"]] = [
+                "domcontentloaded",
+                "load",
+                "commit",
+            ]
+            last_goto_error: Exception | None = None
+            for mode in wait_modes:
+                try:
+                    page.goto(url, timeout=timeout_ms, wait_until=mode)
+                    last_goto_error = None
+                    break
+                except Exception as exc:
+                    last_goto_error = exc
+                    _LOGGER.debug(
+                        "Camoufox goto failed for %s with wait_until=%s: %s",
+                        url,
+                        mode,
+                        exc,
+                    )
+
+            if last_goto_error is not None:
+                _LOGGER.warning(
+                    "Camoufox navigation timed out for %s; using current page content. Error: %s",
+                    url,
+                    last_goto_error,
+                )
+            if settle_ms and hasattr(page, "wait_for_timeout"):
+                page.wait_for_timeout(settle_ms)
+            content = page.content()
+            final_url = getattr(page, "url", "")
+
+            if _is_bot_challenge(content) and not headless:
+                challenge_timeout_ms = _env_int(
+                    "SPORTSIPY_PLAYWRIGHT_CHALLENGE_TIMEOUT_MS", 120000, minimum=0
+                )
+                _LOGGER.info(
+                    "Bot challenge detected in headed Camoufox mode for %s — "
+                    "solve the challenge in the browser window. "
+                    "Waiting up to %ds...",
+                    url,
+                    challenge_timeout_ms // 1000,
+                )
+                print(
+                    f"\n>>> Bot challenge detected. Solve the CAPTCHA/checkbox "
+                    f"in the browser window for:\n    {url}\n"
+                    f"    (waiting up to {challenge_timeout_ms // 1000}s)\n",
+                    flush=True,
+                )
+                try:
+                    page.wait_for_function(
+                        "(function() {"
+                        "  var t = document.title || '';"
+                        "  return t.length > 0"
+                        "      && t.toLowerCase().indexOf('just a moment') === -1;"
+                        "})()",
+                        timeout=challenge_timeout_ms,
+                    )
+                    content = page.content()
+                except Exception as challenge_exc:
+                    _LOGGER.warning(
+                        "Challenge not resolved within %dms for %s: %s",
+                        challenge_timeout_ms,
+                        url,
+                        challenge_exc,
+                    )
+
+            if _is_bot_challenge(content):
+                _LOGGER.warning(
+                    "Camoufox still received bot challenge for %s (final_url=%s)",
+                    url,
+                    final_url,
+                )
+            else:
+                _LOGGER.info(
+                    "Camoufox fetch succeeded for %s (final_url=%s)",
+                    url,
+                    final_url,
+                )
+
+            return content
+    except Exception as exc:
+        if _disable_sync_browser_fallback_if_loop_error(exc):
+            return None
+        _LOGGER.warning("Camoufox fetch failed for %s: %s", url, exc)
+        return None
+
+
 def _fetch_with_playwright(url: str) -> str | None:
-    """Fetch a URL using a stealth Playwright headless browser session.
+    """Fetch a URL using a Playwright headless browser session.
 
     Parameters
     ----------
@@ -1726,8 +1940,6 @@ def _fetch_with_playwright(url: str) -> str | None:
 
                 existing_pages = getattr(context, "pages", None)
                 page = existing_pages[0] if existing_pages else context.new_page()
-                if _playwright_stealth_enabled():
-                    _apply_playwright_stealth(page)
                 wait_modes: list[Literal["load", "domcontentloaded", "networkidle", "commit"]] = []
                 for mode in (wait_until, "domcontentloaded", "load", "commit"):
                     if mode not in wait_modes:
@@ -1831,5 +2043,7 @@ def _fetch_with_playwright(url: str) -> str | None:
                 if browser is not None:
                     browser.close()
     except Exception as exc:
+        if _disable_sync_browser_fallback_if_loop_error(exc):
+            return None
         _LOGGER.warning("Playwright fetch failed for %s: %s", url, exc)
         return None
