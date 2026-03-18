@@ -241,6 +241,23 @@ class TestNCAAFPlayerProperties:
         monkeypatch.setattr(Player, "_retrieve_html_page", lambda _self: None)
         assert player._pull_player_data() is None
 
+    def test_combine_all_stats_checks_standard_table_ids(self, monkeypatch):
+        """Return test combine all stats checks modern *_standard table ids."""
+        player = Player("test-player")
+        requested_divs = []
+
+        def fake_get_stats_table(_html, div, footer=False):
+            requested_divs.append((div, footer))
+            return []
+
+        monkeypatch.setattr(utils, "get_stats_table", fake_get_stats_table)
+
+        player._combine_all_stats(utils.pq("<html></html>"))
+
+        assert ("table#passing_standard", False) in requested_divs
+        assert ("table#rushing_standard", False) in requested_divs
+        assert ("table#scoring_standard", False) in requested_divs
+
     def test_parse_player_information_sets_attributes(self):
         """Return test parse player information sets attributes."""
         player = Player("test-player")
