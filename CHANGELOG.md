@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.1] — 2026-03-18
+
+### Fixed in 0.8.1
+
+- Synced `master` with upstream `davidjkrause/sportsipy` and incorporated the
+  FBref squad ID correction commit (`Updated Premier League Team Ids`).
+- Updated Premier League team ID mappings in `sportsipy/fb/squad_ids.py`
+  (including `chelsea`, `liverpool`, `everton`, `west ham united`, and
+  `bournemouth` aliases) to reflect current upstream values.
+
+---
+
 ## [0.8.0] — 2026-03-18
 
 ### Added in 0.8.0
