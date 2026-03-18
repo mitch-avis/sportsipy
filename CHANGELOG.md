@@ -7,7 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.7.0] — Unreleased
+## [0.8.0] — 2026-03-18
+
+### Added in 0.8.0
+
+- **Camoufox bot-evasion tier** — a hardened Firefox fork (`camoufox`) is now
+  tried as Tier 2 in the `get_page_source()` fetch pipeline (between
+  `curl_cffi` and Playwright).  Camoufox patches fingerprint signals at the
+  engine level, making it significantly more effective against Cloudflare
+  Turnstile than Chromium-based stealth scripts.  Suppressed by setting
+  `SPORTSIPY_DISABLE_CAMOUFOX=1`.
+- `camoufox` added as an optional `[bot-evasion]` extra in `pyproject.toml`;
+  install with `pip install sportsipy[bot-evasion]`.
+- `--camoufox` / `--no-camoufox` CLI flags for `scripts/live_site_audit.py`.
+
+### Removed in 0.8.0
+
+- **Playwright stealth JS injection** — the hand-rolled
+  `_PLAYWRIGHT_STEALTH_SCRIPT` blob, `_apply_playwright_stealth()`, and
+  `_playwright_stealth_enabled()` have been removed.  The script was disabled
+  by default, introduced fingerprint inconsistencies (e.g. `Win32` platform on
+  Linux), and was ineffective against Turnstile.  Camoufox replaces this
+  approach with engine-level patching.
+- `--playwright-stealth` CLI flag and `SPORTSIPY_PLAYWRIGHT_STEALTH` env var
+  removed from `scripts/live_site_audit.py`.
+
+---
+
+## [0.7.0] — 2026-01-27
 
 ### Breaking Changes
 
@@ -33,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     impersonation) when installed, falls back to `requests` automatically.
   - `_BROWSER_HEADERS` — realistic Chrome/Linux headers sent on every HTTP
     request to reduce user-agent-based blocking.
-  - Playwright stealth auto-fallback: if `curl_cffi` returns a challenge body,
+  - Playwright auto-fallback: if `curl_cffi` returns a challenge body,
     `get_page_source()` automatically retries with a headless Playwright browser
     (no `SPORTSIPY_ENABLE_PLAYWRIGHT=1` required for this path).
   - `_apply_playwright_stealth(page)` — injects anti-detection scripts into
@@ -103,7 +130,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - pandas dependency removed from `requirements.txt`.
 - Sphinx documentation build infrastructure (`docs/conf.py`, `docs/Makefile`,
   all `.rst` source files) replaced by plain Markdown docs.
-- AI instruction/context files removed from repository root.
 
 ---
 
