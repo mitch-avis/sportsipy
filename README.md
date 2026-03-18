@@ -211,6 +211,120 @@ configure it via environment variables such as:
 - `SPORTSIPY_RATE_LIMIT_SECONDS` (minimum enforced is 3.0)
 - `SPORTSIPY_DISABLE_RATE_LIMIT=1` (only for testing or controlled use)
 
+## Cloudflare-protected sites
+
+Several sports-reference sites (NFL, NCAAF, FBref) are now behind Cloudflare
+bot protection. Requests from automated tools will typically receive a 403
+response or a Cloudflare challenge page instead of real stats data.
+
+Sportsipy can work around this by injecting Cloudflare session cookies from
+your local Google Chrome browser. The workflow is:
+
+1. **Visit the site in Chrome** — open a page such as
+   `https://www.pro-football-reference.com/` in Google Chrome and let the
+   Cloudflare challenge resolve (you may need to click a Turnstile checkbox).
+2. **Run the audit** — the live audit script automatically reads the
+   Cloudflare cookies (`cf_clearance` and `__cf_bm`) from Chrome's local
+   cookie database and injects them into its HTTP requests (Chrome cookie
+   extraction is enabled by default).
+
+### Using the live audit script
+
+Chrome cookie extraction is enabled by default, so a bare invocation works:
+
+```bash
+python scripts/live_site_audit.py
+python scripts/live_site_audit.py --sport nfl
+```
+
+To disable it for a particular run:
+
+```bash
+python scripts/live_site_audit.py --no-chrome-cookies
+```
+
+### Using the library programmatically
+
+Set the `SPORTSIPY_CHROME_COOKIES` environment variable before importing
+sportsipy:
+
+```bash
+export SPORTSIPY_CHROME_COOKIES=1
+python -c "from sportsipy.nfl.teams import Teams; print(Teams(2024))"
+```
+
+Or set it in Python before the first request:
+
+```python
+import os
+os.environ["SPORTSIPY_CHROME_COOKIES"] = "1"
+
+from sportsipy.nfl.teams import Teams
+teams = Teams(2024)
+```
+
+### Non-default Chrome profile
+
+If your Cloudflare session lives in a non-default Chrome profile, specify it:
+
+```bash
+export SPORTSIPY_CHROME_PROFILE="Profile 1"
+```
+
+Or via the audit script:
+
+```bash
+python scripts/live_site_audit.py --chrome-profile "Profile 1"
+```
+
+### Manual cookie injection
+
+If auto-extraction doesn't work (e.g. on macOS or Windows where Chrome uses
+OS-level keychains), you can copy cookies manually from Chrome's DevTools
+(Application → Cookies) and pass them directly:
+
+```bash
+python scripts/live_site_audit.py \
+  --cookie "cf_clearance=YOUR_VALUE" \
+  --cookie "__cf_bm=YOUR_VALUE" \
+  --user-agent "YOUR_EXACT_CHROME_UA"
+```
+
+**Important notes:**
+
+- `cf_clearance` is tied to the exact User-Agent string. If you use `--cookie`
+  with a manually extracted `cf_clearance`, you **must** also pass
+  `--user-agent` with the exact UA from your Chrome session (`navigator.userAgent`
+  in the DevTools console), or the cookie will be rejected by Cloudflare.
+- Cookie lifetimes are short: `cf_clearance` typically lasts hours to about one
+  day; `__cf_bm` lasts approximately 30 minutes. Re-visit the site in Chrome
+  when cookies expire.
+- Auto-extraction (`--chrome-cookies`) currently supports **Linux only**.
+
+### Environment variables reference
+
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| `SPORTSIPY_CHROME_COOKIES` | `0` | Set to `1` to enable Chrome cookie extraction |
+| `SPORTSIPY_CHROME_PROFILE` | `Default` | Chrome profile directory name |
+| `SPORTSIPY_EXTRA_COOKIES` | _(empty)_ | JSON object of manual cookies, e.g. `{"cf_clearance": "..."}` |
+| `SPORTSIPY_USER_AGENT` | _(built-in)_ | Override User-Agent for all requests |
+
+### Requirements
+
+Auto-extraction requires the `cryptography` package:
+
+```bash
+pip install cryptography
+```
+
+Optionally, install `secretstorage` to read the encryption key from GNOME
+Keyring instead of Chrome's hardcoded fallback:
+
+```bash
+pip install secretstorage
+```
+
 ## Fork lineage and credits
 
 - Original project: [`roclark/sportsipy`](https://github.com/roclark/sportsipy)
