@@ -39,3 +39,15 @@ def disable_playwright(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", False)
     monkeypatch.setattr(utils, "sync_playwright", None)
+
+
+@pytest.fixture(autouse=True)
+def disable_camoufox(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Disable Camoufox fallback for unit tests.
+
+    Camoufox launches a real Firefox browser, introducing network
+    nondeterminism.  Tests that explicitly validate Camoufox behavior can
+    opt back in by monkeypatching ``_CAMOUFOX_AVAILABLE`` and
+    ``_CamoufoxContext``.
+    """
+    monkeypatch.setattr(utils, "_CAMOUFOX_AVAILABLE", False)
