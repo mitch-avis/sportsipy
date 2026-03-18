@@ -827,6 +827,20 @@ def _configure_environment(
     rate_limit_seconds: float,
     timeout_seconds: float,
     max_retries: int,
+    playwright_headless: bool,
+    playwright_wait_until: str,
+    playwright_settle_ms: int,
+    playwright_stealth: bool,
+    playwright_user_data_dir: str | None,
+    playwright_storage_state: str | None,
+    playwright_challenge_timeout_seconds: float,
+    playwright_channel: str,
+    bot_debug_html_dir: str | None,
+    bot_debug_screenshot_dir: str | None,
+    extra_cookies: list[str],
+    user_agent: str | None,
+    chrome_cookies: bool = False,
+    chrome_profile: str = "Default",
 ) -> None:
     for variable in (
         "SPORTSIPY_OFFLINE",
@@ -836,13 +850,56 @@ def _configure_environment(
         "SPORTSIPY_CACHE_TTL_SECONDS",
         "SPORTSIPY_DISABLE_RATE_LIMIT",
         "PYTEST_CURRENT_TEST",
+        "SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR",
+        "SPORTSIPY_PLAYWRIGHT_STORAGE_STATE",
+        "SPORTSIPY_PLAYWRIGHT_CHANNEL",
+        "SPORTSIPY_PLAYWRIGHT_STEALTH",
+        "SPORTSIPY_EXTRA_COOKIES",
+        "SPORTSIPY_USER_AGENT",
+        "SPORTSIPY_CHROME_COOKIES",
+        "SPORTSIPY_CHROME_PROFILE",
+        "SPORTSIPY_BOT_DEBUG_HTML_DIR",
+        "SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR",
     ):
         os.environ.pop(variable, None)
     os.environ["SPORTSIPY_FORCE_RATE_LIMIT"] = "1"
     os.environ["SPORTSIPY_RATE_LIMIT_SECONDS"] = str(rate_limit_seconds)
     os.environ["SPORTSIPY_MAX_RETRIES"] = str(max_retries)
     os.environ["SPORTSIPY_REQUEST_TIMEOUT_SECONDS"] = str(timeout_seconds)
+    os.environ["SPORTSIPY_PLAYWRIGHT_TIMEOUT_MS"] = str(int(max(timeout_seconds, 1) * 1000))
+    os.environ["SPORTSIPY_PLAYWRIGHT_HEADLESS"] = "1" if playwright_headless else "0"
+    os.environ["SPORTSIPY_PLAYWRIGHT_WAIT_UNTIL"] = playwright_wait_until
+    os.environ["SPORTSIPY_PLAYWRIGHT_SETTLE_MS"] = str(max(playwright_settle_ms, 0))
+    os.environ["SPORTSIPY_PLAYWRIGHT_STEALTH"] = "1" if playwright_stealth else "0"
+    os.environ["SPORTSIPY_PLAYWRIGHT_CHALLENGE_TIMEOUT_MS"] = str(
+        int(max(playwright_challenge_timeout_seconds, 0) * 1000)
+    )
+    os.environ["SPORTSIPY_PLAYWRIGHT_CHANNEL"] = playwright_channel
+    if user_agent:
+        os.environ["SPORTSIPY_USER_AGENT"] = user_agent
+    if chrome_cookies:
+        os.environ["SPORTSIPY_CHROME_COOKIES"] = "1"
+        os.environ["SPORTSIPY_CHROME_PROFILE"] = chrome_profile
+    if extra_cookies:
+        cookie_map: dict[str, str] = {}
+        for entry in extra_cookies:
+            if "=" not in entry:
+                raise ValueError(f"Invalid --cookie value '{entry}'. Expected NAME=VALUE.")
+            name, value = entry.split("=", 1)
+            if not name:
+                raise ValueError(f"Invalid --cookie value '{entry}'. Cookie name is empty.")
+            cookie_map[name] = value
+        os.environ["SPORTSIPY_EXTRA_COOKIES"] = json.dumps(cookie_map)
+    if playwright_user_data_dir:
+        os.environ["SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR"] = playwright_user_data_dir
+    if playwright_storage_state:
+        os.environ["SPORTSIPY_PLAYWRIGHT_STORAGE_STATE"] = playwright_storage_state
+    if bot_debug_html_dir:
+        os.environ["SPORTSIPY_BOT_DEBUG_HTML_DIR"] = bot_debug_html_dir
+    if bot_debug_screenshot_dir:
+        os.environ["SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR"] = bot_debug_screenshot_dir
     utils_module._FIXTURE_MAP = None
+    utils_module._CHROME_COOKIE_CACHE = None
 
 
 def _select_cases(args: argparse.Namespace, runtime: dict[str, Any]) -> list[AuditCase]:
@@ -949,6 +1006,99 @@ def _build_parser() -> argparse.ArgumentParser:
         default=1,
         help="Number of retries for transient HTTP failures. Defaults to 1.",
     )
+    parser.add_argument(
+        "--playwright-headed",
+        action="store_true",
+        help="Run Playwright in headed mode (equivalent to SPORTSIPY_PLAYWRIGHT_HEADLESS=0).",
+    )
+    parser.add_argument(
+        "--playwright-wait-until",
+        choices=["load", "domcontentloaded", "networkidle", "commit"],
+        default="domcontentloaded",
+        help="Playwright page.goto wait mode. Defaults to domcontentloaded.",
+    )
+    parser.add_argument(
+        "--playwright-settle-ms",
+        type=int,
+        default=2500,
+        help="Extra delay after navigation before reading HTML. Defaults to 2500 ms.",
+    )
+    parser.add_argument(
+        "--playwright-stealth",
+        action="store_true",
+        help=(
+            "Enable aggressive Playwright JS stealth spoofing. Disabled by default because "
+            "it can create inconsistent fingerprints and worsen Turnstile loops."
+        ),
+    )
+    parser.add_argument(
+        "--playwright-user-data-dir",
+        help="Persistent Chromium profile directory for challenge/session reuse.",
+    )
+    parser.add_argument(
+        "--playwright-storage-state",
+        help="Playwright storage-state JSON path for cookie/session reuse.",
+    )
+    parser.add_argument(
+        "--playwright-challenge-timeout-seconds",
+        type=float,
+        default=120.0,
+        metavar="SECS",
+        help=(
+            "How long to wait (seconds) for the user to solve a bot challenge "
+            "in headed mode. Defaults to 120s."
+        ),
+    )
+    parser.add_argument(
+        "--playwright-channel",
+        default="chrome",
+        metavar="CHANNEL",
+        help=(
+            "Playwright browser channel: 'chrome', 'chrome-beta', 'msedge', or '' for "
+            "bundled Chromium. Defaults to 'chrome' (requires Google Chrome installed)."
+        ),
+    )
+    parser.add_argument(
+        "--bot-debug-html-dir",
+        help="Directory to write Playwright HTML captures for debugging.",
+    )
+    parser.add_argument(
+        "--bot-debug-screenshot-dir",
+        help="Directory to write Playwright screenshots for debugging.",
+    )
+    parser.add_argument(
+        "--cookie",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help=(
+            "Attach an extra cookie to HTTP requests. May be passed multiple times. "
+            "Useful for cf_clearance tokens obtained from a manual browser session."
+        ),
+    )
+    parser.add_argument(
+        "--user-agent",
+        help=(
+            "Override request User-Agent. Recommended when using --cookie cf_clearance, "
+            "to match the browser profile that obtained the token."
+        ),
+    )
+    parser.add_argument(
+        "--chrome-cookies",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Auto-extract Cloudflare cookies (cf_clearance, __cf_bm) from Chrome's "
+            "local cookie store. Enabled by default. Requires the 'cryptography' "
+            "package. Visit the protected site in Chrome first and solve the "
+            "Cloudflare challenge. Use --no-chrome-cookies to disable."
+        ),
+    )
+    parser.add_argument(
+        "--chrome-profile",
+        default="Default",
+        help=("Chrome profile directory name for --chrome-cookies. Defaults to 'Default'."),
+    )
     parser.add_argument("--json-out", type=Path, help="Write a machine-readable JSON report.")
     return parser
 
@@ -971,6 +1121,20 @@ def main() -> int:
         args.rate_limit_seconds,
         args.timeout_seconds,
         args.max_retries,
+        playwright_headless=not args.playwright_headed,
+        playwright_wait_until=args.playwright_wait_until,
+        playwright_settle_ms=args.playwright_settle_ms,
+        playwright_stealth=args.playwright_stealth,
+        playwright_user_data_dir=args.playwright_user_data_dir,
+        playwright_storage_state=args.playwright_storage_state,
+        playwright_challenge_timeout_seconds=args.playwright_challenge_timeout_seconds,
+        playwright_channel=args.playwright_channel,
+        bot_debug_html_dir=args.bot_debug_html_dir,
+        bot_debug_screenshot_dir=args.bot_debug_screenshot_dir,
+        extra_cookies=args.cookie,
+        user_agent=args.user_agent,
+        chrome_cookies=args.chrome_cookies,
+        chrome_profile=args.chrome_profile,
     )
 
     LOGGER.info(
