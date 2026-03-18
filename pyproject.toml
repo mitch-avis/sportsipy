@@ -15,7 +15,7 @@ urls = { "Homepage" = "https://github.com/mitch-avis/sportsipy" }
 dependencies = ["numpy", "polars", "pyquery", "requests"]
 
 [project.optional-dependencies]
-bot-evasion = ["curl_cffi", "playwright"]
+bot-evasion = ["curl_cffi", "playwright", "camoufox"]
 classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
