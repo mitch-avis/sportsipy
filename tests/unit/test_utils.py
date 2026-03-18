@@ -814,7 +814,7 @@ class TestUtils:
                 return None
 
         class Chromium:
-            def launch(self, headless=True):
+            def launch(self, **_kwargs):
                 return Browser()
 
         class PlaywrightSession:
@@ -1262,7 +1262,7 @@ class TestBotDetectionLayer:
                 return None
 
         class Chromium:
-            def launch(self, headless=True):
+            def launch(self, **_kwargs):
                 return Browser()
 
         class PlaywrightSession:
