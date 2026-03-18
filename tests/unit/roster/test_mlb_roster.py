@@ -5,6 +5,8 @@ from unittest.mock import patch
 
 from flexmock import flexmock
 
+from sportsipy import utils
+from sportsipy.mlb.constants import PLAYER_SCHEME
 from sportsipy.mlb.player import AbstractPlayer
 from sportsipy.mlb.player import _cleanup as _cleanup_player
 from sportsipy.mlb.roster import Player, _cleanup
@@ -94,3 +96,11 @@ class TestMLBPlayer:
         player._weight = None
 
         assert not player.weight
+
+    def test_player_name_scheme_parses_h1_title(self):
+        """Return test player name scheme parses h1 title."""
+        html = "<html><body><h1>Jose Altuve</h1></body></html>"
+
+        result = utils.parse_field(PLAYER_SCHEME, html, "name")
+
+        assert result == "Jose Altuve"
