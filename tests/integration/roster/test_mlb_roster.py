@@ -536,7 +536,7 @@ class TestMLBPlayer:
         # Request the career stats
         player = self.player("")
 
-        assert repr(player) == "None (altuvjo01)"
+        assert repr(player) == "Jose Altuve (altuvjo01)"
 
 
 class TestMLBPitcher:
