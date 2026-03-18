@@ -1,13 +1,19 @@
+"""Provide utilities for nba utils."""
+
+from __future__ import annotations
+
+from typing import Any
 from urllib.error import HTTPError
 
 from sportsipy import utils
+from sportsipy.nba.constants import PARSING_SCHEME, SEASON_PAGE_URL
 
-from .constants import PARSING_SCHEME, SEASON_PAGE_URL
 
-
-def _add_stats_data(teams_list, team_data_dict):
-    """
-    Add a team's stats row to a dictionary.
+def _add_stats_data(
+    teams_list: Any,
+    team_data_dict: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate all
     stats for each team in a single variable.
@@ -27,6 +33,7 @@ def _add_stats_data(teams_list, team_data_dict):
     dictionary
         An updated version of the team_data_dict with the passed table row
         information included.
+
     """
     # Teams are listed in terms of rank with the first team being #1
     rank = 1
@@ -36,6 +43,8 @@ def _add_stats_data(teams_list, team_data_dict):
             # might be an embedded header row, like in the division standings
             if team_data("a").attr("href") is not None:
                 abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
+                if not isinstance(abbr, str):
+                    continue
                 try:
                     team_data_dict[abbr]["data"] += team_data
                 except KeyError:
@@ -44,9 +53,11 @@ def _add_stats_data(teams_list, team_data_dict):
     return team_data_dict
 
 
-def _retrieve_all_teams(year, season_file=None):
-    """
-    Find and create Team instances for all teams in the given season.
+def _retrieve_all_teams(
+    year: int | str | None,
+    season_file: str | None = None,
+) -> tuple[dict[str, dict[str, Any]] | None, int | str | None]:
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NBA stats table and finds all
     requested stats. Each team then has a Team instance created which includes
@@ -66,6 +77,7 @@ def _retrieve_all_teams(year, season_file=None):
         Returns a ``tuple`` of the team_data_dict and year which represent all
         stats for all teams, and the given year that should be used to pull
         stats from, respectively.
+
     """
     team_data_dict = {}
 
@@ -77,16 +89,12 @@ def _retrieve_all_teams(year, season_file=None):
         # instead.
         if year == 2021:
             try:
-                doc = utils.pq(utils.get_page_source(url=SEASON_PAGE_URL % year))
+                page_source = utils.get_page_source(url=SEASON_PAGE_URL % year)
+                if not page_source:
+                    year = str(int(year) - 1)
             except HTTPError:
                 year = str(int(year) - 1)
-        # If stats for the requested season do not exist yet (as is the case
-        # right before a new season begins), attempt to pull the previous
-        # year's stats. If it exists, use the previous year instead.
-        if not utils.url_exists(SEASON_PAGE_URL % year) and utils.url_exists(
-            SEASON_PAGE_URL % str(int(year) - 1)
-        ):
-            year = str(int(year) - 1)
+        year = utils.resolve_year_for_url(year, lambda y: SEASON_PAGE_URL % y)
     doc = utils.pull_page(SEASON_PAGE_URL % year, season_file)
     teams_list = utils.get_stats_table(doc, "div#div_totals-team")
     opp_teams_list = utils.get_stats_table(doc, "div#div_totals-opponent")
@@ -97,7 +105,7 @@ def _retrieve_all_teams(year, season_file=None):
 
     if not teams_list and not opp_teams_list and not standings_list_e and not standings_list_w:
         utils.no_data_found()
-        return None, None
+        return None, year
     for stats_list in [teams_list, opp_teams_list, standings_list_e, standings_list_w]:
         team_data_dict = _add_stats_data(stats_list, team_data_dict)
     return team_data_dict, year

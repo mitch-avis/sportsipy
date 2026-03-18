@@ -1,3 +1,7 @@
+"""Provide utilities for constants."""
+
+from __future__ import annotations
+
 PARSING_SCHEME = {
     "conference_losses": 'td[data-stat="losses_conf"]:first',
     "conference_win_percentage": 'td[data-stat="win_loss_pct_conf"]:first',
@@ -86,7 +90,7 @@ BOXSCORE_SCHEME = {
     "away_fumbles_lost": 'td[data-stat="vis_stat"]',
     "away_fumbles": 'td[data-stat="vis_stat"]',
     "away_interceptions": 'td[data-stat="vis_stat"]',
-    "away_name": 'a[itemprop="name"]:last',
+    "away_name": "div.scorebox_team:first strong a",
     "away_net_pass_yards": 'td[data-stat="vis_stat"]',
     "away_pass_attempts": 'td[data-stat="vis_stat"]',
     "away_pass_completions": 'td[data-stat="vis_stat"]',
@@ -113,7 +117,7 @@ BOXSCORE_SCHEME = {
     "home_fumbles_lost": 'td[data-stat="home_stat"]',
     "home_fumbles": 'td[data-stat="home_stat"]',
     "home_interceptions": 'td[data-stat="home_stat"]',
-    "home_name": 'a[itemprop="name"]:first',
+    "home_name": "div.scorebox_team:last strong a",
     "home_net_pass_yards": 'td[data-stat="home_stat"]',
     "home_pass_attempts": 'td[data-stat="home_stat"]',
     "home_pass_completions": 'td[data-stat="home_stat"]',
@@ -141,7 +145,7 @@ BOXSCORE_SCHEME = {
     "away_fumbles_lost": 'td[data-stat="vis_stat"]',
     "away_fumbles": 'td[data-stat="vis_stat"]',
     "away_interceptions": 'td[data-stat="vis_stat"]',
-    "away_name": 'a[itemprop="name"]:first',
+    "away_name": "div.scorebox_team:first strong a",
     "away_pass_attempts": 'td[data-stat="vis_stat"]',
     "away_pass_completions": 'td[data-stat="vis_stat"]',
     "away_pass_touchdowns": 'td[data-stat="vis_stat"]',
@@ -159,7 +163,7 @@ BOXSCORE_SCHEME = {
     "home_fumbles_lost": 'td[data-stat="home_stat"]',
     "home_fumbles": 'td[data-stat="home_stat"]',
     "home_interceptions": 'td[data-stat="home_stat"]',
-    "home_name": 'a[itemprop="name"]:last',
+    "home_name": "div.scorebox_team:last strong a",
     "home_pass_attempts": 'td[data-stat="home_stat"]',
     "home_pass_completions": 'td[data-stat="home_stat"]',
     "home_pass_touchdowns": 'td[data-stat="home_stat"]',
@@ -266,7 +270,7 @@ PLAYER_SCHEME = {
     "kickoff_return_touchdowns": 'td[data-stat="td_kick_ret"]',
     "kickoff_return_yards": 'td[data-stat="kick_ret_yds"]',
     "kickoff_returns": 'td[data-stat="kick_ret"]',
-    "name": 'h1[itemprop="name"]',
+    "name": "h1",
     "other_touchdowns": 'td[data-stat="td_other"]',
     "pass_attempts": 'td[data-stat="pass_att"]',
     "pass_yards_per_attempt": 'td[data-stat="pass_yds_per_att"]',
@@ -328,7 +332,7 @@ RANKINGS_SCHEME = {
     "week": 'th[data-stat="week_poll"]',
 }
 
-SEASON_PAGE_URL = "http://www.sports-reference.com/cfb/years/%s-standings.html"
+SEASON_PAGE_URL = "https://www.sports-reference.com/cfb/years/%s-standings.html"
 
 OFFENSIVE_STATS_URL = "https://www.sports-reference.com/cfb/years/%s-team-offense.html"
 DEFENSIVE_STATS_URL = "https://www.sports-reference.com/cfb/years/%s-team-defense.html"

@@ -1,17 +1,23 @@
-import pandas as pd
+"""Provide utilities for teams."""
 
-from .. import utils
-from ..decorators import float_property_decorator, int_property_decorator
-from .conferences import Conferences
-from .constants import PARSING_SCHEME
-from .ncaab_utils import _retrieve_all_teams
-from .roster import Roster
-from .schedule import Schedule
+from __future__ import annotations
+
+from collections.abc import Iterator
+from typing import Any
+
+import polars as pl
+
+from sportsipy import utils
+from sportsipy.decorators import float_property_decorator, int_property_decorator
+from sportsipy.ncaab.conferences import Conferences
+from sportsipy.ncaab.constants import PARSING_SCHEME
+from sportsipy.ncaab.ncaab_utils import _retrieve_all_teams
+from sportsipy.ncaab.roster import Roster
+from sportsipy.ncaab.schedule import Schedule
 
 
 class Team:
-    """
-    An object containing all of a team's season information.
+    """An object containing all of a team's season information.
 
     Finds and parses all team stat information and identifiers, such as full
     and short names, and sets them as properties which can be directly read
@@ -48,22 +54,24 @@ class Team:
         Optionally specify the filename of a local file to use to pull data
         instead of downloading from sports-reference.com. This file should be
         of the Advanced Opponent Stats page for the designated year.
+
     """
 
     def __init__(
         self,
-        team_name=None,
-        team_data=None,
-        team_conference=None,
-        year=None,
-        basic_stats=None,
-        basic_opp_stats=None,
-        adv_stats=None,
-        adv_opp_stats=None,
-    ):
+        team_name: str | None = None,
+        team_data: Any = None,
+        team_conference: str | None = None,
+        year: int | str | None = None,
+        basic_stats: str | None = None,
+        basic_opp_stats: str | None = None,
+        adv_stats: str | None = None,
+        adv_opp_stats: str | None = None,
+    ) -> None:
+        """Initialize the class instance."""
         self._team_conference = team_conference
         self._year = year
-        self._abbreviation = None
+        self._abbreviation: str | None = None
         self._name = None
         self._games_played = None
         self._wins = None
@@ -154,29 +162,24 @@ class Team:
             self._team_conference = conferences_dict[team_name.lower()]
         self._parse_team_data(team_data)
 
-    def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
         return f"{self.name} ({self.abbreviation}) - {self._year}"
 
-    def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
         return self.__str__()
 
     def _retrieve_team_data(
         self,
-        year,
-        team_name,
-        basic_stats=None,
-        basic_opp_stats=None,
-        adv_stats=None,
-        adv_opp_stats=None,
-    ):
-        """
-        Pull all stats for a specific team.
+        year: int | str | None,
+        team_name: str,
+        basic_stats: str | None = None,
+        basic_opp_stats: str | None = None,
+        adv_stats: str | None = None,
+        adv_opp_stats: str | None = None,
+    ) -> Any:
+        """Pull all stats for a specific team.
 
         By first retrieving a dictionary containing all information for all
         teams in the league, only select the desired team for a specific year
@@ -211,17 +214,19 @@ class Team:
         PyQuery object
             Returns a PyQuery object containing all stats and information for
             the specified team.
+
         """
         team_data_dict, year = _retrieve_all_teams(
             year, basic_stats, basic_opp_stats, adv_stats, adv_opp_stats
         )
+        if team_data_dict is None:
+            raise ValueError("No team data found for the requested season.")
         self._year = year
         team_data = team_data_dict[team_name]["data"]
         return team_data
 
-    def _parse_team_data(self, team_data):
-        """
-        Parses a value for every attribute.
+    def _parse_team_data(self, team_data: Any) -> None:
+        """Parse a value for every attribute.
 
         This function looks through every attribute and retrieves the value
         according to the parsing scheme and index of the attribute from the
@@ -237,6 +242,7 @@ class Team:
             A string containing all of the rows of stats for a given team. If
             multiple tables are being referenced, this will be comprised of
             multiple rows in a single string.
+
         """
         for field in self.__dict__:
             if field in ("_year", "_team_conference"):
@@ -250,9 +256,9 @@ class Team:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
-        """
-        Returns a pandas DataFrame containing all other class properties and
+    def dataframe(self) -> Any:
+        """Return a polars DataFrame containing all other class properties and.
+
         values. The index for the DataFrame is the string abbreviation of the
         team, such as 'PURDUE'.
         """
@@ -342,84 +348,84 @@ class Team:
             "win_percentage": self.win_percentage,
             "wins": self.wins,
         }
-        return pd.DataFrame([fields_to_include], index=[self._abbreviation])
+        return pl.DataFrame([fields_to_include])
 
     @property
-    def conference(self):
-        """
-        Returns a ``string`` of the team's conference abbreviation, such as
+    def conference(self) -> Any:
+        """Return a ``string`` of the team's conference abbreviation, such as.
+
         'big-12' for the Big 12 Conference.
         """
         return self._team_conference
 
     @property
-    def abbreviation(self):
-        """
-        Returns a ``string`` of the team's short name, such as 'PURDUE' for the
+    def abbreviation(self) -> Any:
+        """Return a ``string`` of the team's short name, such as 'PURDUE' for the.
+
         Purdue Boilermakers.
         """
         return self._abbreviation
 
     @property
-    def schedule(self):
-        """
-        Returns an instance of the Schedule class containing the team's
+    def schedule(self) -> Any:
+        """Return an instance of the Schedule class containing the team's.
+
         complete schedule for the season.
         """
         return Schedule(self._abbreviation, self._year)
 
     @property
-    def roster(self):
-        """
-        Returns an instance of the Roster class containing all players for the
+    def roster(self) -> Any:
+        """Return an instance of the Roster class containing all players for the.
+
         team during the season with all career stats.
         """
         return Roster(self._abbreviation, self._year)
 
     @property
-    def name(self):
-        """
-        Returns a ``string`` of the team's full name, such as 'Purdue
+    def name(self) -> Any:
+        """Return a ``string`` of the team's full name, such as 'Purdue.
+
         Boilermakers'.
         """
         return self._name
 
     @int_property_decorator
     def games_played(self):
-        """
-        Returns an ``int`` of the total number of games the team has played
+        """Return an ``int`` of the total number of games the team has played.
+
         during the season.
         """
         return self._games_played
 
     @int_property_decorator
     def wins(self):
-        """
-        Returns an ``int`` of the total number of games the team won during the
+        """Return an ``int`` of the total number of games the team won during the.
+
         season.
         """
         return self._wins
 
     @int_property_decorator
     def losses(self):
-        """
-        Returns an ``int`` of the total number of games the team lost during
+        """Return an ``int`` of the total number of games the team lost during.
+
         the season.
         """
         return self._losses
 
     @float_property_decorator
     def win_percentage(self):
-        """
-        Returns a ``float`` of the number of wins divided by the number of
+        """Return a ``float`` of the number of wins divided by the number of.
+
         games played during the season. Percentage ranges from 0-1.
         """
         return self._win_percentage
 
     @float_property_decorator
     def simple_rating_system(self):
-        """
-        Returns a ``float`` of the team's average point differential compared
+        """Return a ``float`` of the team's average point differential compared.
+
         to the strength of schedule. Higher values indicate stronger teams. An
         average team is denoted with 0.0. Negative numbers are comparatively
         worse than average.
@@ -428,8 +434,8 @@ class Team:
 
     @float_property_decorator
     def strength_of_schedule(self):
-        """
-        Returns a ``float`` of the team's strength of schedule based on the
+        """Return a ``float`` of the team's strength of schedule based on the.
+
         points above and below average. An average strength of schedule is
         denoted with 0.0. Negative numbers are comparatively easier than
         average.
@@ -438,149 +444,159 @@ class Team:
 
     @int_property_decorator
     def conference_wins(self):
-        """
-        Returns an ``int`` of the total number of conference games the team won
+        """Return an ``int`` of the total number of conference games the team won.
+
         during the season.
         """
         return self._conference_wins
 
     @int_property_decorator
     def conference_losses(self):
-        """
-        Returns an ``int`` of the total number of conference games the team
+        """Return an ``int`` of the total number of conference games the team.
+
         lost during the season.
         """
         return self._conference_losses
 
     @int_property_decorator
     def home_wins(self):
-        """
-        Returns an ``int`` of the total number of home games the team won
+        """Return an ``int`` of the total number of home games the team won.
+
         during the season.
         """
         return self._home_wins
 
     @int_property_decorator
     def home_losses(self):
-        """
-        Returns an ``int`` of the total number of home games the team lost
+        """Return an ``int`` of the total number of home games the team lost.
+
         during the season.
         """
         return self._home_losses
 
     @int_property_decorator
     def away_wins(self):
-        """
-        Returns an ``int`` of the total number of away games the team won
+        """Return an ``int`` of the total number of away games the team won.
+
         during the season.
         """
         return self._away_wins
 
     @int_property_decorator
     def away_losses(self):
-        """
-        Returns an ``int`` of the total number of away games the team lost
+        """Return an ``int`` of the total number of away games the team lost.
+
         during the season.
         """
         return self._away_losses
 
     @int_property_decorator
     def points(self):
-        """
-        Returns an ``int`` of the total number of points the team scored during
+        """Return an ``int`` of the total number of points the team scored during.
+
         the season.
         """
         return self._points
 
     @int_property_decorator
     def opp_points(self):
-        """
-        Returns an ``int`` of the total number of points opponents have scored
+        """Return an ``int`` of the total number of points opponents have scored.
+
         during the season.
         """
         return self._opp_points
 
     @int_property_decorator
     def minutes_played(self):
-        """
-        Returns an ``int`` of the total number of minutes played by the team
+        """Return an ``int`` of the total number of minutes played by the team.
+
         during the season.
         """
         return self._minutes_played
 
     @int_property_decorator
     def field_goals(self):
-        """
-        Returns an ``int`` of the total number of field goals made during the
+        """Return an ``int`` of the total number of field goals made during the.
+
         season.
         """
         return self._field_goals
 
     @int_property_decorator
     def field_goal_attempts(self):
-        """
-        Returns an ``int`` of the total number of field goal attempts during
+        """Return an ``int`` of the total number of field goal attempts during.
+
         the season.
         """
         return self._field_goal_attempts
 
     @float_property_decorator
     def field_goal_percentage(self):
-        """
-        Returns a ``float`` of the number of field goals made divided by the
+        """Return a ``float`` of the number of field goals made divided by the.
+
         total number of field goal attempts. Percentage ranges from 0-1.
         """
         return self._field_goal_percentage
 
     @int_property_decorator
     def two_point_field_goals(self):
-        """
-        Returns an ``int`` of the total number of two point field goals made
+        """Return an ``int`` of the total number of two point field goals made.
+
         during the season.
         """
-        return self.field_goals - self.three_point_field_goals
+        field_goals = self.field_goals
+        three_point_field_goals = self.three_point_field_goals
+        if field_goals is None or three_point_field_goals is None:
+            return None
+        return field_goals - three_point_field_goals
 
     @int_property_decorator
     def two_point_field_goal_attempts(self):
-        """
-        Returns an ``int`` of the total number of two point field goal attempts
+        """Return an ``int`` of the total number of two point field goal attempts.
+
         during the season.
         """
-        return self.field_goal_attempts - self.three_point_field_goal_attempts
+        attempts = self.field_goal_attempts
+        three_point_attempts = self.three_point_field_goal_attempts
+        if attempts is None or three_point_attempts is None:
+            return None
+        return attempts - three_point_attempts
 
     @float_property_decorator
     def two_point_field_goal_percentage(self):
-        """
-        Returns a ``float`` of the number of two point field goals made divided
+        """Return a ``float`` of the number of two point field goals made divided.
+
         by the number of two point field goal attempts. Percentage ranges from
         0-1.
         """
-        try:
-            result = float(self.two_point_field_goals) / float(self.two_point_field_goal_attempts)
-            return round(result, 3)
-        except ZeroDivisionError:
+        field_goals = self.two_point_field_goals
+        attempts = self.two_point_field_goal_attempts
+        if field_goals is None or attempts is None:
+            return None
+        if attempts == 0:
             return 0.0
+        return round(field_goals / attempts, 3)
 
     @int_property_decorator
     def three_point_field_goals(self):
-        """
-        Returns an ``int`` of the total number of three point field goals made
+        """Return an ``int`` of the total number of three point field goals made.
+
         during the season.
         """
         return self._three_point_field_goals
 
     @int_property_decorator
     def three_point_field_goal_attempts(self):
-        """
-        Returns an ``int`` of the total number of three point field goal
+        """Return an ``int`` of the total number of three point field goal.
+
         attempts during the season.
         """
         return self._three_point_field_goal_attempts
 
     @float_property_decorator
     def three_point_field_goal_percentage(self):
-        """
-        Returns a ``float`` of the number of three point field goals made
+        """Return a ``float`` of the number of three point field goals made.
+
         divided by the number of three point field goal attempts. Percentage
         ranges from 0-1.
         """
@@ -588,110 +604,101 @@ class Team:
 
     @int_property_decorator
     def free_throws(self):
-        """
-        Returns an ``int`` of the total number of free throws made during the
+        """Return an ``int`` of the total number of free throws made during the.
+
         season.
         """
         return self._free_throws
 
     @int_property_decorator
     def free_throw_attempts(self):
-        """
-        Returns an ``int`` of the total number of free throw attempts during
+        """Return an ``int`` of the total number of free throw attempts during.
+
         the season.
         """
         return self._free_throw_attempts
 
     @float_property_decorator
     def free_throw_percentage(self):
-        """
-        Returns a ``float`` of the number of free throws made divided by the
+        """Return a ``float`` of the number of free throws made divided by the.
+
         number of free throw attempts during the season.
         """
         return self._free_throw_percentage
 
     @int_property_decorator
     def offensive_rebounds(self):
-        """
-        Returns an ``int`` of the total number of offensive rebounds during the
+        """Return an ``int`` of the total number of offensive rebounds during the.
+
         season.
         """
         return self._offensive_rebounds
 
     @int_property_decorator
     def defensive_rebounds(self):
-        """
-        Returns an ``int`` of the total number of defensive rebounds during the
+        """Return an ``int`` of the total number of defensive rebounds during the.
+
         season.
         """
-        try:
-            return self.total_rebounds - self.offensive_rebounds
-        except TypeError:
+        total_rebounds = self.total_rebounds
+        offensive_rebounds = self.offensive_rebounds
+        if total_rebounds is None or offensive_rebounds is None:
             return None
+        return total_rebounds - offensive_rebounds
 
     @int_property_decorator
     def total_rebounds(self):
-        """
-        Returns an ``int`` of the total number of rebounds during the season.
-        """
+        """Return an ``int`` of the total number of rebounds during the season."""
         return self._total_rebounds
 
     @int_property_decorator
     def assists(self):
-        """
-        Returns an ``int`` of the total number of assists during the season.
-        """
+        """Return an ``int`` of the total number of assists during the season."""
         return self._assists
 
     @int_property_decorator
     def steals(self):
-        """
-        Returns an ``int`` of the total number of steals during the season.
-        """
+        """Return an ``int`` of the total number of steals during the season."""
         return self._steals
 
     @int_property_decorator
     def blocks(self):
-        """
-        Returns an ``int`` of the total number of blocks during the season.
-        """
+        """Return an ``int`` of the total number of blocks during the season."""
         return self._blocks
 
     @int_property_decorator
     def turnovers(self):
-        """
-        Returns an ``int`` of the total number of turnovers during the season.
-        """
+        """Return an ``int`` of the total number of turnovers during the season."""
         return self._turnovers
 
     @int_property_decorator
     def personal_fouls(self):
-        """
-        Returns an ``int`` of the total number of personal fouls during the
+        """Return an ``int`` of the total number of personal fouls during the.
+
         season.
         """
         return self._personal_fouls
 
     @int_property_decorator
     def opp_field_goals(self):
-        """
-        Returns an ``int`` of the total number of field goals made during the
+        """Return an ``int`` of the total number of field goals made during the.
+
         season by opponents.
         """
         return self._opp_field_goals
 
     @int_property_decorator
     def opp_field_goal_attempts(self):
-        """
-        Returns an ``int`` of the total number of field goal attempts during
+        """Return an ``int`` of the total number of field goal attempts during.
+
         the season by opponents.
         """
         return self._opp_field_goal_attempts
 
     @float_property_decorator
     def opp_field_goal_percentage(self):
-        """
-        Returns a ``float`` of the number of field goals made divided by the
+        """Return a ``float`` of the number of field goals made divided by the.
+
         total number of field goal attempts by opponents. Percentage ranges
         from 0-1.
         """
@@ -699,55 +706,63 @@ class Team:
 
     @int_property_decorator
     def opp_two_point_field_goals(self):
-        """
-        Returns an ``int`` of the total number of two point field goals made
+        """Return an ``int`` of the total number of two point field goals made.
+
         during the season by opponents.
         """
-        return self.opp_field_goals - self.opp_three_point_field_goals
+        field_goals = self.opp_field_goals
+        three_point_field_goals = self.opp_three_point_field_goals
+        if field_goals is None or three_point_field_goals is None:
+            return None
+        return field_goals - three_point_field_goals
 
     @int_property_decorator
     def opp_two_point_field_goal_attempts(self):
-        """
-        Returns an ``int`` of the total number of two point field goal attempts
+        """Return an ``int`` of the total number of two point field goal attempts.
+
         during the season by opponents.
         """
-        return self.opp_field_goal_attempts - self.opp_three_point_field_goal_attempts
+        attempts = self.opp_field_goal_attempts
+        three_point_attempts = self.opp_three_point_field_goal_attempts
+        if attempts is None or three_point_attempts is None:
+            return None
+        return attempts - three_point_attempts
 
     @float_property_decorator
     def opp_two_point_field_goal_percentage(self):
-        """
-        Returns a ``float`` of the number of two point field goals made divided
+        """Return a ``float`` of the number of two point field goals made divided.
+
         by the number of two point field goal attempts by opponents. Percentage
         ranges from 0-1.
         """
-        try:
-            result = float(self.opp_two_point_field_goals) / float(
-                self.opp_two_point_field_goal_attempts
-            )
-            return round(result, 3)
-        except ZeroDivisionError:
+        field_goals = self.opp_two_point_field_goals
+        attempts = self.opp_two_point_field_goal_attempts
+        if field_goals is None or attempts is None:
+            return None
+        if attempts == 0:
             return 0.0
+        return round(field_goals / attempts, 3)
 
     @int_property_decorator
     def opp_three_point_field_goals(self):
-        """
-        Returns an ``int`` of the total number of three point field goals made
+        """Return an ``int`` of the total number of three point field goals made.
+
         during the season by opponents.
         """
         return self._opp_three_point_field_goals
 
     @int_property_decorator
     def opp_three_point_field_goal_attempts(self):
-        """
-        Returns an ``int`` of the total number of three point field goal
+        """Return an ``int`` of the total number of three point field goal.
+
         attempts during the season by opponents.
         """
         return self._opp_three_point_field_goal_attempts
 
     @float_property_decorator
     def opp_three_point_field_goal_percentage(self):
-        """
-        Returns a ``float`` of the number of three point field goals made
+        """Return a ``float`` of the number of three point field goals made.
+
         divided by the number of three point field goal attempts by opponents.
         Percentage ranges from 0-1.
         """
@@ -755,144 +770,146 @@ class Team:
 
     @int_property_decorator
     def opp_free_throws(self):
-        """
-        Returns an ``int`` of the total number of free throws made during the
+        """Return an ``int`` of the total number of free throws made during the.
+
         season by opponents.
         """
         return self._opp_free_throws
 
     @int_property_decorator
     def opp_free_throw_attempts(self):
-        """
-        Returns an ``int`` of the total number of free throw attempts during
+        """Return an ``int`` of the total number of free throw attempts during.
+
         the season by opponents.
         """
         return self._opp_free_throw_attempts
 
     @float_property_decorator
     def opp_free_throw_percentage(self):
-        """
-        Returns a ``float`` of the number of free throws made divided by the
+        """Return a ``float`` of the number of free throws made divided by the.
+
         number of free throw attempts during the season by opponents.
         """
         return self._opp_free_throw_percentage
 
     @int_property_decorator
     def opp_offensive_rebounds(self):
-        """
-        Returns an ``int`` of the total number of offensive rebounds during the
+        """Return an ``int`` of the total number of offensive rebounds during the.
+
         season by opponents.
         """
         return self._opp_offensive_rebounds
 
     @int_property_decorator
     def opp_defensive_rebounds(self):
-        """
-        Returns an ``int`` of the total number of defensive rebounds during the
+        """Return an ``int`` of the total number of defensive rebounds during the.
+
         season by opponents.
         """
-        try:
-            return self.opp_total_rebounds - self.opp_offensive_rebounds
-        except TypeError:
+        total_rebounds = self.opp_total_rebounds
+        offensive_rebounds = self.opp_offensive_rebounds
+        if total_rebounds is None or offensive_rebounds is None:
             return None
+        return total_rebounds - offensive_rebounds
 
     @int_property_decorator
     def opp_total_rebounds(self):
-        """
-        Returns an ``int`` of the total number of rebounds during the season by
+        """Return an ``int`` of the total number of rebounds during the season by.
+
         opponents.
         """
         return self._opp_total_rebounds
 
     @int_property_decorator
     def opp_assists(self):
-        """
-        Returns an ``int`` of the total number of assists during the season by
+        """Return an ``int`` of the total number of assists during the season by.
+
         opponents.
         """
         return self._opp_assists
 
     @int_property_decorator
     def opp_steals(self):
-        """
-        Returns an ``int`` of the total number of steals during the season by
+        """Return an ``int`` of the total number of steals during the season by.
+
         opponents.
         """
         return self._opp_steals
 
     @int_property_decorator
     def opp_blocks(self):
-        """
-        Returns an ``int`` of the total number of blocks during the season by
+        """Return an ``int`` of the total number of blocks during the season by.
+
         opponents.
         """
         return self._opp_blocks
 
     @int_property_decorator
     def opp_turnovers(self):
-        """
-        Returns an ``int`` of the total number of turnovers during the season
+        """Return an ``int`` of the total number of turnovers during the season.
+
         by opponents.
         """
         return self._opp_turnovers
 
     @int_property_decorator
     def opp_personal_fouls(self):
-        """
-        Returns an ``int`` of the total number of personal fouls during the
+        """Return an ``int`` of the total number of personal fouls during the.
+
         season by opponents.
         """
         return self._opp_personal_fouls
 
     @float_property_decorator
     def pace(self):
-        """
-        Returns a ``float`` of the average number of possessions per 40
+        """Return a ``float`` of the average number of possessions per 40.
+
         minutes.
         """
         return self._pace
 
     @float_property_decorator
     def offensive_rating(self):
-        """
-        Returns a ``float`` of the average number of points scored per 100
+        """Return a ``float`` of the average number of points scored per 100.
+
         possessions.
         """
         return self._offensive_rating
 
     @float_property_decorator
     def net_rating(self):
-        """
-        Returns a ``float`` of the net team rating which is equivalent to the
+        """Return a ``float`` of the net team rating which is equivalent to the.
+
         difference between the offensive rating and the defensive (or the
         opponent's offensive) rating. Positive values indicate teams that score
         more points than they allow per 100 possessions.
         """
-        try:
-            return self.offensive_rating - self.opp_offensive_rating
-        except TypeError:
+        offensive_rating = self.offensive_rating
+        opp_offensive_rating = self.opp_offensive_rating
+        if offensive_rating is None or opp_offensive_rating is None:
             return None
+        return offensive_rating - opp_offensive_rating
 
     @float_property_decorator
     def free_throw_attempt_rate(self):
-        """
-        Returns a ``float`` of the average number of free throw attempts per
+        """Return a ``float`` of the average number of free throw attempts per.
+
         field goal attempt.
         """
         return self._free_throw_attempt_rate
 
     @float_property_decorator
     def three_point_attempt_rate(self):
-        """
-        Returns a ``float`` of the percentage of field goal attempts from
+        """Return a ``float`` of the percentage of field goal attempts from.
+
         3-point range. Percentage ranges from 0-1.
         """
         return self._three_point_attempt_rate
 
     @float_property_decorator
     def true_shooting_percentage(self):
-        """
-        Returns a ``float`` of the team's true shooting percentage which
+        """Return a ``float`` of the team's true shooting percentage which.
+
         considers free throws, 2-point field goals, and 3-point field goals.
         Percentage ranges from 0-1.
         """
@@ -900,8 +917,8 @@ class Team:
 
     @float_property_decorator
     def total_rebound_percentage(self):
-        """
-        Returns a ``float`` of the percentage of available rebounds a team
+        """Return a ``float`` of the percentage of available rebounds a team.
+
         grabbed.
         Percentage ranges from 0-100.
         """
@@ -909,8 +926,8 @@ class Team:
 
     @float_property_decorator
     def assist_percentage(self):
-        """
-        Returns a ``float`` of the percentage of field goals that were
+        """Return a ``float`` of the percentage of field goals that were.
+
         assisted.
         Percentage ranges from 0-100.
         """
@@ -918,56 +935,56 @@ class Team:
 
     @float_property_decorator
     def steal_percentage(self):
-        """
-        Returns a ``float`` of the percentage of opponent possessions that
+        """Return a ``float`` of the percentage of opponent possessions that.
+
         ended in a steal. Percentage ranges from 0-100.
         """
         return self._steal_percentage
 
     @float_property_decorator
     def block_percentage(self):
-        """
-        Returns a ``float`` of the percentage of 2-point field goals by the
+        """Return a ``float`` of the percentage of 2-point field goals by the.
+
         opponent that were blocked. Percentage ranges from 0-100.
         """
         return self._block_percentage
 
     @float_property_decorator
     def effective_field_goal_percentage(self):
-        """
-        Returns a ``float`` of the field goal percentage while giving extra
+        """Return a ``float`` of the field goal percentage while giving extra.
+
         weight to 3-point field goals. Percentage ranges from 0-1.
         """
         return self._effective_field_goal_percentage
 
     @float_property_decorator
     def turnover_percentage(self):
-        """
-        Returns a ``float`` of the number of times the team turned the ball
+        """Return a ``float`` of the number of times the team turned the ball.
+
         over per 100 possessions.
         """
         return self._turnover_percentage
 
     @float_property_decorator
     def offensive_rebound_percentage(self):
-        """
-        Returns a ``float`` of the percentage of available offensive rebounds a
+        """Return a ``float`` of the percentage of available offensive rebounds a.
+
         team grabbed. Percentage ranges from 0-100.
         """
         return self._offensive_rebound_percentage
 
     @float_property_decorator
     def free_throws_per_field_goal_attempt(self):
-        """
-        Returns a ``float`` of the number of free throws per field goal
+        """Return a ``float`` of the number of free throws per field goal.
+
         attempt.
         """
         return self._free_throws_per_field_goal_attempt
 
     @float_property_decorator
     def opp_offensive_rating(self):
-        """
-        Returns a ``float`` of the average number of points scored per 100
+        """Return a ``float`` of the average number of points scored per 100.
+
         possessions by the opponent. This is equivalent to the team's defensive
         rating as it is the number of points the team allows per 100
         possessions by the opponent.
@@ -976,24 +993,24 @@ class Team:
 
     @float_property_decorator
     def opp_free_throw_attempt_rate(self):
-        """
-        Returns a ``float`` of the average number of free throw attempts per
+        """Return a ``float`` of the average number of free throw attempts per.
+
         field goal attempt by the opponent.
         """
         return self._opp_free_throw_attempt_rate
 
     @float_property_decorator
     def opp_three_point_attempt_rate(self):
-        """
-        Returns a ``float`` of the percentage of field goal attempts from
+        """Return a ``float`` of the percentage of field goal attempts from.
+
         3-point range by the opponent. Percentage ranges from 0-1.
         """
         return self._opp_three_point_attempt_rate
 
     @float_property_decorator
     def opp_true_shooting_percentage(self):
-        """
-        Returns a ``float`` of the opponent's true shooting percentage which
+        """Return a ``float`` of the opponent's true shooting percentage which.
+
         considers free throws, 2-point field goals, and 3-point field goals.
         Percentage ranges from 0-1.
         """
@@ -1001,72 +1018,71 @@ class Team:
 
     @float_property_decorator
     def opp_total_rebound_percentage(self):
-        """
-        Returns a ``float`` of the percentage of available rebounds the
+        """Return a ``float`` of the percentage of available rebounds the.
+
         opponent grabbed. Percentage ranges from 0-100.
         """
         return self._opp_total_rebound_percentage
 
     @float_property_decorator
     def opp_assist_percentage(self):
-        """
-        Returns a ``float`` of the percentage of the opponent's field goals
+        """Return a ``float`` of the percentage of the opponent's field goals.
+
         that were assisted. Percentage ranges from 0-100.
         """
         return self._opp_assist_percentage
 
     @float_property_decorator
     def opp_steal_percentage(self):
-        """
-        Returns a ``float`` of the percentage of possessions that ended in a
+        """Return a ``float`` of the percentage of possessions that ended in a.
+
         steal by the opponent. Percentage ranges from 0-100.
         """
         return self._opp_steal_percentage
 
     @float_property_decorator
     def opp_block_percentage(self):
-        """
-        Returns a ``float`` of the percentage of 2-point field goals that were
+        """Return a ``float`` of the percentage of 2-point field goals that were.
+
         blocked by the opponent. Percentage ranges from 0-100.
         """
         return self._opp_block_percentage
 
     @float_property_decorator
     def opp_effective_field_goal_percentage(self):
-        """
-        Returns a ``float`` of the opponent's field goal percentage while
+        """Return a ``float`` of the opponent's field goal percentage while.
+
         giving extra weight to 3-point field goals. Percentage ranges from 0-1.
         """
         return self._opp_effective_field_goal_percentage
 
     @float_property_decorator
     def opp_turnover_percentage(self):
-        """
-        Returns a ``float`` of the number of times the opponent turned the ball
+        """Return a ``float`` of the number of times the opponent turned the ball.
+
         over per 100 possessions.
         """
         return self._opp_turnover_percentage
 
     @float_property_decorator
     def opp_offensive_rebound_percentage(self):
-        """
-        Returns a ``float`` of the percentage of available offensive rebounds
+        """Return a ``float`` of the percentage of available offensive rebounds.
+
         the opponent grabbed. Percentage ranges from 0-100.
         """
         return self._opp_offensive_rebound_percentage
 
     @float_property_decorator
     def opp_free_throws_per_field_goal_attempt(self):
-        """
-        Returns a ``float`` of the number of free throws per field goal attempt
+        """Return a ``float`` of the number of free throws per field goal attempt.
+
         by the opponent.
         """
         return self._opp_free_throws_per_field_goal_attempt
 
 
 class Teams:
-    """
-    A list of all NCAA Men's Basketball teams and their stats in a given year.
+    """A list of all NCAA Men's Basketball teams and their stats in a given year.
 
     Finds and retrieves a list of all NCAA Men's Basketball teams from
     www.sports-reference.com and creates a Team instance for every team that
@@ -1093,11 +1109,18 @@ class Teams:
         Optionally specify the filename of a local file to use to pull data
         instead of downloading from sports-reference.com. This file should
         be of the Advanced Opponent Stats page for the designated year.
+
     """
 
     def __init__(
-        self, year=None, basic_stats=None, basic_opp_stats=None, adv_stats=None, adv_opp_stats=None
-    ):
+        self,
+        year: int | str | None = None,
+        basic_stats: str | None = None,
+        basic_opp_stats: str | None = None,
+        adv_stats: str | None = None,
+        adv_opp_stats: str | None = None,
+    ) -> None:
+        """Initialize the class instance."""
         self._teams = []
         self._conferences_dict = Conferences(year).team_conference
 
@@ -1106,9 +1129,8 @@ class Teams:
         )
         self._instantiate_teams(team_data_dict, year)
 
-    def __getitem__(self, abbreviation):
-        """
-        Return a specified team.
+    def __getitem__(self, abbreviation: str) -> Team:
+        """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
         short name.
@@ -1128,15 +1150,15 @@ class Teams:
         ------
         ValueError
             If the requested team is not present within the Teams list.
+
         """
         for team in self._teams:
             if team.abbreviation.upper() == abbreviation.upper():
                 return team
         raise ValueError(f"Team abbreviation {abbreviation} not found")
 
-    def __call__(self, abbreviation):
-        """
-        Return a specified team.
+    def __call__(self, abbreviation: str) -> Team:
+        """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
         short name. This method is a wrapper for __getitem__.
@@ -1151,33 +1173,29 @@ class Teams:
         -------
         Team instance
             if the requested team can be found, its Team instance is returned
+
         """
         return self.__getitem__(abbreviation)
 
-    def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
         teams = [f"{team.name} ({team.abbreviation})".strip() for team in self._teams]
         return "\n".join(teams)
 
-    def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
         return self.__str__()
 
-    def __iter__(self):
-        """Returns an iterator of all of the NCAAB teams for a given season."""
+    def __iter__(self) -> Iterator[Team]:
+        """Return an iterator of all of the NCAAB teams for a given season."""
         return iter(self._teams)
 
-    def __len__(self):
-        """Returns the number of NCAAB teams for a given season."""
+    def __len__(self) -> int:
+        """Return the number of NCAAB teams for a given season."""
         return len(self._teams)
 
-    def _instantiate_teams(self, team_data_dict, year):
-        """
-        Create a Team instance for all teams.
+    def _instantiate_teams(self, team_data_dict: Any, year: int | str | None) -> None:
+        """Create a Team instance for all teams.
 
         Once all team information has been pulled from the various webpages,
         create a Team instance for each team and append it to a larger list of
@@ -1190,6 +1208,7 @@ class Teams:
             well as team rankings, indexed by team abbreviation.
         year : string
             A ``string`` of the requested year to pull stats from.
+
         """
         if not team_data_dict:
             return
@@ -1203,13 +1222,18 @@ class Teams:
             team = Team(team_data=team_data["data"], team_conference=conference, year=year)
             self._teams.append(team)
 
+        # Keep a stable, alphabetical ordering for reproducible output
+        # (string representations and DataFrame rows rely on a consistent
+        # ordering across runs and fixtures).
+        self._teams.sort(key=lambda t: (t.name or "").lower())
+
     @property
-    def dataframes(self):
-        """
-        Returns a pandas DataFrame where each row is a representation of the
+    def dataframes(self) -> Any:
+        """Return a polars DataFrame where each row is a representation of the.
+
         Team class. Rows are indexed by the team abbreviation.
         """
         frames = []
         for team in iter(self._teams):
             frames.append(team.dataframe)
-        return pd.concat(frames)
+        return pl.concat(frames, how="diagonal_relaxed")

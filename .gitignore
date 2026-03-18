@@ -162,3 +162,17 @@ cython_debug/
 
 # Local data
 /data
+
+# Local logs
+/logs
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+playwright.config.ts
+package.json
+package-lock.json

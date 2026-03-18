@@ -1,8 +1,8 @@
+"""Provide utilities for test ncaab rankings."""
+
 from os.path import dirname, join
 
-import mock
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.ncaab.rankings import Rankings
@@ -10,12 +10,15 @@ from sportsipy.ncaab.rankings import Rankings
 YEAR = 2018
 
 
-def read_file(filename=None):
+def read_file(filename):
+    """Return read file."""
     filepath = join(dirname(__file__), "ncaab", filename)
-    return open(filepath, "r", encoding="utf8").read()
+    return open(filepath, encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status_code=200):
             self.url = url
@@ -26,7 +29,7 @@ def mock_pyquery(url, timeout=None):
             self.text = html_contents
 
         def __call__(self, div):
-            return read_file()
+            return read_file(f"{YEAR}-polls.html")
 
     if "BAD" in url:
         return MockPQ("", 404)
@@ -35,6 +38,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -47,7 +52,10 @@ def mock_request(url, timeout=None):
 
 
 class TestNCAABRankings:
+    """Represent TestNCAABRankings."""
+
     def setup_method(self):
+        """Return setup method."""
         results_extended = [
             {
                 "abbreviation": "virginia",
@@ -132,7 +140,7 @@ class TestNCAABRankings:
             },
             {
                 "abbreviation": "north-carolina",
-                "name": "North Carolina",
+                "name": "UNC",
                 "rank": 10,
                 "week": 19,
                 "date": "Final",
@@ -267,7 +275,7 @@ class TestNCAABRankings:
             },
             {
                 "abbreviation": "saint-marys-ca",
-                "name": "Saint Mary's (CA)",
+                "name": "Saint Mary's",
                 "rank": 25,
                 "week": 19,
                 "date": "Final",
@@ -387,7 +395,7 @@ class TestNCAABRankings:
                 },
                 {
                     "abbreviation": "north-carolina",
-                    "name": "North Carolina",
+                    "name": "UNC",
                     "rank": 10,
                     "week": 19,
                     "date": "Final",
@@ -522,7 +530,7 @@ class TestNCAABRankings:
                 },
                 {
                     "abbreviation": "saint-marys-ca",
-                    "name": "Saint Mary's (CA)",
+                    "name": "Saint Mary's",
                     "rank": 25,
                     "week": 19,
                     "date": "Final",
@@ -536,7 +544,7 @@ class TestNCAABRankings:
                     "name": "Virginia",
                     "rank": 1,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "1",
                     "change": 0,
                 },
@@ -545,7 +553,7 @@ class TestNCAABRankings:
                     "name": "Villanova",
                     "rank": 2,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "4",
                     "change": 2,
                 },
@@ -554,7 +562,7 @@ class TestNCAABRankings:
                     "name": "Xavier",
                     "rank": 3,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "3",
                     "change": 0,
                 },
@@ -563,7 +571,7 @@ class TestNCAABRankings:
                     "name": "Michigan State",
                     "rank": 4,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "2",
                     "change": -2,
                 },
@@ -572,7 +580,7 @@ class TestNCAABRankings:
                     "name": "Duke",
                     "rank": 5,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "5",
                     "change": 0,
                 },
@@ -581,7 +589,7 @@ class TestNCAABRankings:
                     "name": "Gonzaga",
                     "rank": 6,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "7",
                     "change": 1,
                 },
@@ -590,7 +598,7 @@ class TestNCAABRankings:
                     "name": "Michigan",
                     "rank": 7,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "15",
                     "change": 8,
                 },
@@ -599,7 +607,7 @@ class TestNCAABRankings:
                     "name": "Cincinnati",
                     "rank": 8,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "10",
                     "change": 2,
                 },
@@ -608,7 +616,7 @@ class TestNCAABRankings:
                     "name": "Kansas",
                     "rank": 9,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "6",
                     "change": -3,
                 },
@@ -617,7 +625,7 @@ class TestNCAABRankings:
                     "name": "Purdue",
                     "rank": 10,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "8",
                     "change": -2,
                 },
@@ -626,16 +634,16 @@ class TestNCAABRankings:
                     "name": "Wichita State",
                     "rank": 11,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "11",
                     "change": 0,
                 },
                 {
                     "abbreviation": "north-carolina",
-                    "name": "North Carolina",
+                    "name": "UNC",
                     "rank": 12,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "9",
                     "change": -3,
                 },
@@ -644,7 +652,7 @@ class TestNCAABRankings:
                     "name": "Tennessee",
                     "rank": 13,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "16",
                     "change": 3,
                 },
@@ -653,7 +661,7 @@ class TestNCAABRankings:
                     "name": "Texas Tech",
                     "rank": 14,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "12",
                     "change": -2,
                 },
@@ -662,7 +670,7 @@ class TestNCAABRankings:
                     "name": "Arizona",
                     "rank": 15,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "19",
                     "change": 4,
                 },
@@ -671,7 +679,7 @@ class TestNCAABRankings:
                     "name": "Auburn",
                     "rank": 16,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "14",
                     "change": -2,
                 },
@@ -680,7 +688,7 @@ class TestNCAABRankings:
                     "name": "Ohio State",
                     "rank": 17,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "13",
                     "change": -4,
                 },
@@ -689,7 +697,7 @@ class TestNCAABRankings:
                     "name": "West Virginia",
                     "rank": 18,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "20",
                     "change": 2,
                 },
@@ -698,16 +706,16 @@ class TestNCAABRankings:
                     "name": "Clemson",
                     "rank": 19,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "18",
                     "change": -1,
                 },
                 {
                     "abbreviation": "saint-marys-ca",
-                    "name": "Saint Mary's (CA)",
+                    "name": "Saint Mary's",
                     "rank": 20,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "22",
                     "change": 2,
                 },
@@ -716,7 +724,7 @@ class TestNCAABRankings:
                     "name": "Houston",
                     "rank": 21,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "25",
                     "change": 4,
                 },
@@ -725,7 +733,7 @@ class TestNCAABRankings:
                     "name": "Nevada",
                     "rank": 22,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "21",
                     "change": -1,
                 },
@@ -734,7 +742,7 @@ class TestNCAABRankings:
                     "name": "Florida",
                     "rank": 23,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "",
                     "change": 0,
                 },
@@ -743,7 +751,7 @@ class TestNCAABRankings:
                     "name": "Miami (FL)",
                     "rank": 24,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "",
                     "change": 0,
                 },
@@ -752,7 +760,7 @@ class TestNCAABRankings:
                     "name": "Rhode Island",
                     "rank": 25,
                     "week": 18,
-                    "date": "2018-03-05",
+                    "date": "3/5",
                     "previous": "17",
                     "change": -8,
                 },
@@ -762,9 +770,9 @@ class TestNCAABRankings:
         self.results = results
         self.results_complete = results_complete
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    def test_rankings_integration(self, *args, **kwargs):
-        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
+    def test_rankings_integration(self, monkeypatch, *args, **kwargs):
+        """Return test rankings integration."""
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: YEAR)
 
         rankings = Rankings()
 
@@ -772,15 +780,14 @@ class TestNCAABRankings:
         assert rankings.current == self.results
         assert rankings.complete == self.results_complete
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_integration_bad_url(self, *args, **kwargs):
+        """Return test rankings integration bad url."""
         with pytest.raises(ValueError):
             Rankings("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2019)
 
         rankings = Rankings()
 
@@ -788,8 +795,8 @@ class TestNCAABRankings:
         assert rankings.current == self.results
         assert rankings.complete == self.results_complete
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_rankings_string_representation(self, *args, **kwargs):
+        """Return test rankings string representation."""
         rankings = Rankings()
 
         assert repr(rankings) == "NCAAB Rankings"

@@ -1,3 +1,7 @@
+"""Provide utilities for squad ids."""
+
+from __future__ import annotations
+
 SQUAD_IDS = {
     "08 homburg": "89a86c55",
     "08 villingen": "f554f7de",

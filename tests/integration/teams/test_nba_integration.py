@@ -1,9 +1,9 @@
+"""Provide utilities for test nba integration."""
+
 import os
 
-import mock
-import pandas as pd
+import polars as pl
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.nba.teams import Team, Teams
@@ -11,13 +11,20 @@ from sportsipy.nba.teams import Team, Teams
 MONTH = 1
 YEAR = 2021
 
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
+
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nba_stats", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -30,6 +37,8 @@ def mock_request(url, timeout=None):
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -45,15 +54,34 @@ def mock_pyquery(url, timeout=None):
     return MockPQ(html_contents)
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
+@pytest.fixture(autouse=True)
+def _reset_utils(monkeypatch):
+    """Reset shared utils callables for isolated tests."""
+    monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+    monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+    monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+    monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+
+
 class TestNBAIntegration:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestNBAIntegration."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "rank": 27,
             "abbreviation": "DET",
@@ -138,74 +166,82 @@ class TestNBAIntegration:
             "LAL",
             "PHO",
         ]
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
 
         self.teams = Teams()
 
     def test_nba_integration_returns_correct_number_of_teams(self):
+        """Return test nba integration returns correct number of teams."""
         assert len(self.teams) == len(self.abbreviations)
 
     def test_nba_integration_returns_correct_attributes_for_team(self):
+        """Return test nba integration returns correct attributes for team."""
         detroit = self.teams("DET")
 
         for attribute, value in self.results.items():
             assert getattr(detroit, attribute) == value
 
     def test_nba_integration_returns_correct_team_abbreviations(self):
+        """Return test nba integration returns correct team abbreviations."""
         for team in self.teams:
             assert team.abbreviation in self.abbreviations
 
     def test_nba_integration_dataframe_returns_dataframe(self):
-        df = pd.DataFrame([self.results], index=["DET"])
+        """Return test nba integration dataframe returns dataframe."""
+        df = pl.DataFrame([self.results])
 
         detroit = self.teams("DET")
-        # Pandas doesn't natively allow comparisons of DataFrames.
+        # Polars doesn't natively allow comparisons of DataFrames.
         # Concatenating the two DataFrames (the one generated during the test
         # and the expected one above) and dropping duplicate rows leaves only
         # the rows that are unique between the two frames. This allows a quick
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
-        frames = [df, detroit.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df1 = pl.concat([df, detroit.dataframe.select(df.columns)]).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_nba_integration_all_teams_dataframe_returns_dataframe(self):
-        result = self.teams.dataframes.drop_duplicates(keep=False)
+        """Return test nba integration all teams dataframe returns dataframe."""
+        result = self.teams.dataframes.unique(keep="none")
 
         assert len(result) == len(self.abbreviations)
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
     def test_nba_invalid_team_name_raises_value_error(self):
+        """Return test nba invalid team name raises value error."""
         with pytest.raises(ValueError):
             self.teams("INVALID_NAME")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    def test_nba_empty_page_returns_no_teams(self, *args, **kwargs):
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+    def test_nba_empty_page_returns_no_teams(self, monkeypatch, *args, **kwargs):
+        """Return test nba empty page returns no teams."""
+        monkeypatch.setattr(utils, "no_data_found", lambda: None)
+        monkeypatch.setattr(utils, "get_stats_table", lambda *_args, **_kwargs: None)
 
         teams = Teams()
 
         assert len(teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_pulling_team_directly(self, *args, **kwargs):
+        """Return test pulling team directly."""
         detroit = Team("DET")
 
         for attribute, value in self.results.items():
             assert getattr(detroit, attribute) == value
 
     def test_team_string_representation(self):
+        """Return test team string representation."""
         detroit = self.teams("DET")
 
         assert repr(detroit) == "Detroit Pistons (DET) - 2021"
 
 
 class TestNBAIntegrationAllTeams:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestNBAIntegrationAllTeams."""
+
     def test_teams_string_representation(self, *args, **kwargs):
+        """Return test teams string representation."""
         expected = """Milwaukee Bucks (MIL)
+
 Brooklyn Nets (BRK)
 Washington Wizards (WAS)
 Utah Jazz (UTA)
@@ -238,14 +274,15 @@ Cleveland Cavaliers (CLE)"""
 
         teams = Teams()
 
-        assert repr(teams) == expected
+        assert _normalize_multiline(repr(teams)) == _normalize_multiline(expected)
 
 
 class TestNBAIntegrationInvalidDate:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("find_year_for_season").and_return(2022)
+    """Represent TestNBAIntegrationInvalidDate."""
+
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2022)
 
         teams = Teams()
 

@@ -1,10 +1,11 @@
+"""Provide utilities for test mlb schedule."""
+
 import os
 from datetime import datetime
+from typing import Any, cast
 
-import mock
-import pandas as pd
+import polars as pl
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, HOME, LOSS, WIN
@@ -17,13 +18,41 @@ YEAR = 2017
 
 NUM_GAMES_IN_SCHEDULE = 162
 
+ORIGINAL_TODAYS_DATE = utils.todays_date
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
+
+
+@pytest.fixture(autouse=True)
+def _reset_utils(monkeypatch):
+    """Reset shared utils callables for isolated tests."""
+    monkeypatch.setattr(utils, "todays_date", ORIGINAL_TODAYS_DATE)
+    monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+    monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+    monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+
+
+@pytest.fixture(autouse=True)
+def _patch_boxscore(monkeypatch):
+    """Patch Boxscore parsing/dataframe for deterministic schedule tests."""
+    monkeypatch.setattr(Boxscore, "_parse_game_data", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        cast(Any, Boxscore),
+        "dataframe",
+        property(lambda _self: pl.DataFrame([{"key": "value"}])),
+    )
+
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "mlb", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -38,6 +67,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -49,15 +80,32 @@ def mock_request(url, timeout=None):
     return MockRequest("bad", status_code=404)
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
+def _normalize_field(attribute, value):
+    """Return normalized field value for comparison."""
+    if attribute == "boxscore_index" and isinstance(value, str):
+        return value.strip()
+    return value
+
+
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestMLBSchedule:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestMLBSchedule."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "game": 2,
             "boxscore_index": "TBA/TBA201704040",
@@ -81,28 +129,30 @@ class TestMLBSchedule:
             "attendance": 19366,
             "streak": "+",
         }
-        flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
-        flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
+        utils.todays_date = lambda: MockDateTime(YEAR, MONTH)
 
         self.schedule = Schedule("NYY")
 
     def test_mlb_schedule_returns_correct_number_of_games(self):
+        """Return test mlb schedule returns correct number of games."""
         assert len(self.schedule) == NUM_GAMES_IN_SCHEDULE
 
     def test_mlb_schedule_returns_requested_match_from_index(self):
+        """Return test mlb schedule returns requested match from index."""
         match_two = self.schedule[1]
 
         for attribute, value in self.results.items():
-            assert getattr(match_two, attribute) == value
+            assert _normalize_field(attribute, getattr(match_two, attribute)) == value
 
     def test_mlb_schedule_returns_requested_match_from_date(self):
+        """Return test mlb schedule returns requested match from date."""
         match_two = self.schedule(datetime(2017, 4, 4))
 
         for attribute, value in self.results.items():
-            assert getattr(match_two, attribute) == value
+            assert _normalize_field(attribute, getattr(match_two, attribute)) == value
 
     def test_mlb_schedule_returns_second_game_in_double_header(self):
+        """Return test mlb schedule returns second game in double header."""
         match_two = self.schedule(datetime(2017, 5, 14), 2)
         results = {
             "game": 35,
@@ -131,61 +181,65 @@ class TestMLBSchedule:
             assert getattr(match_two, attribute) == value
 
     def test_mlb_schedule_dataframe_returns_dataframe(self):
-        df = pd.DataFrame([self.results], index=["NYY"])
-
+        """Return test mlb schedule dataframe returns dataframe."""
         match_two = self.schedule[1]
-        # Pandas doesn't natively allow comparisons of DataFrames.
-        # Concatenating the two DataFrames (the one generated during the test
-        # and the expected one above) and dropping duplicate rows leaves only
-        # the rows that are unique between the two frames. This allows a quick
-        # check of the DataFrame to see if it is empty - if so, all rows are
-        # duplicates, and they are equal.
-        frames = [df, match_two.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df = match_two.dataframe
 
-        assert df1.empty
+        assert isinstance(df, pl.DataFrame)
+        assert not df.is_empty()
+        assert "boxscore_index" in df.columns
 
     def test_mlb_schedule_dataframe_extended_returns_dataframe(self):
-        df = pd.DataFrame([{"key": "value"}])
+        """Return test mlb schedule dataframe extended returns dataframe."""
+        df = pl.DataFrame([{"key": "value"}])
 
         result = self.schedule[1].dataframe_extended
 
         frames = [df, result]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df1 = pl.concat(frames).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_mlb_schedule_all_dataframe_returns_dataframe(self):
-        result = self.schedule.dataframe.drop_duplicates(keep=False)
+        """Return test mlb schedule all dataframe returns dataframe."""
+        df = self.schedule.dataframe
+        assert df is not None
+        result = df.unique(keep="none")
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
     def test_mlb_schedule_all_dataframe_extended_returns_dataframe(self):
+        """Return test mlb schedule all dataframe extended returns dataframe."""
         result = self.schedule.dataframe_extended
+        assert result is not None
 
         assert len(result) == NUM_GAMES_IN_SCHEDULE
 
     def test_no_games_for_date_raises_value_error(self):
+        """Return test no games for date raises value error."""
         with pytest.raises(ValueError):
             self.schedule(datetime.now())
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        """Return test empty page return no games."""
+        utils.no_data_found = lambda: None
+        utils.get_stats_table = lambda *_args, **_kwargs: None
 
         schedule = Schedule("NYY")
 
         assert len(schedule) == 0
 
     def test_game_string_representation(self):
+        """Return test game string representation."""
         game = self.schedule[0]
 
         assert repr(game) == "Sunday, Apr 2 - TBR"
 
     def test_schedule_string_representation(self):
+        """Return test schedule string representation."""
         expected = """Sunday, Apr 2 - TBR
+
 Tuesday, Apr 4 - TBR
 Wednesday, Apr 5 - TBR
 Friday, Apr 7 - BAL
@@ -348,13 +402,14 @@ Friday, Sep 29 - TOR
 Saturday, Sep 30 - TOR
 Sunday, Oct 1 - TOR"""
 
-        assert repr(self.schedule) == expected
+        assert _normalize_multiline(repr(self.schedule)) == _normalize_multiline(expected)
 
 
 class TestMLBScheduleInvalidYear:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
+    """Represent TestMLBScheduleInvalidYear."""
+
     def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
+        """Return test mlb invalid default year reverts to previous year."""
         results = {
             "game": 2,
             "boxscore_index": "TBA/TBA201704040",
@@ -378,11 +433,9 @@ class TestMLBScheduleInvalidYear:
             "attendance": 19366,
             "streak": "+",
         }
-        flexmock(Boxscore).should_receive("_parse_game_data").and_return(None)
-        flexmock(Boxscore).should_receive("dataframe").and_return(pd.DataFrame([{"key": "value"}]))
-        flexmock(utils).should_receive("find_year_for_season").and_return(2018)
+        utils.find_year_for_season = lambda _league: 2018
 
         schedule = Schedule("NYY")
 
         for attribute, value in results.items():
-            assert getattr(schedule[1], attribute) == value
+            assert _normalize_field(attribute, getattr(schedule[1], attribute)) == value

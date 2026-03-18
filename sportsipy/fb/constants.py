@@ -1,3 +1,7 @@
+"""Provide utilities for constants."""
+
+from __future__ import annotations
+
 SQUAD_URL = "https://fbref.com/en/squads/%s"
 
 SCHEDULE_SCHEME = {

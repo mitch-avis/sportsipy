@@ -1,11 +1,16 @@
-import mock
+"""Provide utilities for test nba utils."""
+
+from unittest import mock
+
 from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.nba.nba_utils import _retrieve_all_teams
 
 
-def mock_pyquery(url, timeout=None):
+def mock_pyquery(url, timeout=None, **kwargs):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -24,8 +29,11 @@ def mock_pyquery(url, timeout=None):
 
 
 class TestNBAUtils:
+    """Represent TestNBAUtils."""
+
     @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_nba_2020_season_default_to_previous(self, *args, **kwargs):
+        """Return test nba 2020 season default to previous."""
         flexmock(utils).should_receive("find_year_for_season").and_return(2021)
 
         _, year = _retrieve_all_teams(None)

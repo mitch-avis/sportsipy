@@ -1,10 +1,15 @@
+"""Provide utilities for test fb utils."""
+
 import pytest
 
 from sportsipy.fb.fb_utils import _lookup_team, _parse_squad_name, lookup_squad_id
 
 
 class TestFBUtils:
+    """Represent TestFBUtils."""
+
     def test_squad_name_parsing(self):
+        """Return test squad name parsing."""
         test_names = {
             "FC Barcelona": "barcelona",
             "Tottenham Hotspur": "tottenham hotspur",
@@ -16,11 +21,13 @@ class TestFBUtils:
             assert result == expected_name
 
     def test_squad_lookup_doesnt_suppress(self):
+        """Return test squad lookup doesnt suppress."""
         output = lookup_squad_id("madeup city")
 
         assert isinstance(output, dict)
 
     def test_team_name_lookup(self):
+        """Return test team name lookup."""
         test_names = {
             "Tottenham Hotspur": "361ca564",
             "tottenham hotspur": "361ca564",
@@ -33,5 +40,6 @@ class TestFBUtils:
             assert result == squad_id
 
     def test_team_name_lookup_no_match(self):
+        """Return test team name lookup no match."""
         with pytest.raises(ValueError):
             _ = _lookup_team("noteamname")

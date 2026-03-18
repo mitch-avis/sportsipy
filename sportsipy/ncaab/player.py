@@ -1,10 +1,16 @@
+"""Provide utilities for player."""
+
+from __future__ import annotations
+
 import re
 from functools import wraps
+from typing import Any
 
-from pyquery import PyQuery as pq
+from lxml.etree import ParserError
+from pyquery import PyQuery
 
-from .. import utils
-from .constants import PLAYER_SCHEME
+from sportsipy import utils
+from sportsipy.ncaab.constants import PLAYER_SCHEME
 
 
 def _cleanup(prop):
@@ -22,7 +28,6 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         value = _cleanup(prop[index])
@@ -39,7 +44,6 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         value = _cleanup(prop[index])
@@ -53,8 +57,7 @@ def _float_property_decorator(func):
 
 
 class AbstractPlayer:
-    """
-    Get player information and stats for all seasons.
+    """Get player information and stats for all seasons.
 
     Given a player ID, such as 'carsen-edwards-1' for Carsen Edwards, capture
     all relevant stats and information like name, height/weight, career
@@ -79,9 +82,16 @@ class AbstractPlayer:
         A string representation of the player's HTML data from the Boxscore
         page. If the player appears in multiple tables, all of their
         information will appear in one single string concatenated togather.
+
     """
 
-    def __init__(self, player_id, player_name, player_data):
+    def __init__(
+        self,
+        player_id: str | None,
+        player_name: str | None,
+        player_data: dict[str, dict[str, str]] | str | None,
+    ) -> None:
+        """Initialize the class instance."""
         self._player_data = player_data
         self._player_id = player_id
         self._name = player_name
@@ -119,12 +129,20 @@ class AbstractPlayer:
         self._block_percentage = None
         self._turnover_percentage = None
         self._usage_percentage = None
+        self._season = None
 
         self._parse_player_data(player_data)
 
-    def _parse_value(self, stats, field):
-        """
-        Pull the specified value from the HTML contents.
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
+        return f"{self.name} ({self.player_id})"
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return self.__str__()
+
+    def _parse_value(self, stats: PyQuery, field: str) -> str | None:
+        """Pull the specified value from the HTML contents.
 
         Given a field, find the corresponding HTML tag for that field and parse
         its value before returning the value as a string. A couple fields, such
@@ -143,6 +161,7 @@ class AbstractPlayer:
         -------
         string
             Returns the desired value as a string.
+
         """
         if field == "conference":
             value = self._parse_conference(stats)
@@ -150,11 +169,10 @@ class AbstractPlayer:
             value = self._parse_team_abbreviation(stats)
         else:
             value = utils.parse_field(PLAYER_SCHEME, stats, field)
-        return value
+        return None if value is None else str(value)
 
-    def _parse_player_data(self, player_data):
-        """
-        Parse all player information and set attributes.
+    def _parse_player_data(self, player_data: dict[str, Any] | str | None) -> None:
+        """Parse all player information and set attributes.
 
         Iterate through each class attribute to parse the data from the HTML
         page and set the attribute value with the result.
@@ -168,35 +186,54 @@ class AbstractPlayer:
             class is inherited from the ``BoxscorePlayer`` class, player_data
             will be a string representing the player's game statistics in HTML
             format.
+
         """
-        for field in self.__dict__:
+        # Build fields as parallel lists aligned to the canonical season order
+        # so property decorators can index into them reliably.
+        skip_fields = {
+            "player_id",
+            "index",
+            "most_recent_season",
+            "player_data",
+            "name",
+            "height",
+            "weight",
+            "position",
+            "season",
+        }
+
+        if isinstance(player_data, dict):
+            # Use the season ordering established by the Player class when
+            # available; otherwise, fall back to the dict insertion order.
+            season_keys = list(getattr(self, "_season", None) or list(player_data.keys()))
+        else:
+            season_keys = None
+
+        for field in list(self.__dict__.keys()):
             short_field = str(field)[1:]
-            if short_field in (
-                "player_id",
-                "index",
-                "most_recent_season",
-                "player_data",
-                "name",
-                "height",
-                "weight",
-                "position",
-            ):
+            if short_field in skip_fields:
                 continue
             field_stats = []
-            if isinstance(player_data, dict):
-                for data in player_data.values():
-                    stats = pq(data["data"])
+            if season_keys is not None:
+                for season in season_keys:
+                    data = player_data.get(season, {}) if isinstance(player_data, dict) else {}
+                    raw = data.get("data", "") if isinstance(data, dict) else ""
+                    try:
+                        stats = PyQuery(raw) if raw and raw.strip() else PyQuery("<div></div>")
+                    except (ParserError, ValueError):
+                        stats = PyQuery("<div></div>")
                     value = self._parse_value(stats, short_field)
-                    field_stats.append(value)
+                    # Ensure placeholder entry for missing values so lists
+                    # remain aligned with season_keys.
+                    field_stats.append(value if value is not None else "")
             else:
-                stats = pq(player_data)
+                stats = PyQuery(player_data)
                 value = self._parse_value(stats, short_field)
                 field_stats.append(value)
             setattr(self, field, field_stats)
 
-    def _parse_conference(self, stats):
-        """
-        Parse the conference abbreviation for the player's team.
+    def _parse_conference(self, stats: PyQuery) -> str:
+        """Parse the conference abbreviation for the player's team.
 
         The conference abbreviation is embedded within the conference name tag
         and should be special-parsed to extract it.
@@ -210,15 +247,15 @@ class AbstractPlayer:
         -------
         string
             Returns a string of the conference abbreviation, such as 'big-12'.
+
         """
         conference_tag = stats(PLAYER_SCHEME["conference"])
         conference = re.sub(r".*/cbb/conferences/", "", str(conference_tag("a")))
         conference = re.sub(r"/.*", "", conference)
         return conference
 
-    def _parse_team_abbreviation(self, stats):
-        """
-        Parse the team abbreviation.
+    def _parse_team_abbreviation(self, stats: PyQuery) -> str:
+        """Parse the team abbreviation.
 
         The team abbreviation is embedded within the team name tag and should
         be special-parsed to extract it.
@@ -233,6 +270,7 @@ class AbstractPlayer:
         string
             Returns a string of the team's abbreviation, such as 'PURDUE' for
             the Purdue Boilermakers.
+
         """
         team_tag = stats(PLAYER_SCHEME["team_abbreviation"])
         team = re.sub(r".*/cbb/schools/", "", str(team_tag("a")))
@@ -240,207 +278,203 @@ class AbstractPlayer:
         return team
 
     @property
-    def player_id(self):
-        """
-        Returns a ``string`` of the player's ID on sports-reference, such as
+    def player_id(self) -> Any:
+        """Return a ``string`` of the player's ID on sports-reference, such as.
+
         'carsen-edwards-1' for Carsen Edwards.
         """
         return self._player_id
 
     @property
-    def name(self):
-        """
-        Returns a ``string`` of the players name, such as 'Carsen Edwards'.
-        """
+    def name(self) -> Any:
+        """Return a ``string`` of the players name, such as 'Carsen Edwards'."""
         return self._name
 
     @_int_property_decorator
     def minutes_played(self):
-        """
-        Returns an ``int`` of the total number of minutes the player played.
-        """
+        """Return an ``int`` of the total number of minutes the player played."""
         return self._minutes_played
 
     @_int_property_decorator
     def field_goals(self):
-        """
-        Returns an ``int`` of the total number of field goals the player
+        """Return an ``int`` of the total number of field goals the player.
+
         scored.
         """
         return self._field_goals
 
     @_int_property_decorator
     def field_goal_attempts(self):
-        """
-        Returns an ``int`` of the total number of field goals the player
+        """Return an ``int`` of the total number of field goals the player.
+
         attempted during the season.
         """
         return self._field_goal_attempts
 
     @_float_property_decorator
     def field_goal_percentage(self):
-        """
-        Returns a ``float`` of the player's field goal percentage during the
+        """Return a ``float`` of the player's field goal percentage during the.
+
         season. Percentage ranges from 0-1.
         """
         return self._field_goal_percentage
 
     @_int_property_decorator
     def three_pointers(self):
-        """
-        Returns an ``int`` of the total number of three point field goals the
+        """Return an ``int`` of the total number of three point field goals the.
+
         player made.
         """
         return self._three_pointers
 
     @_int_property_decorator
     def three_point_attempts(self):
-        """
-        Returns an ``int`` of the total number of three point field goals the
+        """Return an ``int`` of the total number of three point field goals the.
+
         player attempted during the season.
         """
         return self._three_point_attempts
 
     @_float_property_decorator
     def three_point_percentage(self):
-        """
-        Returns a ``float`` of the player's three point field goal percentage
+        """Return a ``float`` of the player's three point field goal percentage.
+
         during the season. Percentage ranges from 0-1.
         """
         return self._three_point_percentage
 
     @_int_property_decorator
     def two_pointers(self):
-        """
-        Returns an ``int`` of the total number of two point field goals the
+        """Return an ``int`` of the total number of two point field goals the.
+
         player made.
         """
         return self._two_pointers
 
     @_int_property_decorator
     def two_point_attempts(self):
-        """
-        Returns an ``int`` of the total number of two point field goals the
+        """Return an ``int`` of the total number of two point field goals the.
+
         player attempted during the season.
         """
         return self._two_point_attempts
 
     @_float_property_decorator
     def two_point_percentage(self):
-        """
-        Returns a ``float`` of the player's two point field goal percentage
+        """Return a ``float`` of the player's two point field goal percentage.
+
         during the season. Percentage ranges from 0-1.
         """
         return self._two_point_percentage
 
     @_float_property_decorator
     def effective_field_goal_percentage(self):
-        """
-        Returns a ``float`` of the player's field goal percentage while giving
+        """Return a ``float`` of the player's field goal percentage while giving.
+
         extra weight to 3-point field goals. Percentage ranges from 0-1.
         """
         return self._effective_field_goal_percentage
 
     @_int_property_decorator
     def free_throws(self):
-        """
-        Returns an ``int`` of the total number of free throws the player made
+        """Return an ``int`` of the total number of free throws the player made.
+
         during the season.
         """
         return self._free_throws
 
     @_int_property_decorator
     def free_throw_attempts(self):
-        """
-        Returns an ``int`` of the total number of free throws the player
+        """Return an ``int`` of the total number of free throws the player.
+
         attempted during the season.
         """
         return self._free_throw_attempts
 
     @_float_property_decorator
     def free_throw_percentage(self):
-        """
-        Returns a ``float`` of the player's free throw percentage during the
+        """Return a ``float`` of the player's free throw percentage during the.
+
         season. Percentage ranges from 0-1.
         """
         return self._free_throw_percentage
 
     @_int_property_decorator
     def offensive_rebounds(self):
-        """
-        Returns an ``int`` of the total number of offensive rebounds the player
+        """Return an ``int`` of the total number of offensive rebounds the player.
+
         grabbed during the season.
         """
         return self._offensive_rebounds
 
     @_int_property_decorator
     def defensive_rebounds(self):
-        """
-        Returns an ``int`` of the total number of defensive rebounds the player
+        """Return an ``int`` of the total number of defensive rebounds the player.
+
         grabbed during the season.
         """
         return self._defensive_rebounds
 
     @_int_property_decorator
     def total_rebounds(self):
-        """
-        Returns an ``int`` of the total number of offensive and defensive
+        """Return an ``int`` of the total number of offensive and defensive.
+
         rebounds the player grabbed during the season.
         """
         return self._total_rebounds
 
     @_int_property_decorator
     def assists(self):
-        """
-        Returns an ``int`` of the total number of assists the player tallied
+        """Return an ``int`` of the total number of assists the player tallied.
+
         during the season.
         """
         return self._assists
 
     @_int_property_decorator
     def steals(self):
-        """
-        Returns an ``int`` of the total number of steals the player tallied
+        """Return an ``int`` of the total number of steals the player tallied.
+
         during the season.
         """
         return self._steals
 
     @_int_property_decorator
     def blocks(self):
-        """
-        Returns an ``int`` of the total number of shots the player blocked
+        """Return an ``int`` of the total number of shots the player blocked.
+
         during the season.
         """
         return self._blocks
 
     @_int_property_decorator
     def turnovers(self):
-        """
-        Returns an ``int`` of the total number of times the player turned the
+        """Return an ``int`` of the total number of times the player turned the.
+
         ball over during the season for any reason.
         """
         return self._turnovers
 
     @_int_property_decorator
     def personal_fouls(self):
-        """
-        Returns an ``int`` of the total number of personal fouls the player
+        """Return an ``int`` of the total number of personal fouls the player.
+
         committed during the season.
         """
         return self._personal_fouls
 
     @_int_property_decorator
     def points(self):
-        """
-        Returns an ``int`` of the total number of points the player scored
+        """Return an ``int`` of the total number of points the player scored.
+
         during the season.
         """
         return self._points
 
     @_float_property_decorator
     def true_shooting_percentage(self):
-        """
-        Returns a ``float`` of the player's true shooting percentage which
+        """Return a ``float`` of the player's true shooting percentage which.
+
         takes into account two and three pointers as well as free throws.
         Percentage ranges from 0-1.
         """
@@ -448,56 +482,56 @@ class AbstractPlayer:
 
     @_float_property_decorator
     def three_point_attempt_rate(self):
-        """
-        Returns a ``float`` of the percentage of field goals that are shot from
+        """Return a ``float`` of the percentage of field goals that are shot from.
+
         beyond the 3-point arc. Percentage ranges from 0-1.
         """
         return self._three_point_attempt_rate
 
     @_float_property_decorator
     def free_throw_attempt_rate(self):
-        """
-        Returns a ``float`` of the number of free throw attempts per field goal
+        """Return a ``float`` of the number of free throw attempts per field goal.
+
         attempt.
         """
         return self._free_throw_attempt_rate
 
     @_float_property_decorator
     def offensive_rebound_percentage(self):
-        """
-        Returns a ``float`` of the percentage of available offensive rebounds
+        """Return a ``float`` of the percentage of available offensive rebounds.
+
         the player grabbed. Percentage ranges from 0-100.
         """
         return self._offensive_rebound_percentage
 
     @_float_property_decorator
     def defensive_rebound_percentage(self):
-        """
-        Returns a ``float`` of the percentage of available defensive rebounds
+        """Return a ``float`` of the percentage of available defensive rebounds.
+
         the player grabbed. Percentage ranges from 0-100.
         """
         return self._defensive_rebound_percentage
 
     @_float_property_decorator
     def total_rebound_percentage(self):
-        """
-        Returns a ``float`` of the percentage of available rebounds the player
+        """Return a ``float`` of the percentage of available rebounds the player.
+
         grabbed, both offensive and defensive. Percentage ranges from 0-100.
         """
         return self._total_rebound_percentage
 
     @_float_property_decorator
     def assist_percentage(self):
-        """
-        Returns a ``float`` of the percentage of field goals the player
+        """Return a ``float`` of the percentage of field goals the player.
+
         assisted while on the floor. Percentage ranges from 0-100.
         """
         return self._assist_percentage
 
     @_float_property_decorator
     def steal_percentage(self):
-        """
-        Returns a ``float`` of the percentage of defensive possessions that
+        """Return a ``float`` of the percentage of defensive possessions that.
+
         ended with the player stealing the ball while on the floor. Percentage
         ranges from 0-100.
         """
@@ -505,8 +539,8 @@ class AbstractPlayer:
 
     @_float_property_decorator
     def block_percentage(self):
-        """
-        Returns a ``float`` of the percentage of opposing two-point field goal
+        """Return a ``float`` of the percentage of opposing two-point field goal.
+
         attempts that were blocked by the player while on the floor. Percentage
         ranges from 0-100.
         """
@@ -514,16 +548,16 @@ class AbstractPlayer:
 
     @_float_property_decorator
     def turnover_percentage(self):
-        """
-        Returns a ``float`` of the average number of turnovers per 100
+        """Return a ``float`` of the average number of turnovers per 100.
+
         possessions by the player.
         """
         return self._turnover_percentage
 
     @_float_property_decorator
     def usage_percentage(self):
-        """
-        Returns a ``float`` of the percentage of plays the player is involved
+        """Return a ``float`` of the percentage of plays the player is involved.
+
         in while on the floor. Percentage ranges from 0-100.
         """
         return self._usage_percentage

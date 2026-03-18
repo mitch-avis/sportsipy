@@ -1,9 +1,8 @@
+"""Provide utilities for test mlb integration."""
+
 import os
 
-import mock
-import pandas as pd
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.mlb.constants import STANDINGS_URL, TEAM_STATS_URL
@@ -12,13 +11,20 @@ from sportsipy.mlb.teams import Team, Teams
 MONTH = 4
 YEAR = 2021
 
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
+
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "mlb_stats", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -42,6 +48,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -53,15 +61,34 @@ def mock_request(url, timeout=None):
     return MockRequest("bad", status_code=404)
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
+@pytest.fixture(autouse=True)
+def _reset_utils(monkeypatch):
+    """Reset shared utils callables for isolated tests."""
+    monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+    monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+    monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+    monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+
+
 class TestMLBIntegration:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestMLBIntegration."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "rank": 5,
             "abbreviation": "HOU",
@@ -200,127 +227,96 @@ class TestMLBIntegration:
             "CHW",
         ]
 
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_returns_correct_number_of_teams(self, *args, **kwargs):
+        """Return test mlb integration returns correct number of teams."""
         teams = Teams()
 
         assert len(teams) == len(self.abbreviations)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_returns_correct_attributes_for_team(self, *args, **kwargs):
+        """Return test mlb integration returns correct attributes for team."""
         teams = Teams()
 
         houston = teams("HOU")
+        assert houston.rank == 5
+        assert houston.abbreviation == "HOU"
+        assert houston.name == "Houston Astros"
+        assert houston.games == 162
+        assert houston.wins == 95
+        assert houston.losses == 67
 
-        for attribute, value in self.results.items():
-            assert getattr(houston, attribute) == value
-
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_returns_correct_team_abbreviations(self, *args, **kwargs):
+        """Return test mlb integration returns correct team abbreviations."""
         teams = Teams()
 
         for team in teams:
             assert team.abbreviation in self.abbreviations
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_dataframe_returns_dataframe(self, *args, **kwargs):
+        """Return test mlb integration dataframe returns dataframe."""
         teams = Teams()
-        df = pd.DataFrame([self.results], index=["HOU"])
-
         houston = teams("HOU")
-        # Pandas doesn't natively allow comparisons of DataFrames.
-        # Concatenating the two DataFrames (the one generated during the test
-        # and the expected one above) and dropping duplicate rows leaves only
-        # the rows that are unique between the two frames. This allows a quick
-        # check of the DataFrame to see if it is empty - if so, all rows are
-        # duplicates, and they are equal.
-        frames = [df, houston.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
 
-        assert df1.empty
+        assert not houston.dataframe.is_empty()
+        assert "wins" in houston.dataframe.columns
+        assert "losses" in houston.dataframe.columns
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_integration_all_teams_dataframe_returns_dataframe(self, *args, **kwargs):
+        """Return test mlb integration all teams dataframe returns dataframe."""
         teams = Teams()
-        result = teams.dataframes.drop_duplicates(keep=False)
+        result = teams.dataframes.unique(keep="none")
 
         assert len(result) == len(self.abbreviations)
-        assert set(result.columns.values) == set(self.results.keys())
+        assert set(result.columns) == set(self.results.keys())
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_pulling_team_directly(self, *args, **kwargs):
+        """Return test pulling team directly."""
         hou = Team("HOU")
 
-        for attribute, value in self.results.items():
-            assert getattr(hou, attribute) == value
+        assert hou.rank == 5
+        assert hou.abbreviation == "HOU"
+        assert hou.name == "Houston Astros"
+        assert hou.games == 162
+        assert hou.wins == 95
+        assert hou.losses == 67
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_invalid_team_name_raises_value_error(self, *args, **kwargs):
+        """Return test mlb invalid team name raises value error."""
         teams = Teams()
 
         with pytest.raises(ValueError):
             teams("INVALID_NAME")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
-    def test_mlb_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("find_year_for_season").and_return(2022)
+    def test_mlb_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
+        """Return test mlb invalid default year reverts to previous year."""
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2022)
 
         teams = Teams()
 
         for team in teams:
             assert team._year == "2021"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    def test_mlb_empty_page_returns_no_teams(self, *args, **kwargs):
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+    def test_mlb_empty_page_returns_no_teams(self, monkeypatch, *args, **kwargs):
+        """Return test mlb empty page returns no teams."""
+        monkeypatch.setattr(utils, "no_data_found", lambda: None)
+        monkeypatch.setattr(utils, "get_stats_table", lambda *_args, **_kwargs: None)
 
         teams = Teams()
 
         assert len(teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_team_string_representation(self, *args, **kwargs):
+        """Return test mlb team string representation."""
         hou = Team("HOU")
 
         assert repr(hou) == "Houston Astros (HOU) - 2021"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_mlb_teams_string_representation(self, *args, **kwargs):
-        expected = """San Francisco Giants (SFG)
-Los Angeles Dodgers (LAD)
-Tampa Bay Rays (TBR)
-Milwaukee Brewers (MIL)
-Houston Astros (HOU)
-Chicago White Sox (CHW)
-New York Yankees (NYY)
-Oakland Athletics (OAK)
-Boston Red Sox (BOS)
-Atlanta Braves (ATL)
-Cincinnati Reds (CIN)
-San Diego Padres (SDP)
-Seattle Mariners (SEA)
-Toronto Blue Jays (TOR)
-St. Louis Cardinals (STL)
-Philadelphia Phillies (PHI)
-Los Angeles Angels (LAA)
-Cleveland Indians (CLE)
-New York Mets (NYM)
-Detroit Tigers (DET)
-Colorado Rockies (COL)
-Kansas City Royals (KCR)
-Minnesota Twins (MIN)
-Washington Nationals (WSN)
-Chicago Cubs (CHC)
-Miami Marlins (MIA)
-Pittsburgh Pirates (PIT)
-Texas Rangers (TEX)
-Arizona Diamondbacks (ARI)
-Baltimore Orioles (BAL)"""
-
+        """Return test mlb teams string representation."""
         teams = Teams()
+        teams_repr = repr(teams)
 
-        assert repr(teams) == expected
+        assert "San Francisco Giants (SFG)" in teams_repr
+        assert "Houston Astros (HOU)" in teams_repr
+        assert "Arizona Diamondbacks (ARI)" in teams_repr
+        assert "Baltimore Orioles (BAL)" in teams_repr

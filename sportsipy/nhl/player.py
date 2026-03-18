@@ -1,16 +1,20 @@
+"""Provide utilities for player."""
+
+from __future__ import annotations
+
 from functools import wraps
+from typing import Any
 
-from pyquery import PyQuery as pq
+from pyquery import PyQuery
 
-from .. import utils
-from .constants import BOXSCORE_RETRY, PLAYER_SCHEME
+from sportsipy import utils
+from sportsipy.nhl.constants import BOXSCORE_RETRY, PLAYER_SCHEME
 
 
 def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -26,7 +30,6 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         try:
@@ -39,8 +42,7 @@ def _float_property_decorator(func):
 
 
 class AbstractPlayer:
-    """
-    Get player information and stats for all seasons.
+    """Get player information and stats for all seasons.
 
     Given a player ID, such as 'zettehe01' for Henrik Zetterberg, capture all
     relevant stats and information like name, team, height/weight, career
@@ -68,9 +70,16 @@ class AbstractPlayer:
         A string representation of the player's HTML data from the Boxscore
         page. If the player appears in multiple tables, all of their
         information will appear in one single string concatenated together.
+
     """
 
-    def __init__(self, player_id, player_name, player_data):
+    def __init__(
+        self,
+        player_id: str | None,
+        player_name: str | None,
+        player_data: dict[str, dict[str, str]] | str | None,
+    ) -> None:
+        """Initialize the class instance."""
         self._player_id = player_id
         self._name = player_name
         self._goals = None
@@ -103,9 +112,16 @@ class AbstractPlayer:
 
         self._parse_player_data(player_data)
 
-    def _parse_value(self, stats, field):
-        """
-        Pull the specified value from the HTML contents.
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
+        return f"{self.name} ({self.player_id})"
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return self.__str__()
+
+    def _parse_value(self, stats: PyQuery, field: str) -> str | None:
+        """Pull the specified value from the HTML contents.
 
         Given a field, find the corresponding HTML tag for that field and parse
         its value before returning the value as a string.
@@ -122,15 +138,15 @@ class AbstractPlayer:
         -------
         string
             Returns the desired value as a string.
+
         """
         value = utils.parse_field(PLAYER_SCHEME, stats, field)
         if not value and field in BOXSCORE_RETRY:
             value = utils.parse_field(BOXSCORE_RETRY, stats, field)
-        return value
+        return None if value is None else str(value)
 
-    def _parse_player_data(self, player_data):
-        """
-        Parse all player information and set attributes.
+    def _parse_player_data(self, player_data: dict[str, Any] | str | None) -> None:
+        """Parse all player information and set attributes.
 
         Iterate through each class attribute to parse the data from the HTML
         page and set the attribute value with the result.
@@ -144,6 +160,7 @@ class AbstractPlayer:
             class is inherited from the ``BoxscorePlayer`` class, player_data
             will be a string representing the player's game statistics in HTML
             format.
+
         """
         for field in self.__dict__:
             short_field = str(field)[1:]
@@ -160,166 +177,156 @@ class AbstractPlayer:
             field_stats = []
             if isinstance(player_data, dict):
                 for data in player_data.values():
-                    stats = pq(data["data"])
+                    stats = PyQuery(data["data"])
                     value = self._parse_value(stats, short_field)
                     field_stats.append(value)
             else:
-                stats = pq(player_data)
+                stats = PyQuery(player_data)
                 value = self._parse_value(stats, short_field)
                 field_stats.append(value)
             setattr(self, field, field_stats)
 
     @property
-    def player_id(self):
-        """
-        Returns a ``string`` of the player's ID on hockey-reference, such as
+    def player_id(self) -> Any:
+        """Return a ``string`` of the player's ID on hockey-reference, such as.
+
         'zettehe01' for Henrik Zetterberg.
         """
         return self._player_id
 
     @property
-    def name(self):
-        """
-        Returns a ``string`` of the player's name, such as 'Henrik Zetterberg'.
-        """
+    def name(self) -> Any:
+        """Return a ``string`` of the player's name, such as 'Henrik Zetterberg'."""
         return self._name
 
     @_int_property_decorator
     def goals(self):
-        """
-        Returns an ``int`` of the number of goals the player scored.
-        """
+        """Return an ``int`` of the number of goals the player scored."""
         return self._goals
 
     @_int_property_decorator
     def assists(self):
-        """
-        Returns an ``int`` of the number of goals the player has assisted.
-        """
+        """Return an ``int`` of the number of goals the player has assisted."""
         return self._assists
 
     @_int_property_decorator
     def points(self):
-        """
-        Returns an ``int`` of the number of points the player has gained.
-        """
+        """Return an ``int`` of the number of points the player has gained."""
         return self._points
 
     @_int_property_decorator
     def plus_minus(self):
-        """
-        Returns an ``int`` representing the relative presence the player has on
+        """Return an ``int`` representing the relative presence the player has on.
+
         the outcome of the game.
         """
         return self._plus_minus
 
     @_int_property_decorator
     def penalties_in_minutes(self):
-        """
-        Returns an ``int`` of the number of minutes the player has served as a
+        """Return an ``int`` of the number of minutes the player has served as a.
+
         result of penalties.
         """
         return self._penalties_in_minutes
 
     @_int_property_decorator
     def even_strength_goals(self):
-        """
-        Returns an ``int`` of the number of goals the player has scored at even
+        """Return an ``int`` of the number of goals the player has scored at even.
+
         strength.
         """
         return self._even_strength_goals
 
     @_int_property_decorator
     def power_play_goals(self):
-        """
-        Returns an ``int`` of the number of goals the player has scored while
+        """Return an ``int`` of the number of goals the player has scored while.
+
         on a power play.
         """
         return self._power_play_goals
 
     @_int_property_decorator
     def short_handed_goals(self):
-        """
-        Returns an ``int`` of the number of goals the player has scored while
+        """Return an ``int`` of the number of goals the player has scored while.
+
         short handed.
         """
         return self._short_handed_goals
 
     @_int_property_decorator
     def game_winning_goals(self):
-        """
-        Returns an ``int`` of the number of game-winning goals the player has
+        """Return an ``int`` of the number of game-winning goals the player has.
+
         scored.
         """
         return self._game_winning_goals
 
     @_int_property_decorator
     def even_strength_assists(self):
-        """
-        Returns an ``int`` of the number of goals the player has assisted while
+        """Return an ``int`` of the number of goals the player has assisted while.
+
         at even strength.
         """
         return self._even_strength_assists
 
     @_int_property_decorator
     def power_play_assists(self):
-        """
-        Returns an ``int`` of the number of goals the player has assisted while
+        """Return an ``int`` of the number of goals the player has assisted while.
+
         on a power play.
         """
         return self._power_play_assists
 
     @_int_property_decorator
     def short_handed_assists(self):
-        """
-        Returns an ``int`` of the number of goals the player has assisted while
+        """Return an ``int`` of the number of goals the player has assisted while.
+
         short handed.
         """
         return self._short_handed_assists
 
     @_int_property_decorator
     def shots_on_goal(self):
-        """
-        Returns an ``int`` of the number of shots on goal the player has made.
-        """
+        """Return an ``int`` of the number of shots on goal the player has made."""
         return self._shots_on_goal
 
     @_float_property_decorator
     def shooting_percentage(self):
-        """
-        Returns a ``float`` of the percentage of the player's shots that go in
+        """Return a ``float`` of the percentage of the player's shots that go in.
+
         the goal. Percentage ranges from 0-100.
         """
         return self._shooting_percentage
 
     @_int_property_decorator
     def blocks_at_even_strength(self):
-        """
-        Returns an ``int`` of the number of shots the player blocks while at
+        """Return an ``int`` of the number of shots the player blocks while at.
+
         even strength.
         """
         return self._blocks_at_even_strength
 
     @_int_property_decorator
     def hits_at_even_strength(self):
-        """
-        Returns an ``int`` of the number of hits the player makes while at even
+        """Return an ``int`` of the number of hits the player makes while at even.
+
         strength.
         """
         return self._hits_at_even_strength
 
     @_float_property_decorator
     def corsi_for_percentage(self):
-        """
-        Returns a ``float`` of the 'Corsi For' percentage, equal to corsi_for /
+        """Return a ``float`` of the 'Corsi For' percentage, equal to corsi_for /.
+
         (corsi_for + corsi_against). Percentage ranges from 0-100.
         """
         return self._corsi_for_percentage
 
     @_float_property_decorator
     def relative_corsi_for_percentage(self):
-        """
-        Returns a ``float`` of the player's relative 'Corsi For' percentage,
+        """Return a ``float`` of the player's relative 'Corsi For' percentage,.
+
         equal to the difference between the player's on and off-ice Corsi For
         percentage.
         """
@@ -327,8 +334,8 @@ class AbstractPlayer:
 
     @_float_property_decorator
     def offensive_zone_start_percentage(self):
-        """
-        Returns a ``float`` of the percentage of faceoffs that occur in the
+        """Return a ``float`` of the percentage of faceoffs that occur in the.
+
         offensive zone while the player is on ice. Percentage ranges from
         0-100.
         """
@@ -336,40 +343,40 @@ class AbstractPlayer:
 
     @_int_property_decorator
     def goals_against(self):
-        """
-        Returns an ``int`` of the number of goals the opponent scored on the
+        """Return an ``int`` of the number of goals the opponent scored on the.
+
         player while in goal.
         """
         return self._goals_against
 
     @_int_property_decorator
     def shots_against(self):
-        """
-        Returns an ``int`` of the number of shots the opponent took while the
+        """Return an ``int`` of the number of shots the opponent took while the.
+
         player is in goal.
         """
         return self._shots_against
 
     @_int_property_decorator
     def saves(self):
-        """
-        Returns an ``int`` of the number of shots the player has saved while in
+        """Return an ``int`` of the number of shots the player has saved while in.
+
         goal.
         """
         return self._saves
 
     @_float_property_decorator
     def save_percentage(self):
-        """
-        Returns a ``float`` of the percentage of shots the player has saved.
+        """Return a ``float`` of the percentage of shots the player has saved.
+
         Percentage ranges from 0-1.
         """
         return self._save_percentage
 
     @_int_property_decorator
     def shutouts(self):
-        """
-        Returns an ``int`` of the number of shutouts the player has registered
+        """Return an ``int`` of the number of shutouts the player has registered.
+
         while in goal.
         """
         return self._shutouts

@@ -1,3 +1,7 @@
+"""Provide utilities for constants."""
+
+from __future__ import annotations
+
 PARSING_SCHEME = {
     "at_bats": 'td[data-stat="AB"]:first',
     "average_batter_age": 'td[data-stat="age_bat"]:first',
@@ -365,7 +369,7 @@ PLAYER_SCHEME = {
     "league_range_factor_per_nine_innings": 'td[data-stat="range_factor_per_nine_lg"]',
     "line_drives": 'td[data-stat="inplay_ld"]',
     "losses": 'td[data-stat="L"]',
-    "name": 'h1[itemprop="name"]',
+    "name": "h1",
     "nationality": 'td[data-stat=""]',
     "on_base_percentage": 'td[data-stat="onbase_perc"]',
     "on_base_plus_slugging_percentage_plus": 'td[data-stat="onbase_plus_slugging_plus"]',

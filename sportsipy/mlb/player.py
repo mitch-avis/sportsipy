@@ -1,8 +1,13 @@
+"""Provide utilities for player."""
+
+from __future__ import annotations
+
 from functools import wraps
+from typing import Any
 
-from pyquery import PyQuery as pq
+from pyquery import PyQuery
 
-from .constants import PLAYER_ELEMENT_INDEX, PLAYER_SCHEME
+from sportsipy.mlb.constants import PLAYER_ELEMENT_INDEX, PLAYER_SCHEME
 
 
 def _cleanup(prop):
@@ -21,7 +26,6 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         element_ind = 0
@@ -41,7 +45,6 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         element_ind = 0
@@ -58,8 +61,7 @@ def _float_property_decorator(func):
 
 
 class AbstractPlayer:
-    """
-    Get player information and stats for all seasons.
+    """Get player information and stats for all seasons.
 
     Given a player ID, such as 'altuvjo01' for Jose Altuve, capture all
     relevant stats and information like name, nationality, height/weight,
@@ -81,9 +83,16 @@ class AbstractPlayer:
         name, 'FF', are the first 2 letters in the player's first name, and
         'NN' is a number starting at '01' for the first time that player ID has
         been used and increments by 1 for every successive player.
+
     """
 
-    def __init__(self, player_id, player_name, player_data):
+    def __init__(
+        self,
+        player_id: str | None,
+        player_name: str | None,
+        player_data: dict[str, dict[str, str]] | str,
+    ) -> None:
+        """Initialize the class instance."""
         self._player_id = player_id
         self._name = player_name
         self._plate_appearances = None
@@ -110,9 +119,16 @@ class AbstractPlayer:
 
         self._parse_player_data(player_data)
 
-    def _parse_value(self, stats, field):
-        """
-        Pull the specified value from the HTML contents.
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
+        return f"{self.name} ({self.player_id})"
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return self.__str__()
+
+    def _parse_value(self, stats: PyQuery, field: str) -> list[str] | None:
+        """Pull the specified value from the HTML contents.
 
         Given a field, find the corresponding HTML tag for that field and parse
         its value before returning the value as a string.
@@ -130,18 +146,18 @@ class AbstractPlayer:
         list
             A list of all values that match the requested field. If no value
             could be found, returns None.
+
         """
         scheme = PLAYER_SCHEME[field]
-        items = [i.text() for i in stats(scheme).items()]
+        items = [str(i.text() or "") for i in stats(scheme).items()]
         # Stats can be added and removed on a yearly basis. If no stats are
         # found, return None and have that be the value.
         if len(items) == 0:
             return None
         return items
 
-    def _parse_player_data(self, player_data):
-        """
-        Parse all player information and set attributes.
+    def _parse_player_data(self, player_data: dict[str, Any] | str | None) -> None:
+        """Parse all player information and set attributes.
 
         Iterate through each class attribute to parse the data from the HTML
         page and set the attribute value with the result.
@@ -155,6 +171,7 @@ class AbstractPlayer:
             class is inherited from the ``BoxscorePlayer`` class, player_data
             will be a string representing the player's game statistics in HTML
             format.
+
         """
         for field in self.__dict__:
             short_field = str(field)[1:]
@@ -174,100 +191,86 @@ class AbstractPlayer:
             field_stats = []
             if isinstance(player_data, dict):
                 for data in player_data.values():
-                    stats = pq(data["data"])
+                    stats = PyQuery(data["data"])
                     value = self._parse_value(stats, short_field)
                     field_stats.append(value)
             else:
-                stats = pq(player_data)
+                stats = PyQuery(player_data)
                 value = self._parse_value(stats, short_field)
                 field_stats.append(value)
             setattr(self, field, field_stats)
 
     @property
-    def player_id(self):
-        """
-        Returns a ``string`` of the player's ID on sports-reference, such as
+    def player_id(self) -> str | None:
+        """Return a ``string`` of the player's ID on sports-reference, such as.
+
         'altuvjo01' for Jose Altuve.
         """
         return self._player_id
 
     @property
-    def name(self):
-        """
-        Returns a ``string`` of the player's name, such as 'Jose Altuve'.
-        """
+    def name(self) -> str | None:
+        """Return a ``string`` of the player's name, such as 'Jose Altuve'."""
         return self._name
 
     @_int_property_decorator
     def plate_appearances(self):
-        """
-        Returns an ``int`` of the number of plate appearances the player had.
-        """
+        """Return an ``int`` of the number of plate appearances the player had."""
         return self._plate_appearances
 
     @_int_property_decorator
     def at_bats(self):
-        """
-        Returns an ``int`` of the number of at bats the player had.
-        """
+        """Return an ``int`` of the number of at bats the player had."""
         return self._at_bats
 
     @_int_property_decorator
     def runs(self):
-        """
-        Returns an ``int`` of the number of runs the player scored.
-        """
+        """Return an ``int`` of the number of runs the player scored."""
         return self._runs
 
     @_int_property_decorator
     def hits(self):
-        """
-        Returns an ``int`` of the number of hits the player had.
-        """
+        """Return an ``int`` of the number of hits the player had."""
         return self._hits
 
     @_int_property_decorator
     def runs_batted_in(self):
-        """
-        Returns an ``int`` of the number of runs batted in the player
+        """Return an ``int`` of the number of runs batted in the player.
+
         registered.
         """
         return self._runs_batted_in
 
     @_int_property_decorator
     def bases_on_balls(self):
-        """
-        Returns an ``int`` of the number of bases the player registered as a
+        """Return an ``int`` of the number of bases the player registered as a.
+
         result of balls.
         """
         return self._bases_on_balls
 
     @_int_property_decorator
     def times_struck_out(self):
-        """
-        Returns an ``int`` of the number of times the player was struck out.
-        """
+        """Return an ``int`` of the number of times the player was struck out."""
         return self._times_struck_out
 
     @_float_property_decorator
     def batting_average(self):
-        """
-        Returns a ``float`` of the batting average for the player.
-        """
+        """Return a ``float`` of the batting average for the player."""
         return self._batting_average
 
     @_float_property_decorator
     def on_base_percentage(self):
-        """
-        Returns a ``float`` of the percentage of at bats that result in the
+        """Return a ``float`` of the percentage of at bats that result in the.
+
         batter getting on base.
         """
         return self._on_base_percentage
 
     @_float_property_decorator
     def slugging_percentage(self):
-        """
-        Returns a ``float`` of the slugging percentage for the player based
+        """Return a ``float`` of the slugging percentage for the player based.
+
         on the number of bases gained per at-bat with bigger plays getting more
         weight.
         """
@@ -275,69 +278,63 @@ class AbstractPlayer:
 
     @_float_property_decorator
     def on_base_plus_slugging_percentage(self):
-        """
-        Returns a ``float`` of the on base percentage plus the slugging
+        """Return a ``float`` of the on base percentage plus the slugging.
+
         percentage. Percentage ranges from 0-1.
         """
         return self._on_base_plus_slugging_percentage
 
     @_int_property_decorator
     def putouts(self):
-        """
-        Returns an ``int`` of the number of putouts the player had.
-        """
+        """Return an ``int`` of the number of putouts the player had."""
         return self._putouts
 
     @_int_property_decorator
     def assists(self):
-        """
-        Returns an ``int`` of the number of assists the player had.
-        """
+        """Return an ``int`` of the number of assists the player had."""
         return self._assists
 
     @_int_property_decorator
     def hits_allowed(self):
-        """
-        Returns an ``int`` of the number of hits the player allowed as a
+        """Return an ``int`` of the number of hits the player allowed as a.
+
         pitcher.
         """
         return self._hits_allowed
 
     @_int_property_decorator
     def runs_allowed(self):
-        """
-        Returns an ``int`` of the number of runs the player allowed as a
+        """Return an ``int`` of the number of runs the player allowed as a.
+
         pitcher.
         """
         return self._runs_allowed
 
     @_int_property_decorator
     def earned_runs_allowed(self):
-        """
-        Returns an ``int`` of the number of earned runs the player allowed as a
+        """Return an ``int`` of the number of earned runs the player allowed as a.
+
         pitcher.
         """
         return self._earned_runs_allowed
 
     @_int_property_decorator
     def bases_on_balls_given(self):
-        """
-        Returns an ``int`` of the number of bases on balls the player has given
+        """Return an ``int`` of the number of bases on balls the player has given.
+
         as a pitcher.
         """
         return self._bases_on_balls_given
 
     @_int_property_decorator
     def strikeouts(self):
-        """
-        Returns an ``int`` of the number of strikeouts the player threw as a
+        """Return an ``int`` of the number of strikeouts the player threw as a.
+
         pitcher.
         """
         return self._strikeouts
 
     @_int_property_decorator
     def batters_faced(self):
-        """
-        Returns an ``int`` of the number of batters the pitcher has faced.
-        """
+        """Return an ``int`` of the number of batters the pitcher has faced."""
         return self._batters_faced

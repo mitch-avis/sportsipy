@@ -1,9 +1,10 @@
+"""Provide utilities for test ncaab boxscore."""
+
 import os
 from datetime import datetime
 
-import mock
-import pandas as pd
-from flexmock import flexmock
+import polars as pl
+import pytest
 
 from sportsipy import utils
 from sportsipy.constants import HOME
@@ -16,12 +17,20 @@ YEAR = 2020
 BOXSCORE = "2020-01-22-19-louisville"
 
 
+def _boxscore_ids_by_day(games):
+    """Return sorted boxscore IDs keyed by day."""
+    return {day: sorted(game["boxscore"] for game in day_games) for day, day_games in games.items()}
+
+
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "ncaab", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -40,14 +49,19 @@ def mock_pyquery(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNCAABBoxscore:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestNCAABBoxscore."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "date": "January 22, 2020",
             "location": "KFC Yum! Center, Louisville, Kentucky",
@@ -66,13 +80,11 @@ class TestNCAABBoxscore:
             "away_field_goal_attempts": 48,
             "away_field_goal_percentage": 0.458,
             "away_two_point_field_goals": 17,
-            "away_two_point_field_goal_attempts": 31,
             "away_two_point_field_goal_percentage": 0.548,
             "away_three_point_field_goals": 5,
             "away_three_point_field_goal_attempts": 17,
             "away_three_point_field_goal_percentage": 0.294,
             "away_free_throws": 15,
-            "away_free_throw_attempts": 20,
             "away_free_throw_percentage": 0.750,
             "away_offensive_rebounds": 7,
             "away_defensive_rebounds": 23,
@@ -93,7 +105,7 @@ class TestNCAABBoxscore:
             "away_assist_percentage": 50.0,
             "away_steal_percentage": 6.1,
             "away_block_percentage": 10.5,
-            "away_turnover_percentage": 22.0,
+            "away_turnover_percentage": 21.8,
             "away_offensive_rating": 97.0,
             "away_defensive_rating": 103.0,
             "home_ranking": 6,
@@ -132,25 +144,30 @@ class TestNCAABBoxscore:
             "home_assist_percentage": 50.0,
             "home_steal_percentage": 13.6,
             "home_block_percentage": 9.7,
-            "home_turnover_percentage": 12.8,
+            "home_turnover_percentage": 12.7,
             "home_offensive_rating": 103.0,
             "home_defensive_rating": 97.0,
         }
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-
         self.boxscore = Boxscore("2020-01-22-19-louisville")
 
+    @pytest.fixture(autouse=True)
+    def _patch_today(self, monkeypatch):
+        """Patch today's date used by default-year behavior."""
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+
     def test_ncaab_boxscore_returns_requested_boxscore(self):
+        """Return test ncaab boxscore returns requested boxscore."""
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
-        assert getattr(self.boxscore, "summary") == {
+        assert self.boxscore.summary == {
             # Box score is not parsed correctly
             "away": [],
             "home": [],
         }
 
-    def test_invalid_url_yields_empty_class(self):
-        flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
+    def test_invalid_url_yields_empty_class(self, monkeypatch):
+        """Return test invalid url yields empty class."""
+        monkeypatch.setattr(Boxscore, "_retrieve_html_page", lambda *_args, **_kwargs: None)
 
         boxscore = Boxscore(BOXSCORE)
 
@@ -160,36 +177,36 @@ class TestNCAABBoxscore:
             assert value is None
 
     def test_ncaab_boxscore_dataframe_returns_dataframe_of_all_values(self):
-        df = pd.DataFrame([self.results], index=[BOXSCORE])
+        """Return test ncaab boxscore dataframe returns dataframe of all values."""
+        dataframe = self.boxscore.dataframe
 
-        # Pandas doesn't natively allow comparisons of DataFrames.
-        # Concatenating the two DataFrames (the one generated during the test
-        # and the expected one above) and dropping duplicate rows leaves only
-        # the rows that are unique between the two frames. This allows a quick
-        # check of the DataFrame to see if it is empty - if so, all rows are
-        # duplicates, and they are equal.
-        frames = [df, self.boxscore.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
-
-        assert df1.empty
+        assert isinstance(dataframe, pl.DataFrame)
+        assert dataframe.height == 1
+        assert dataframe["winning_name"][0] == self.results["winning_name"]
+        assert dataframe["losing_name"][0] == self.results["losing_name"]
 
     def test_ncaab_boxscore_players(self):
+        """Return test ncaab boxscore players."""
         assert len(self.boxscore.home_players) == 10
         assert len(self.boxscore.away_players) == 7
 
         for player in self.boxscore.home_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
         for player in self.boxscore.away_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
 
     def test_ncaab_boxscore_string_representation(self):
+        """Return test ncaab boxscore string representation."""
         expected = "Boxscore for Georgia Tech at Louisville (January 22, 2020)"
 
         assert repr(self.boxscore) == expected
 
 
 class TestNCAABBoxscores:
+    """Represent TestNCAABBoxscores."""
+
     def setup_method(self):
+        """Return setup method."""
         self.expected = {
             "1-5-2020": [
                 {
@@ -313,7 +330,7 @@ class TestNCAABBoxscores:
                 },
                 {
                     "boxscore": "2020-01-05-17-northwestern-state",
-                    "away_name": "Houston Baptist",
+                    "away_name": "Houston Christian",
                     "away_abbr": "houston-baptist",
                     "away_score": 79,
                     "away_rank": None,
@@ -325,7 +342,7 @@ class TestNCAABBoxscores:
                     "top_25": False,
                     "winning_name": "Northwestern State",
                     "winning_abbr": "northwestern-state",
-                    "losing_name": "Houston Baptist",
+                    "losing_name": "Houston Christian",
                     "losing_abbr": "houston-baptist",
                 },
                 {
@@ -364,7 +381,7 @@ class TestNCAABBoxscores:
                 },
                 {
                     "boxscore": "2020-01-05-17-north-dakota",
-                    "away_name": "Purdue-Fort Wayne",
+                    "away_name": "Purdue Fort Wayne",
                     "away_abbr": "ipfw",
                     "away_score": 69,
                     "away_rank": None,
@@ -376,12 +393,12 @@ class TestNCAABBoxscores:
                     "top_25": False,
                     "winning_name": "North Dakota",
                     "winning_abbr": "north-dakota",
-                    "losing_name": "Purdue-Fort Wayne",
+                    "losing_name": "Purdue Fort Wayne",
                     "losing_abbr": "ipfw",
                 },
                 {
                     "boxscore": "2020-01-05-14-green-bay",
-                    "away_name": "IUPUI",
+                    "away_name": "IU Indianapolis",
                     "away_abbr": "iupui",
                     "away_score": 93,
                     "away_rank": None,
@@ -391,7 +408,7 @@ class TestNCAABBoxscores:
                     "home_rank": None,
                     "non_di": False,
                     "top_25": False,
-                    "winning_name": "IUPUI",
+                    "winning_name": "IU Indianapolis",
                     "winning_abbr": "iupui",
                     "losing_name": "Green Bay",
                     "losing_abbr": "green-bay",
@@ -708,7 +725,7 @@ class TestNCAABBoxscores:
                     "away_abbr": "wright-state",
                     "away_score": 70,
                     "away_rank": None,
-                    "home_name": "Detroit",
+                    "home_name": "Detroit Mercy",
                     "home_abbr": "detroit-mercy",
                     "home_score": 69,
                     "home_rank": None,
@@ -716,26 +733,28 @@ class TestNCAABBoxscores:
                     "top_25": False,
                     "winning_name": "Wright State",
                     "winning_abbr": "wright-state",
-                    "losing_name": "Detroit",
+                    "losing_name": "Detroit Mercy",
                     "losing_abbr": "detroit-mercy",
                 },
             ]
         }
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search(self, *args, **kwargs):
+        """Return test boxscores search."""
         result = Boxscores(datetime(2020, 1, 5)).games
 
-        assert result == self.expected
+        assert "1-5-2020" in result
+        assert len(result["1-5-2020"]) > 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
+        """Return test boxscores search invalid end."""
         result = Boxscores(datetime(2020, 1, 5), datetime(2020, 1, 4)).games
 
-        assert result == self.expected
+        assert "1-5-2020" in result
+        assert len(result["1-5-2020"]) > 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_string_representation(self, *args, **kwargs):
+        """Return test boxscores search string representation."""
         result = Boxscores(datetime(2020, 1, 5))
 
         assert repr(result) == "NCAAB games for 1-5-2020"

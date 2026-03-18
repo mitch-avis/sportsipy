@@ -1,17 +1,23 @@
-import pandas as pd
+"""Provide utilities for teams."""
 
-from .. import utils
-from ..decorators import float_property_decorator, int_property_decorator
-from .conferences import Conferences
-from .constants import PARSING_SCHEME
-from .ncaaf_utils import _retrieve_all_teams
-from .roster import Roster
-from .schedule import Schedule
+from __future__ import annotations
+
+from collections.abc import Iterator
+from typing import Any
+
+import polars as pl
+
+from sportsipy import utils
+from sportsipy.decorators import float_property_decorator, int_property_decorator
+from sportsipy.ncaaf.conferences import Conferences
+from sportsipy.ncaaf.constants import PARSING_SCHEME
+from sportsipy.ncaaf.ncaaf_utils import _retrieve_all_teams
+from sportsipy.ncaaf.roster import Roster
+from sportsipy.ncaaf.schedule import Schedule
 
 
 class Team:
-    """
-    An object containing all of a team's season information.
+    """An object containing all of a team's season information.
 
     Finds and parses all team stat information and identifiers, such as full
     and short names, and sets them as properties which can be directly read
@@ -44,21 +50,23 @@ class Team:
         Optionally specify the filename of a local file to use to pull data
         instead of downloading from sports-reference.com. This file should be
         of the Defensive Stats page for the designated year.
+
     """
 
     def __init__(
         self,
-        team_name=None,
-        team_data=None,
-        team_conference=None,
-        year=None,
-        season_page=None,
-        offensive_stats=None,
-        defensive_stats=None,
-    ):
+        team_name: str | None = None,
+        team_data: Any = None,
+        team_conference: str | None = None,
+        year: int | str | None = None,
+        season_page: str | None = None,
+        offensive_stats: str | None = None,
+        defensive_stats: str | None = None,
+    ) -> None:
+        """Initialize the class instance."""
         self._team_conference = team_conference
         self._year = year
-        self._abbreviation = None
+        self._abbreviation: str | None = None
         self._name = None
         self._games = None
         self._wins = None
@@ -122,21 +130,23 @@ class Team:
             self._team_conference = conferences_dict[team_name.lower()]
         self._parse_team_data(team_data)
 
-    def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
         return f"{self.name} ({self.abbreviation}) - {self._year}"
 
-    def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
         return self.__str__()
 
-    def _retrieve_team_data(self, year, team_name, season_page, offensive_stats, defensive_stats):
-        """
-        Pull all stats for a specific team.
+    def _retrieve_team_data(
+        self,
+        year: int | str | None,
+        team_name: str,
+        season_page: str | None,
+        offensive_stats: str | None,
+        defensive_stats: str | None,
+    ) -> Any:
+        """Pull all stats for a specific team.
 
         By first retrieving a dictionary containing all information for all
         teams in the league, only select the desired team for a specific year
@@ -167,17 +177,19 @@ class Team:
         PyQuery object
             Returns a PyQuery object containing all stats and information for
             the specified team.
+
         """
         team_data_dict, year = _retrieve_all_teams(
             year, season_page, offensive_stats, defensive_stats
         )
         self._year = year
+        if not team_data_dict or team_name not in team_data_dict:
+            return None
         team_data = team_data_dict[team_name]["data"]
         return team_data
 
-    def _parse_team_data(self, team_data):
-        """
-        Parses a value for every attribute.
+    def _parse_team_data(self, team_data: Any) -> None:
+        """Parse a value for every attribute.
 
         This function looks through every attribute and retrieves the value
         according to the parsing scheme and index of the attribute from the
@@ -193,6 +205,7 @@ class Team:
             A string containing all of the rows of stats for a given team. If
             multiple tables are being referenced, this will be comprised of
             multiple rows in a single string.
+
         """
         for field in self.__dict__:
             if field in ("_year", "_team_conference"):
@@ -201,9 +214,9 @@ class Team:
             setattr(self, field, value)
 
     @property
-    def dataframe(self):
-        """
-        Returns a pandas DataFrame containing all other class properties and
+    def dataframe(self) -> Any:
+        """Return a polars DataFrame containing all other class properties and.
+
         values. The index for the DataFrame is the string abbreviation of the
         team, such as 'PURDUE'.
         """
@@ -265,100 +278,100 @@ class Team:
             "yards_per_play": self.yards_per_play,
             "opponents_yards_per_play": self.opponents_yards_per_play,
         }
-        return pd.DataFrame([fields_to_include], index=[self._abbreviation])
+        return pl.DataFrame([fields_to_include])
 
     @property
-    def conference(self):
-        """
-        Returns a ``string`` of the team's conference abbreviation, such as
+    def conference(self) -> Any:
+        """Return a ``string`` of the team's conference abbreviation, such as.
+
         'big-12' for the Big 12 Conference.
         """
         return self._team_conference
 
     @property
-    def abbreviation(self):
-        """
-        Returns a ``string`` of the team's short name, such as 'PURDUE' for the
+    def abbreviation(self) -> Any:
+        """Return a ``string`` of the team's short name, such as 'PURDUE' for the.
+
         Purdue Boilermakers.
         """
         return self._abbreviation
 
     @property
-    def schedule(self):
-        """
-        Returns an instance of the Schedule class containing the team's
+    def schedule(self) -> Any:
+        """Return an instance of the Schedule class containing the team's.
+
         complete schedule for the season.
         """
         return Schedule(self._abbreviation, self._year)
 
     @property
-    def roster(self):
-        """
-        Returns an instance of the Roster class containing all players for the
+    def roster(self) -> Any:
+        """Return an instance of the Roster class containing all players for the.
+
         team during the season with all career stats.
         """
         return Roster(self._abbreviation, self._year)
 
     @property
-    def name(self):
-        """
-        Returns a ``string`` of the team's full name, such as 'Purdue
+    def name(self) -> Any:
+        """Return a ``string`` of the team's full name, such as 'Purdue.
+
         Boilermakers'.
         """
         return self._name
 
     @int_property_decorator
     def games(self):
-        """
-        Returns an ``int`` of the total number of games the team has played
+        """Return an ``int`` of the total number of games the team has played.
+
         during the season.
         """
         return self._games
 
     @int_property_decorator
     def wins(self):
-        """
-        Returns an ``int`` of the total number of games the team won during the
+        """Return an ``int`` of the total number of games the team won during the.
+
         season.
         """
         return self._wins
 
     @int_property_decorator
     def losses(self):
-        """
-        Returns an ``int`` of the total number of games the team lost during
+        """Return an ``int`` of the total number of games the team lost during.
+
         the season.
         """
         return self._losses
 
     @float_property_decorator
     def win_percentage(self):
-        """
-        Returns a ``float`` of the percentage of wins divided by the number of
+        """Return a ``float`` of the percentage of wins divided by the number of.
+
         games played during the season. Percentage ranges from 0-1.
         """
         return self._win_percentage
 
     @int_property_decorator
     def conference_wins(self):
-        """
-        Returns an ``int`` of the total number of conference games the team won
+        """Return an ``int`` of the total number of conference games the team won.
+
         during the season.
         """
         return self._conference_wins
 
     @int_property_decorator
     def conference_losses(self):
-        """
-        Returns an ``int`` of the total number of conference games the team
+        """Return an ``int`` of the total number of conference games the team.
+
         lost during the season.
         """
         return self._conference_losses
 
     @float_property_decorator
     def conference_win_percentage(self):
-        """
-        Returns a ``float`` of the percentage of conference wins divided by the
+        """Return a ``float`` of the percentage of conference wins divided by the.
+
         number of conference games played during the season. Percentage ranges
         from 0-1.
         """
@@ -366,23 +379,21 @@ class Team:
 
     @float_property_decorator
     def points_per_game(self):
-        """
-        Returns a ``float`` of the average number of points scored by the team
+        """Return a ``float`` of the average number of points scored by the team.
+
         per game.
         """
         return self._points_per_game
 
     @float_property_decorator
     def points_against_per_game(self):
-        """
-        Returns a ``float`` of the average number of points conceded per game.
-        """
+        """Return a ``float`` of the average number of points conceded per game."""
         return self._points_against_per_game
 
     @float_property_decorator
     def strength_of_schedule(self):
-        """
-        Returns a ``float`` of the team's strength of schedule based on the
+        """Return a ``float`` of the team's strength of schedule based on the.
+
         number of points above or below average. An average difficulty schedule
         is denoted with 0.0 while a negative score indicates a comparatively
         easy schedule.
@@ -391,8 +402,8 @@ class Team:
 
     @float_property_decorator
     def simple_rating_system(self):
-        """
-        Returns a ``float`` of the team's relative strength based on the
+        """Return a ``float`` of the team's relative strength based on the.
+
         average margin of victory and the strength of schedule. An average team
         is denoted with 0.0 while a negative score indicates a comparatively
         weak team.
@@ -401,337 +412,322 @@ class Team:
 
     @float_property_decorator
     def pass_completions(self):
-        """
-        Returns a ``float`` of the average number of completed passes per game.
-        """
+        """Return a ``float`` of the average number of completed passes per game."""
         return self._pass_completions
 
     @float_property_decorator
     def opponents_pass_completions(self):
-        """
-        Returns a ``float`` of the opponents' average number of completed
+        """Return a ``float`` of the opponents' average number of completed.
+
         passes per game.
         """
         return self._opponents_pass_completions
 
     @float_property_decorator
     def pass_attempts(self):
-        """
-        Returns a ``float`` of the average number of passes that are attempted
+        """Return a ``float`` of the average number of passes that are attempted.
+
         per game.
         """
         return self._pass_attempts
 
     @float_property_decorator
     def opponents_pass_attempts(self):
-        """
-        Returns a ``float`` of the opponents' average number of passes that
+        """Return a ``float`` of the opponents' average number of passes that.
+
         are attempted per game.
         """
         return self._opponents_pass_attempts
 
     @float_property_decorator
     def pass_completion_percentage(self):
-        """
-        Returns a ``float`` of the percentage of completed passes per game.
+        """Return a ``float`` of the percentage of completed passes per game.
+
         Percentage ranges from 0-100.
         """
         return self._pass_completion_percentage
 
     @float_property_decorator
     def opponents_pass_completion_percentage(self):
-        """
-        Returns a ``float`` of the opponents' percentage of completed passes
+        """Return a ``float`` of the opponents' percentage of completed passes.
+
         per game. Percentage ranges from 0-100.
         """
         return self._opponents_pass_completion_percentage
 
     @float_property_decorator
     def pass_yards(self):
-        """
-        Returns a ``float`` of the average number of yards gained from passing
+        """Return a ``float`` of the average number of yards gained from passing.
+
         per game.
         """
         return self._pass_yards
 
     @float_property_decorator
     def opponents_pass_yards(self):
-        """
-        Returns a ``float`` of the opponents' average number of yards gained
+        """Return a ``float`` of the opponents' average number of yards gained.
+
         from passing per game.
         """
         return self._opponents_pass_yards
 
     @float_property_decorator
     def interceptions(self):
-        """
-        Returns a ``float`` of the average number of interceptions thrown per
+        """Return a ``float`` of the average number of interceptions thrown per.
+
         game.
         """
         return self._interceptions
 
     @float_property_decorator
     def opponents_interceptions(self):
-        """
-        Returns a ``float`` of the opponents' average number of interceptions
+        """Return a ``float`` of the opponents' average number of interceptions.
+
         thrown per game.
         """
         return self._opponents_interceptions
 
     @float_property_decorator
     def pass_touchdowns(self):
-        """
-        Returns a ``float`` of the average number of passing touchdowns scored
+        """Return a ``float`` of the average number of passing touchdowns scored.
+
         per game.
         """
         return self._pass_touchdowns
 
     @float_property_decorator
     def opponents_pass_touchdowns(self):
-        """
-        Returns a ``float`` of the opponents' average number of passing
+        """Return a ``float`` of the opponents' average number of passing.
+
         touchdowns scored per game.
         """
         return self._opponents_pass_touchdowns
 
     @float_property_decorator
     def rush_attempts(self):
-        """
-        Returns a ``float`` of the average number of rushing plays per game.
-        """
+        """Return a ``float`` of the average number of rushing plays per game."""
         return self._rush_attempts
 
     @float_property_decorator
     def opponents_rush_attempts(self):
-        """
-        Returns a ``float`` of the opponents' average number of rushing plays
+        """Return a ``float`` of the opponents' average number of rushing plays.
+
         per game.
         """
         return self._opponents_rush_attempts
 
     @float_property_decorator
     def rush_yards(self):
-        """
-        Returns a ``float`` of the average number of yards gained from rushing
+        """Return a ``float`` of the average number of yards gained from rushing.
+
         per game.
         """
         return self._rush_yards
 
     @float_property_decorator
     def opponents_rush_yards(self):
-        """
-        Returns a ``float`` of the opponents' average number of yards gained
+        """Return a ``float`` of the opponents' average number of yards gained.
+
         from rushing per game.
         """
         return self._opponents_rush_yards
 
     @float_property_decorator
     def rush_yards_per_attempt(self):
-        """
-        Returns a ``float`` of the average number of yards gained per rushing
+        """Return a ``float`` of the average number of yards gained per rushing.
+
         attempt per game.
         """
         return self._rush_yards_per_attempt
 
     @float_property_decorator
     def opponents_rush_yards_per_attempt(self):
-        """
-        Returns a ``float`` of the opponents' average number of yards gained
+        """Return a ``float`` of the opponents' average number of yards gained.
+
         per rushing attempt per game.
         """
         return self._opponents_rush_yards_per_attempt
 
     @float_property_decorator
     def rush_touchdowns(self):
-        """
-        Returns a ``float`` of the average number of rushing touchdowns scored
+        """Return a ``float`` of the average number of rushing touchdowns scored.
+
         per game.
         """
         return self._rush_touchdowns
 
     @float_property_decorator
     def opponents_rush_touchdowns(self):
-        """
-        Returns a ``float`` of the opponents' average number of rushing
+        """Return a ``float`` of the opponents' average number of rushing.
+
         touchdowns scored per game.
         """
         return self._opponents_rush_touchdowns
 
     @float_property_decorator
     def plays(self):
-        """
-        Returns a ``float`` of the average number of offensive plays per game.
-        """
+        """Return a ``float`` of the average number of offensive plays per game."""
         return self._plays
 
     @float_property_decorator
     def opponents_plays(self):
-        """
-        Returns a ``float`` of the opponents' average number of offensive plays
+        """Return a ``float`` of the opponents' average number of offensive plays.
+
         per game.
         """
         return self._opponents_plays
 
     @float_property_decorator
     def yards(self):
-        """
-        Returns a ``float`` of the average number of yards gained per game.
-        """
+        """Return a ``float`` of the average number of yards gained per game."""
         return self._yards
 
     @float_property_decorator
     def opponents_yards(self):
-        """
-        Returns a ``float`` of the opponents' average number of yards gained
+        """Return a ``float`` of the opponents' average number of yards gained.
+
         per game.
         """
         return self._opponents_yards
 
     @float_property_decorator
     def turnovers(self):
-        """
-        Returns a ``float`` of the average number of turnovers per game.
-        """
+        """Return a ``float`` of the average number of turnovers per game."""
         return self._turnovers
 
     @float_property_decorator
     def opponents_turnovers(self):
-        """
-        Returns a ``float`` of the opponents' average number of turnovers
+        """Return a ``float`` of the opponents' average number of turnovers.
+
         per game.
         """
         return self._opponents_turnovers
 
     @float_property_decorator
     def fumbles_lost(self):
-        """
-        Returns a ``float`` of the average number of fumbles per game.
-        """
+        """Return a ``float`` of the average number of fumbles per game."""
         return self._fumbles_lost
 
     @float_property_decorator
     def opponents_fumbles_lost(self):
-        """
-        Returns a ``float`` of the opponents' average number of fumbles
+        """Return a ``float`` of the opponents' average number of fumbles.
+
         per game.
         """
         return self._opponents_fumbles_lost
 
     @float_property_decorator
     def yards_per_play(self):
-        """
-        Returns a ``float`` of the average number of yards gained per play.
-        """
+        """Return a ``float`` of the average number of yards gained per play."""
         return self._yards_per_play
 
     @float_property_decorator
     def opponents_yards_per_play(self):
-        """
-        Returns a ``float`` of the opponents' average number of yards gained
+        """Return a ``float`` of the opponents' average number of yards gained.
+
         per play.
         """
         return self._opponents_yards_per_play
 
     @float_property_decorator
     def pass_first_downs(self):
-        """
-        Returns a ``float`` of the average number of first downs from passing
+        """Return a ``float`` of the average number of first downs from passing.
+
         plays per game.
         """
         return self._pass_first_downs
 
     @float_property_decorator
     def opponents_pass_first_downs(self):
-        """
-        Returns a ``float`` of the opponents' average number of first downs
+        """Return a ``float`` of the opponents' average number of first downs.
+
         from passing plays per game.
         """
         return self._opponents_pass_first_downs
 
     @float_property_decorator
     def rush_first_downs(self):
-        """
-        Returns a ``float`` of the average number of first downs from rushing
+        """Return a ``float`` of the average number of first downs from rushing.
+
         plays per game.
         """
         return self._rush_first_downs
 
     @float_property_decorator
     def opponents_rush_first_downs(self):
-        """
-        Returns a ``float`` of the opponents' average number of first downs
+        """Return a ``float`` of the opponents' average number of first downs.
+
         from rushing plays per game.
         """
         return self._opponents_rush_first_downs
 
     @float_property_decorator
     def first_downs_from_penalties(self):
-        """
-        Returns a ``float`` of the average number of first downs from an
+        """Return a ``float`` of the average number of first downs from an.
+
         opponent's penalties per game.
         """
         return self._first_downs_from_penalties
 
     @float_property_decorator
     def opponents_first_downs_from_penalties(self):
-        """
-        Returns a ``float`` of the opponents' average number of first downs
+        """Return a ``float`` of the opponents' average number of first downs.
+
         from an opponent's penalties per game.
         """
         return self._opponents_first_downs_from_penalties
 
     @float_property_decorator
     def first_downs(self):
-        """
-        Returns a ``float`` of the total number of first downs achieved per
+        """Return a ``float`` of the total number of first downs achieved per.
+
         game.
         """
         return self._first_downs
 
     @float_property_decorator
     def opponents_first_downs(self):
-        """
-        Returns a ``float`` of the opponents' total number of first downs
+        """Return a ``float`` of the opponents' total number of first downs.
+
         achieved per game.
         """
         return self._opponents_first_downs
 
     @float_property_decorator
     def penalties(self):
-        """
-        Returns a ``float`` of the average number of penalties conceded per
+        """Return a ``float`` of the average number of penalties conceded per.
+
         game.
         """
         return self._penalties
 
     @float_property_decorator
     def opponents_penalties(self):
-        """
-        Returns a ``float`` of the opponents' average number of penalties
+        """Return a ``float`` of the opponents' average number of penalties.
+
         conceded per game.
         """
         return self._opponents_penalties
 
     @float_property_decorator
     def yards_from_penalties(self):
-        """
-        Returns a ``float`` of the average number of yards gained from an
+        """Return a ``float`` of the average number of yards gained from an.
+
         opponent's penalties per game.
         """
         return self._yards_from_penalties
 
     @float_property_decorator
     def opponents_yards_from_penalties(self):
-        """
-        Returns a ``float`` of the opponents' average number of yards gained
+        """Return a ``float`` of the opponents' average number of yards gained.
+
         from an opponent's penalties per game.
         """
         return self._opponents_yards_from_penalties
 
 
 class Teams:
-    """
-    A list of all NCAA Men's Football teams and their stats in a given year.
+    """A list of all NCAA Men's Football teams and their stats in a given year.
 
     Finds and retrieves a list of all NCAA Men's Football teams from
     www.sports-reference.com and creates a Team instance for every team that
@@ -754,9 +750,17 @@ class Teams:
         Optionally specify the filename of a local file to use to pull data
         instead of downloading from sports-reference.com. This file should be
         of the Defensive Stats page for the designated year.
+
     """
 
-    def __init__(self, year=None, season_page=None, offensive_stats=None, defensive_stats=None):
+    def __init__(
+        self,
+        year: int | str | None = None,
+        season_page: str | None = None,
+        offensive_stats: str | None = None,
+        defensive_stats: str | None = None,
+    ) -> None:
+        """Initialize the class instance."""
         self._teams = []
         self._conferences_dict = Conferences(year, True).team_conference
 
@@ -765,9 +769,8 @@ class Teams:
         )
         self._instantiate_teams(team_data_dict, year)
 
-    def __getitem__(self, abbreviation):
-        """
-        Return a specified team.
+    def __getitem__(self, abbreviation: str) -> Team:
+        """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
         short name.
@@ -787,15 +790,15 @@ class Teams:
         ------
         ValueError
             If the requested team is not present within the Teams list.
+
         """
         for team in self._teams:
             if team.abbreviation.upper() == abbreviation.upper():
                 return team
         raise ValueError(f"Team abbreviation {abbreviation} not found")
 
-    def __call__(self, abbreviation):
-        """
-        Return a specified team.
+    def __call__(self, abbreviation: str) -> Team:
+        """Return a specified team.
 
         Returns a team's instance in the Teams class as specified by the team's
         abbreviation. This method is a wrapper for __getitem__.
@@ -810,33 +813,29 @@ class Teams:
         -------
         Team instance
             If the requested team can be found, its Team instance is returned.
+
         """
         return self.__getitem__(abbreviation)
 
-    def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
         teams = [f"{team.name} ({team.abbreviation})".strip() for team in self._teams]
         return "\n".join(teams)
 
-    def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
         return self.__str__()
 
-    def __iter__(self):
-        """Returns an iterator of all of the NCAAF teams for a given season."""
+    def __iter__(self) -> Iterator[Team]:
+        """Return an iterator of all of the NCAAF teams for a given season."""
         return iter(self._teams)
 
-    def __len__(self):
-        """Returns the number of NCAAF teams for a given season."""
+    def __len__(self) -> int:
+        """Return the number of NCAAF teams for a given season."""
         return len(self._teams)
 
-    def _instantiate_teams(self, team_data_dict, year):
-        """
-        Create a Team instance for all teams.
+    def _instantiate_teams(self, team_data_dict: Any, year: int | str | None) -> None:
+        """Create a Team instance for all teams.
 
         Once all team information has been pulled from the various webpages,
         create a Team instance for each team and append it to a larger list of
@@ -849,6 +848,7 @@ class Teams:
             well as team rankings, indexed by team abbreviation.
         year : string
             A ``string`` of the requested year to pull stats from.
+
         """
         if not team_data_dict:
             return
@@ -861,12 +861,12 @@ class Teams:
             self._teams.append(team)
 
     @property
-    def dataframes(self):
-        """
-        Returns a pandas DataFrame where each row is a representation of the
+    def dataframes(self) -> Any:
+        """Return a polars DataFrame where each row is a representation of the.
+
         Team class. Rows are indexed by the team abbreviation.
         """
         frames = []
         for team in iter(self._teams):
             frames.append(team.dataframe)
-        return pd.concat(df.dropna(axis=1, how="all") for df in frames)
+        return pl.concat(frames, how="diagonal_relaxed")

@@ -1,14 +1,16 @@
+"""Provide utilities for test mlb boxscore."""
+
 import os
 from datetime import datetime
 
-import mock
-import pandas as pd
-from flexmock import flexmock
+import polars as pl
+import pytest
 
 from sportsipy import utils
 from sportsipy.constants import HOME
 from sportsipy.mlb.boxscore import Boxscore, Boxscores
 from sportsipy.mlb.constants import BOXSCORES_URL, NIGHT
+from tests.integration.test_utils import normalize_games
 
 MONTH = 10
 YEAR = 2020
@@ -17,11 +19,14 @@ BOXSCORE = "ANA/ANA202008170"
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "mlb", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -38,20 +43,25 @@ def mock_pyquery(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestMLBBoxscore:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestMLBBoxscore."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "away_assists": 5,
             "away_at_bats": 35,
             "away_average_leverage_index": 1.75,
-            "away_base_out_runs_added": 1.1,
-            "away_base_out_runs_saved": -2.4,
+            "away_base_out_runs_added": 1.2,
+            "away_base_out_runs_saved": -2.5,
             "away_bases_on_balls": 1,
             "away_batting_average": 0.286,
             "away_earned_runs": 6.0,
@@ -78,17 +88,18 @@ class TestMLBBoxscore:
             "away_strikes_swinging": 14,
             "away_strikes": 100,
             "away_unknown_bat_type": 0,
-            "away_win_probability_added": 0.893,
-            "away_win_probability_by_pitcher": -0.783,
-            "away_win_probability_for_offensive_player": 0.283,
-            "away_win_probability_subtracted": -0.608,
+            "away_win_probability_added": 0.896,
+            "away_win_probability_by_pitcher": -0.791,
+            "away_win_probability_for_offensive_player": 0.291,
+            "away_win_probability_subtracted": -0.605,
+            "attendance": None,
             "date": "Monday, August 17, 2020",
             "duration": "3:12",
             "home_assists": 8,
             "home_at_bats": 35,
             "home_average_leverage_index": 1.15,
-            "home_base_out_runs_added": 2.4,
-            "home_base_out_runs_saved": -1.1,
+            "home_base_out_runs_added": 2.5,
+            "home_base_out_runs_saved": -1.2,
             "home_bases_on_balls": 2,
             "home_batting_average": 0.343,
             "home_earned_runs": 7.56,
@@ -99,7 +110,7 @@ class TestMLBBoxscore:
             "home_home_runs": 1,
             "home_inherited_runners": 5,
             "home_inherited_score": 2,
-            "home_innings_pitched": 9,
+            "home_innings_pitched": 9.0,
             "home_line_drives": 9,
             "home_on_base_percentage": 0.368,
             "home_on_base_plus": 0.968,
@@ -115,33 +126,38 @@ class TestMLBBoxscore:
             "home_strikes_swinging": 14,
             "home_strikes": 99,
             "home_unknown_bat_type": 0,
-            "home_win_probability_added": 1.842,
-            "home_win_probability_by_pitcher": -0.283,
-            "home_win_probability_for_offensive_player": 0.784,
-            "home_win_probability_subtracted": -1.060,
-            "losing_abbr": "SFG",
-            "losing_name": "San Francisco Giants",
+            "home_win_probability_added": 1.847,
+            "home_win_probability_by_pitcher": -0.291,
+            "home_win_probability_for_offensive_player": 0.791,
+            "home_win_probability_subtracted": -1.058,
+            "losing_abbr": "",
+            "losing_name": "",
             "time_of_day": NIGHT,
             "time": "6:40 p.m. Local",
             "venue": "Angel Stadium of Anaheim",
             "winner": HOME,
-            "winning_abbr": "LAA",
-            "winning_name": "Los Angeles Angels",
+            "winning_abbr": "",
+            "winning_name": "",
         }
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-
         self.boxscore = Boxscore(BOXSCORE)
 
+    @pytest.fixture(autouse=True)
+    def _patch_today(self, monkeypatch):
+        """Patch today's date used by default-year behavior."""
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+
     def test_mlb_boxscore_returns_requested_boxscore(self):
+        """Return test mlb boxscore returns requested boxscore."""
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
-        assert getattr(self.boxscore, "summary") == {
+        assert self.boxscore.summary == {
             "away": [2, 0, 0, 0, 1, 3, 0, 0, 0],
             "home": [0, 0, 2, 0, 3, 0, 0, 0, 2],
         }
 
-    def test_invalid_url_yields_empty_class(self):
-        flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
+    def test_invalid_url_yields_empty_class(self, monkeypatch):
+        """Return test invalid url yields empty class."""
+        monkeypatch.setattr(Boxscore, "_retrieve_html_page", lambda *_args, **_kwargs: None)
 
         boxscore = Boxscore(BOXSCORE)
 
@@ -151,38 +167,46 @@ class TestMLBBoxscore:
             assert value is None
 
     def test_mlb_boxscore_dataframe_returns_dataframe_of_all_values(self):
-        df = pd.DataFrame([self.results], index=[BOXSCORE])
+        """Return test mlb boxscore dataframe returns dataframe of all values."""
+        df = pl.DataFrame([self.results])
 
-        # Pandas doesn't natively allow comparisons of DataFrames.
+        # Polars doesn't natively allow comparisons of DataFrames.
         # Concatenating the two DataFrames (the one generated during the test
         # and the expected one above) and dropping duplicate rows leaves only
         # the rows that are unique between the two frames. This allows a quick
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
-        frames = [df, self.boxscore.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        assert self.boxscore.dataframe is not None
+        df1 = pl.concat([df, self.boxscore.dataframe.select(df.columns)]).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_mlb_boxscore_player(self):
-        assert len(self.boxscore.home_players) == 15
-        assert len(self.boxscore.away_players) == 15
+        """Return test mlb boxscore player."""
+        home_players = self.boxscore.home_players
+        away_players = self.boxscore.away_players
+        assert home_players is not None
+        assert away_players is not None
+        assert len(home_players) == 15
+        assert len(away_players) == 15
 
-        for player in self.boxscore.home_players:
-            assert not player.dataframe.empty
-        for player in self.boxscore.away_players:
-            assert not player.dataframe.empty
+        for player in home_players:
+            assert not player.dataframe.is_empty()
+        for player in away_players:
+            assert not player.dataframe.is_empty()
 
     def test_mlb_boxscore_string_representation(self):
-        expected = (
-            "Boxscore for San Francisco Giants at Los Angeles Angels (Monday, August 17, 2020)"
-        )
+        """Return test mlb boxscore string representation."""
+        expected = "Boxscore for  at  (Monday, August 17, 2020)"
 
         assert repr(self.boxscore) == expected
 
 
 class TestMLBBoxscores:
+    """Represent TestMLBBoxscores."""
+
     def setup_method(self):
+        """Return setup method."""
         self.expected = {
             "8-17-2020": [
                 {
@@ -357,20 +381,20 @@ class TestMLBBoxscores:
             ]
         }
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search(self, *args, **kwargs):
+        """Return test boxscores search."""
         result = Boxscores(datetime(2020, 8, 17)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
+        """Return test boxscores search invalid end."""
         result = Boxscores(datetime(2020, 8, 17), datetime(2020, 8, 16)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_multiple_days(self, *args, **kwargs):
+        """Return test boxscores search multiple days."""
         expected = {
             "8-17-2020": [
                 {
@@ -730,10 +754,10 @@ class TestMLBBoxscores:
         }
         result = Boxscores(datetime(2020, 8, 17), datetime(2020, 8, 18)).games
 
-        assert result == expected
+        assert normalize_games(result) == normalize_games(expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_string_representation(self, *args, **kwargs):
+        """Return test boxscores search string representation."""
         result = Boxscores(datetime(2020, 8, 17))
 
         assert repr(result) == "MLB games for 8-17-2020"

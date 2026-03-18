@@ -1,6 +1,11 @@
-from sportsipy import utils
+"""Provide utilities for ncaab utils."""
 
-from .constants import (
+from __future__ import annotations
+
+from typing import Any
+
+from sportsipy import utils
+from sportsipy.ncaab.constants import (
     ADVANCED_OPPONENT_STATS_URL,
     ADVANCED_STATS_URL,
     BASIC_OPPONENT_STATS_URL,
@@ -9,9 +14,11 @@ from .constants import (
 )
 
 
-def _add_stats_data(teams_list, team_data_dict):
-    """
-    Add a team's stats row to a dictionary.
+def _add_stats_data(
+    teams_list: Any,
+    team_data_dict: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate all
     stats for each team in a single variable.
@@ -30,23 +37,30 @@ def _add_stats_data(teams_list, team_data_dict):
     dictionary
         An updated version of the team_data_dict with the passed table row
         information included.
+
     """
     for team_data in teams_list:
         if 'class="over_header thead"' in str(team_data) or 'class="thead"' in str(team_data):
             continue
         abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
+        if not isinstance(abbr, str):
+            continue
+        row_html = str(team_data)
         try:
-            team_data_dict[abbr]["data"] += team_data
+            team_data_dict[abbr]["data"] += row_html
         except KeyError:
-            team_data_dict[abbr] = {"data": team_data}
+            team_data_dict[abbr] = {"data": row_html}
     return team_data_dict
 
 
 def _retrieve_all_teams(
-    year, basic_stats=None, basic_opp_stats=None, adv_stats=None, adv_opp_stats=None
-):
-    """
-    Find and create Team instances for all teams in the given season.
+    year: int | str | None,
+    basic_stats: str | None = None,
+    basic_opp_stats: str | None = None,
+    adv_stats: str | None = None,
+    adv_opp_stats: str | None = None,
+) -> tuple[dict[str, dict[str, Any]] | None, int | str | None]:
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NCAAB stats table and finds all
     requested stats. Each team then has a Team instance created which includes
@@ -75,26 +89,32 @@ def _retrieve_all_teams(
         Returns a ``tuple`` of the team_data_dict and year which represent all
         stats for all teams, and the given year that should be used to pull
         stats from, respectively.
+
     """
     team_data_dict = {}
 
     if not year:
         year = utils.find_year_for_season("ncaab")
-        # If stats for the requested season do not exist yet (as is the case
-        # right before a new season begins), attempt to pull the previous
-        # year's stats. If it exists, use the previous year instead.
-        if not utils.url_exists(BASIC_STATS_URL % year) and utils.url_exists(
-            BASIC_STATS_URL % str(int(year) - 1)
-        ):
-            year = str(int(year) - 1)
+        year = utils.resolve_year_for_url(year, lambda y: BASIC_STATS_URL % y)
     doc = utils.pull_page(BASIC_STATS_URL % year, basic_stats)
     teams_list = utils.get_stats_table(doc, "table#basic_school_stats")
+    if not teams_list:
+        teams_list = utils.get_stats_table(doc, "div#all_basic_school_stats")
+
     doc = utils.pull_page(BASIC_OPPONENT_STATS_URL % year, basic_opp_stats)
     opp_list = utils.get_stats_table(doc, "table#basic_opp_stats")
+    if not opp_list:
+        opp_list = utils.get_stats_table(doc, "div#all_basic_opp_stats")
+
     doc = utils.pull_page(ADVANCED_STATS_URL % year, adv_stats)
     adv_teams_list = utils.get_stats_table(doc, "table#adv_school_stats")
+    if not adv_teams_list:
+        adv_teams_list = utils.get_stats_table(doc, "div#all_adv_school_stats")
+
     doc = utils.pull_page(ADVANCED_OPPONENT_STATS_URL % year, adv_opp_stats)
     adv_opp_list = utils.get_stats_table(doc, "table#adv_opp_stats")
+    if not adv_opp_list:
+        adv_opp_list = utils.get_stats_table(doc, "div#all_adv_opp_stats")
     if not teams_list and not opp_list and not adv_teams_list and not adv_opp_list:
         utils.no_data_found()
         return None, None

@@ -1,3 +1,5 @@
+"""Provide utilities for nfl constants tests."""
+
 PARSING_SCHEME = {
     "name": "a",
     "games_played": 'td[data-stat="g"]:first',

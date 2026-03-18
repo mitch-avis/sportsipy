@@ -1,14 +1,19 @@
+"""Provide utilities for roster."""
+
+from __future__ import annotations
+
 import re
 from functools import wraps
+from typing import Any
 from urllib.error import HTTPError
 
-import pandas as pd
+import polars as pl
 from lxml.etree import ParserError
-from pyquery import PyQuery as pq
+from pyquery import PyQuery
 
-from .. import utils
-from .constants import PLAYER_SCHEME, PLAYER_URL, ROSTER_URL
-from .player import AbstractPlayer
+from sportsipy import utils
+from sportsipy.ncaab.constants import PLAYER_SCHEME, PLAYER_URL, ROSTER_URL
+from sportsipy.ncaab.player import AbstractPlayer
 
 
 def _cleanup(prop):
@@ -26,7 +31,6 @@ def _int_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         value = _cleanup(prop[index])
@@ -43,7 +47,6 @@ def _float_property_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         index = args[0]._index
         prop = func(*args)
         value = _cleanup(prop[index])
@@ -60,10 +63,14 @@ def _most_recent_decorator(func):
     @property
     @wraps(func)
     def wrapper(*args):
-        # pylint: disable=protected-access
         season = args[0]._most_recent_season
-        seasons = args[0]._season
-        index = seasons.index(season)
+        seasons = args[0]._season or []
+        # If the most recent season isn't found, default to the first
+        # available season (index 0) to avoid ValueError.
+        try:
+            index = seasons.index(season) if season in seasons else 0
+        except ValueError:
+            index = 0
         prop = func(*args)
         return prop[index]
 
@@ -71,8 +78,7 @@ def _most_recent_decorator(func):
 
 
 class Player(AbstractPlayer):
-    """
-    Get player information and stats for all seasons.
+    """Get player information and stats for all seasons.
 
     Given a player ID, such as 'carsen-edwards-1' for Carsen Edwards, capture
     all relevant stats and information like name, height/weight, career
@@ -98,13 +104,15 @@ class Player(AbstractPlayer):
         lowercase, 'last' is the player's last name in lowercase, and 'N' is a
         number starting at '1' for the first time that player ID has been used
         and increments by 1 for every successive player.
+
     """
 
-    def __init__(self, player_id):
+    def __init__(self, player_id: str | None) -> None:
+        """Initialize the class instance."""
         self._most_recent_season = ""
         self._index = None
-        self._player_id = player_id
-        self._season = None
+        self._player_id: str | None = player_id
+        self._season: list[str] | None = None
         self._name = None
         self._team_abbreviation = None
         self._conference = None
@@ -127,21 +135,16 @@ class Player(AbstractPlayer):
         self.find_initial_index()
         AbstractPlayer.__init__(self, player_id, self._name, player_data)
 
-    def __str__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
         return f"{self.name} ({self.player_id})"
 
-    def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
         return self.__str__()
 
-    def _retrieve_html_page(self):
-        """
-        Download the requested player's stats page.
+    def _retrieve_html_page(self) -> PyQuery | None:
+        """Download the requested player's stats page.
 
         Download the requested page and strip all of the comment tags before
         returning a pyquery object which will be used to parse the data.
@@ -151,17 +154,20 @@ class Player(AbstractPlayer):
         PyQuery object
             The requested page is returned as a queriable PyQuery object with
             the comment tags removed.
+
         """
         url = PLAYER_URL % self._player_id
         try:
-            url_data = utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            url_data = utils.pq(page_source)
         except (HTTPError, ParserError):
             return None
-        return pq(utils.remove_html_comment_tags(url_data))
+        return PyQuery(utils.remove_html_comment_tags(url_data))
 
-    def _parse_season(self, row):
-        """
-        Parse the season string from the table.
+    def _parse_season(self, row: PyQuery) -> str:
+        """Parse the season string from the table.
 
         The season is generally located in the first column of the stats tables
         and should be parsed to denote which season metrics are being pulled
@@ -177,12 +183,18 @@ class Player(AbstractPlayer):
         string
             A string representation of the season in the format 'YYYY-YY', such
             as '2017-18'.
-        """
-        return utils.parse_field(PLAYER_SCHEME, row, "season")
 
-    def _combine_season_stats(self, table_rows, career_stats, all_stats_dict):
         """
-        Combine all stats for each season.
+        season = utils.parse_field(PLAYER_SCHEME, row, "season")
+        return "" if season is None else str(season)
+
+    def _combine_season_stats(
+        self,
+        table_rows: Any,
+        career_stats: Any,
+        all_stats_dict: dict[str, dict[str, str]],
+    ) -> dict[str, dict[str, str]]:
+        """Combine all stats for each season.
 
         Since all of the stats are spread across multiple tables, they should
         be combined into a single field which can be used to easily query stats
@@ -206,6 +218,7 @@ class Player(AbstractPlayer):
         dictionary
             Returns an updated version of the passed all_stats_dict which
             includes more metrics from the provided table.
+
         """
         most_recent_season = self._most_recent_season
         if not table_rows:
@@ -226,9 +239,8 @@ class Player(AbstractPlayer):
             all_stats_dict["Career"] = {"data": str(next(career_stats))}
         return all_stats_dict
 
-    def _combine_all_stats(self, player_info):
-        """
-        Pull stats from all tables into single data structure.
+    def _combine_all_stats(self, player_info: PyQuery) -> dict[str, dict[str, str]]:
+        """Pull stats from all tables into single data structure.
 
         Pull the stats from all of the requested tables into a dictionary that
         is separated by season to allow easy queries of the player's stats for
@@ -245,18 +257,26 @@ class Player(AbstractPlayer):
         dictionary
             Returns a dictionary where all stats from each table are combined
             by season to allow easy queries by year.
+
         """
         all_stats_dict = {}
 
         for table_id in ["players_totals", "players_advanced"]:
+            # Try direct table id first, then the surrounding div id which
+            # some pages wrap the table in and/or comment out (e.g. all_players_...)
             table_items = utils.get_stats_table(player_info, f"table#{table_id}")
+            if not table_items:
+                table_items = utils.get_stats_table(player_info, f"div#all_{table_id}")
             career_items = utils.get_stats_table(player_info, f"table#{table_id}", footer=True)
+            if not career_items:
+                career_items = utils.get_stats_table(
+                    player_info, f"div#all_{table_id}", footer=True
+                )
             all_stats_dict = self._combine_season_stats(table_items, career_items, all_stats_dict)
         return all_stats_dict
 
-    def _parse_player_information(self, player_info):
-        """
-        Parse general player information.
+    def _parse_player_information(self, player_info: PyQuery) -> None:
+        """Parse general player information.
 
         Parse general player information such as height, weight, and name. The
         attribute for the requested field will be set with the value prior to
@@ -266,15 +286,15 @@ class Player(AbstractPlayer):
         ----------
         player_info : PyQuery object
             A PyQuery object containing the HTML from the player's stats page.
+
         """
         for field in ["_height", "_weight", "_name"]:
             short_field = str(field)[1:]
             value = utils.parse_field(PLAYER_SCHEME, player_info, short_field)
             setattr(self, field, value)
 
-    def _parse_player_position(self, player_info):
-        """
-        Parse the player's position.
+    def _parse_player_position(self, player_info: PyQuery) -> None:
+        """Parse the player's position.
 
         The player's position isn't contained within a unique tag and the
         player's meta information should be iterated through until 'Position'
@@ -285,16 +305,16 @@ class Player(AbstractPlayer):
         player_info : PyQuery object
             A PyQuery object of the player's information on the HTML stats
             page.
+
         """
         for section in player_info("div#meta p").items():
             if "Position" in str(section):
-                position = section.text().replace("Position: ", "")
-                setattr(self, "_position", position)
+                position = str(section.text() or "").replace("Position: ", "")
+                self._position = position
                 break
 
-    def _pull_player_data(self):
-        """
-        Pull and aggregate all player information.
+    def _pull_player_data(self) -> dict[str, dict[str, str]]:
+        """Pull and aggregate all player information.
 
         Pull the player's HTML stats page and parse unique properties, such as
         the player's height, weight, and position. Next, combine all stats for
@@ -307,17 +327,27 @@ class Player(AbstractPlayer):
             Returns a dictionary of the player's combined stats where each key
             is a string of the season and the value is the season's associated
             stats.
+
         """
         player_info = self._retrieve_html_page()
+        # If the player's page cannot be retrieved, return an empty career
+        # record so downstream parsing still functions without raising
+        # TypeErrors when attempting to iterate over a None object.
+        if not player_info:
+            self._name = ""
+            self._position = None
+            self._most_recent_season = "Career"
+            self._season = ["Career"]
+            return {"Career": {"data": ""}}
+
         self._parse_player_information(player_info)
         self._parse_player_position(player_info)
         all_stats = self._combine_all_stats(player_info)
-        setattr(self, "_season", all_stats.keys())
+        self._season = list(all_stats.keys())
         return all_stats
 
-    def find_initial_index(self):
-        """
-        Find the index of career stats.
+    def find_initial_index(self) -> None:
+        """Find the index of career stats.
 
         When the Player class is instantiated, the default stats to pull are
         the player's career stats. Upon being called, the index of the 'Career'
@@ -331,9 +361,8 @@ class Player(AbstractPlayer):
                     break
                 index += 1
 
-    def __call__(self, requested_season=""):
-        """
-        Specify a different season to pull stats from.
+    def __call__(self, requested_season: str = "") -> Player:
+        """Specify a different season to pull stats from.
 
         A different season can be requested by passing the season string, such
         as '2017-18' to the class instance.
@@ -349,6 +378,7 @@ class Player(AbstractPlayer):
         -------
         Player class instance
             Returns the class instance with the updated stats being referenced.
+
         """
         if requested_season.lower() == "career" or requested_season == "":
             requested_season = "Career"
@@ -361,9 +391,8 @@ class Player(AbstractPlayer):
                 index += 1
         return self
 
-    def _dataframe_fields(self):
-        """
-        Creates a dictionary of all fields to include with DataFrame.
+    def _dataframe_fields(self) -> dict[str, Any]:
+        """Create a dictionary of all fields to include with DataFrame.
 
         With the result of the calls to class properties changing based on the
         class index value, the dictionary should be regenerated every time the
@@ -375,6 +404,7 @@ class Player(AbstractPlayer):
             Returns a dictionary where the keys are the shortened ``string``
             attribute names and the values are the actual value for each
             attribute for the specified index.
+
         """
         fields_to_include = {
             "assist_percentage": self.assist_percentage,
@@ -432,9 +462,9 @@ class Player(AbstractPlayer):
         return fields_to_include
 
     @property
-    def dataframe(self):
-        """
-        Returns a ``pandas DataFrame`` containing all other relevant class
+    def dataframe(self) -> Any:
+        """Return a ``polars DataFrame`` containing all other relevant class.
+
         properties and values where each index is a different season plus the
         career stats.
         """
@@ -447,23 +477,23 @@ class Player(AbstractPlayer):
                 rows.append(self._dataframe_fields())
                 indices.append(season)
         self._index = temp_index
-        return pd.DataFrame(rows, index=[indices])
+        return pl.DataFrame(rows)
 
     @property
-    def season(self):
-        """
-        Returns a ``string`` of the season in the format 'YYYY-YY', such as
+    def season(self) -> Any:
+        """Return a ``string`` of the season in the format 'YYYY-YY', such as.
+
         '2017-18'. If no season was requested, the career stats will be
         returned for the player and the season will default to 'Career'.
         """
-        if self._season is not None:
+        if self._season is not None and self._index is not None:
             return self._season[self._index]
         return None
 
     @property
-    def conference(self):
-        """
-        Returns a ``string`` of the abbreviation for the conference the team
+    def conference(self) -> Any:
+        """Return a ``string`` of the abbreviation for the conference the team.
+
         participated in for the requested season.
         """
         if self._conference is not None:
@@ -472,54 +502,46 @@ class Player(AbstractPlayer):
 
     @_most_recent_decorator
     def team_abbreviation(self):
-        """
-        Returns a ``string`` of the abbrevation for the team the player plays
+        """Return a ``string`` of the abbrevation for the team the player plays.
+
         for, such as 'PURDUE' for Carsen Edwards.
         """
         return self._team_abbreviation
 
     @property
-    def position(self):
-        """
-        Returns a ``string`` constant of the player's primary position.
-        """
+    def position(self) -> Any:
+        """Return a ``string`` constant of the player's primary position."""
         return self._position
 
     @property
-    def height(self):
-        """
-        Returns a ``string`` of the player's height in the format
+    def height(self) -> Any:
+        """Return a ``string`` of the player's height in the format.
+
         "feet-inches".
         """
         return self._height
 
     @property
-    def weight(self):
-        """
-        Returns an ``int`` of the player's weight in pounds.
-        """
+    def weight(self) -> Any:
+        """Return an ``int`` of the player's weight in pounds."""
         if not self._weight:
             return None
         return int(self._weight.replace("lb", ""))
 
     @_int_property_decorator
     def games_played(self):
-        """
-        Returns an ``int`` of the number of games the player participated in.
-        """
+        """Return an ``int`` of the number of games the player participated in."""
         return self._games_played
 
     @_int_property_decorator
     def games_started(self):
-        """
-        Returns an ``int`` of the number of games the player started.
-        """
+        """Return an ``int`` of the number of games the player started."""
         return self._games_started
 
     @_float_property_decorator
     def player_efficiency_rating(self):
-        """
-        Returns a ``float`` of the player's efficiency rating which represents
+        """Return a ``float`` of the player's efficiency rating which represents.
+
         the player's relative production level. An average player in the league
         has an efficiency rating of 15.
         """
@@ -527,40 +549,40 @@ class Player(AbstractPlayer):
 
     @_int_property_decorator
     def points_produced(self):
-        """
-        Returns an ``int`` of the number of offensive points the player
+        """Return an ``int`` of the number of offensive points the player.
+
         produced.
         """
         return self._points_produced
 
     @_float_property_decorator
     def offensive_win_shares(self):
-        """
-        Returns a ``float`` of the number of wins the player contributed to the
+        """Return a ``float`` of the number of wins the player contributed to the.
+
         team as a result of his offensive plays.
         """
         return self._offensive_win_shares
 
     @_float_property_decorator
     def defensive_win_shares(self):
-        """
-        Returns a ``float`` of the number of wins the player contributed to the
+        """Return a ``float`` of the number of wins the player contributed to the.
+
         team as a result of his defensive plays.
         """
         return self._defensive_win_shares
 
     @_float_property_decorator
     def win_shares(self):
-        """
-        Returns a ``float`` of the number of wins the player contributed to the
+        """Return a ``float`` of the number of wins the player contributed to the.
+
         team as a result of his offensive and defensive plays.
         """
         return self._win_shares
 
     @_float_property_decorator
     def win_shares_per_40_minutes(self):
-        """
-        Returns a ``float`` of the number of wins the player contributed to the
+        """Return a ``float`` of the number of wins the player contributed to the.
+
         team per 40 minutes of playtime. An average player has a contribution
         of 0.100.
         """
@@ -568,8 +590,8 @@ class Player(AbstractPlayer):
 
     @_float_property_decorator
     def offensive_box_plus_minus(self):
-        """
-        Returns a ``float`` of the number of offensive points per 100
+        """Return a ``float`` of the number of offensive points per 100.
+
         possessions the player contributed in comparison to an average player
         in the league.
         """
@@ -577,8 +599,8 @@ class Player(AbstractPlayer):
 
     @_float_property_decorator
     def defensive_box_plus_minus(self):
-        """
-        Returns a ``float`` of the number of defensive points per 100
+        """Return a ``float`` of the number of defensive points per 100.
+
         possessions the player contributed in comparison to an average player
         in the league.
         """
@@ -586,8 +608,8 @@ class Player(AbstractPlayer):
 
     @_float_property_decorator
     def box_plus_minus(self):
-        """
-        Returns a ``float`` of the total number of points per 100 possessions
+        """Return a ``float`` of the total number of points per 100 possessions.
+
         the player contributed in comparison to an average player in the
         league.
         """
@@ -595,8 +617,7 @@ class Player(AbstractPlayer):
 
 
 class Roster:
-    """
-    Get stats for all players on a roster.
+    """Get stats for all players on a roster.
 
     Request a team's roster for a given season and create instances of the
     Player class for each player, containing a detailed list of the players
@@ -614,12 +635,15 @@ class Roster:
         the name and player ID for each player as opposed to all of their
         respective stats which greatly reduces the time to return a response if
         just the names and IDs are desired. Defaults to False.
+
     """
 
-    def __init__(self, team, year=None, slim=False):
+    def __init__(self, team: str | None, year: int | str | None = None, slim: bool = False) -> None:
+        """Initialize the class instance."""
         self._team = team
         self._slim = slim
         self._coach = None
+        self._players: dict[str, str] | list[Player]
         if slim:
             self._players = {}
         else:
@@ -627,22 +651,20 @@ class Roster:
 
         self._find_players_with_coach(year)
 
-    def __str__(self):
-        """
-        Return the string representation of the class.
-        """
-        players = [f"{player.name} ({player.player_id})".strip() for player in self._players]
+    def __str__(self) -> str:
+        """Return the string representation of the class."""
+        if isinstance(self._players, dict):
+            players = [f"{name} ({player_id})".strip() for player_id, name in self._players.items()]
+        else:
+            players = [f"{player.name} ({player.player_id})".strip() for player in self._players]
         return "\n".join(players)
 
-    def __repr__(self):
-        """
-        Return the string representation of the class.
-        """
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
         return self.__str__()
 
-    def _pull_team_page(self, url):
-        """
-        Download the team page.
+    def _pull_team_page(self, url: str) -> PyQuery | None:
+        """Download the team page.
 
         Download the requested team's season page and create a PyQuery object.
 
@@ -655,15 +677,19 @@ class Roster:
         -------
         PyQuery object
             Returns a PyQuery object of the team's HTML page.
+
         """
         try:
-            return utils.pq(utils.get_page_source(url=url))
+            page_source = utils.get_page_source(url=url)
+            if not page_source:
+                return None
+            cleaned_page = utils.remove_html_comment_tags(page_source)
+            return utils.pq(cleaned_page)
         except HTTPError:
             return None
 
-    def _create_url(self, year):
-        """
-        Build the team URL.
+    def _create_url(self, year: int | str | None) -> str:
+        """Build the team URL.
 
         Build a URL given a team's abbreviation and the 4-digit year.
 
@@ -678,12 +704,13 @@ class Roster:
         string
             Returns a string of the team's season page for the requested team
             and year.
-        """
-        return ROSTER_URL % (self._team.lower(), year)
 
-    def _get_id(self, player):
         """
-        Parse the player ID.
+        team = self._team.lower() if self._team else ""
+        return ROSTER_URL % (team, year)
+
+    def _get_id(self, player: PyQuery) -> str:
+        """Parse the player ID.
 
         Given a PyQuery object representing a single player on the team roster,
         parse the player ID and return it as a string.
@@ -698,14 +725,21 @@ class Roster:
         -------
         string
             Returns a string of the player ID.
+
         """
         name_tag = player('th[data-stat="player"] a')
+        # Prefer the href attribute to avoid including surrounding/adjacent
+        # HTML/text when the PyQuery element is stringified.
+        href = str(name_tag.attr("href") or "") if name_tag else ""
+        if href:
+            name = re.sub(r".*/cbb/players/", "", href)
+            return re.sub(r"\.html.*", "", name)
+        # Fallback: stringify the tag (legacy behavior)
         name = re.sub(r".*/cbb/players/", "", str(name_tag))
         return re.sub(r"\.html.*", "", name)
 
-    def _get_name(self, player):
-        """
-        Parse the player's name.
+    def _get_name(self, player: PyQuery) -> str:
+        """Parse the player's name.
 
         Given a PyQuery object representing a single player on the team roster,
         parse the player ID and return it as a string.
@@ -720,13 +754,16 @@ class Roster:
         -------
         string
             Returns a string of the player's name.
+
         """
         name_tag = player('th[data-stat="player"] a')
-        return name_tag.text()
+        name = name_tag.text()
+        if not isinstance(name, str):
+            name = str(name) if name is not None else ""
+        return name
 
-    def _parse_coach(self, page):
-        """
-        Parse the team's coach.
+    def _parse_coach(self, page: PyQuery) -> str | None:
+        """Parse the team's coach.
 
         Given a copy of the team's roster page, find and parse the team's
         coach from the team summary.
@@ -740,17 +777,18 @@ class Roster:
         -------
         string
             Returns a string of the coach's name.
+
         """
         coach_name = None
         for line in page.find("p").items():
             strong = line.find("strong")
-            if hasattr(strong, "text") and strong.text().strip() == "Coach:":
-                coach_name = line.find("a").text()
+            strong_text = str(strong.text() or "") if hasattr(strong, "text") else ""
+            if strong_text.strip() == "Coach:":
+                coach_name = str(line.find("a").text() or "") or None
         return coach_name
 
-    def _find_players_with_coach(self, year):
-        """
-        Find all player IDs for the requested team.
+    def _find_players_with_coach(self, year: int | str | None) -> None:
+        """Find all player IDs for the requested team.
 
         For the requested team and year (if applicable), pull the roster table
         and parse the player ID for all players on the roster and create an
@@ -763,17 +801,11 @@ class Roster:
         year : string
             The 4-digit string representing the year to pull the team's roster
             from.
+
         """
         if not year:
             year = utils.find_year_for_season("ncaab")
-            # If stats for the requested season do not exist yet (as is the
-            # case right before a new season begins), attempt to pull the
-            # previous year's stats. If it exists, use the previous year
-            # instead.
-            if not utils.url_exists(self._create_url(year)) and utils.url_exists(
-                self._create_url(str(int(year) - 1))
-            ):
-                year = str(int(year) - 1)
+            year = utils.resolve_year_for_url(year, lambda y: self._create_url(y))
         url = self._create_url(year)
         page = self._pull_team_page(url)
         if not page:
@@ -782,19 +814,27 @@ class Roster:
         players = page("table#roster tbody tr").items()
         for player in players:
             player_id = self._get_id(player)
+            # Only include players that have a player page/fixture available.
+            player_url = PLAYER_URL % player_id
             if self._slim:
                 name = self._get_name(player)
-                self._players[player_id] = name
+                if isinstance(self._players, dict) and utils.url_exists(player_url):
+                    self._players[player_id] = name
             else:
+                # Avoid creating player instances for missing pages.
+                if not utils.url_exists(player_url):
+                    continue
                 player_instance = Player(player_id)
-                self._players.append(player_instance)
+                # Ensure player parsed a valid name before adding.
+                if isinstance(self._players, list) and player_instance.name:
+                    self._players.append(player_instance)
 
         self._coach = self._parse_coach(page)
 
     @property
-    def players(self):
-        """
-        Returns a ``list`` of player instances for each player on the requested
+    def players(self) -> Any:
+        """Return a ``list`` of player instances for each player on the requested.
+
         team's roster if the ``slim`` property is False when calling the Roster
         class. If the ``slim`` property is True, returns a ``dictionary`` where
         each key is a string of the player's ID and each value is the player's
@@ -803,8 +843,6 @@ class Roster:
         return self._players
 
     @property
-    def coach(self):
-        """
-        Returns a ``string`` of the coach's name, such as 'Matt Painter'.
-        """
+    def coach(self) -> Any:
+        """Return a ``string`` of the coach's name, such as 'Matt Painter'."""
         return self._coach

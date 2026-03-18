@@ -1,3 +1,7 @@
+"""Provide utilities for constants."""
+
+from __future__ import annotations
+
 PARSING_SCHEME = {
     "assist_percentage": 'td[data-stat="ast_pct"]:first',
     "assists": 'td[data-stat="ast"]:first',
@@ -119,14 +123,14 @@ BOXSCORE_SCHEME = {
     "away_free_throw_percentage": 'tfoot td[data-stat="ft_pct"]',
     "away_free_throws": 'tfoot td[data-stat="ft"]',
     "away_minutes_played": 'tfoot td[data-stat="mp"]',
-    "away_name": 'a[itemprop="name"]:first',
+    "away_name": "div.scorebox > div:nth-of-type(1) strong a",
     "away_offensive_rating": 'tfoot td[data-stat="off_rtg"]',
     "away_offensive_rebound_percentage": 'tfoot td[data-stat="orb_pct"]',
     "away_offensive_rebounds": 'tfoot td[data-stat="orb"]',
     "away_personal_fouls": 'tfoot td[data-stat="pf"]',
     "away_points": 'tfoot td[data-stat="pts"]',
-    "away_ranking": 'div[class="game_summary nohover current"] tr',
-    "away_record": 'div#boxes div[class="section_heading"] h2',
+    "away_ranking": "div.game_summary.nohover.current tr",
+    "away_record": 'div#boxes div.section_heading[id^="box-score-basic-"] h2',
     "away_steal_percentage": 'tfoot td[data-stat="stl_pct"]',
     "away_steals": 'tfoot td[data-stat="stl"]',
     "away_three_point_attempt_rate": 'tfoot td[data-stat="fg3a_per_fga_pct"]',
@@ -158,14 +162,14 @@ BOXSCORE_SCHEME = {
     "home_free_throw_percentage": 'tfoot td[data-stat="ft_pct"]',
     "home_free_throws": 'tfoot td[data-stat="ft"]',
     "home_minutes_played": 'tfoot td[data-stat="mp"]',
-    "home_name": 'a[itemprop="name"]:last',
+    "home_name": "div.scorebox > div:nth-of-type(2) strong a",
     "home_offensive_rating": 'tfoot td[data-stat="off_rtg"]',
     "home_offensive_rebound_percentage": 'tfoot td[data-stat="orb_pct"]',
     "home_offensive_rebounds": 'tfoot td[data-stat="orb"]',
     "home_personal_fouls": 'tfoot td[data-stat="pf"]',
     "home_points": 'tfoot td[data-stat="pts"]',
-    "home_ranking": 'div[class="game_summary nohover current"] tr',
-    "home_record": 'div#boxes div[class="section_heading"] h2',
+    "home_ranking": "div.game_summary.nohover.current tr",
+    "home_record": 'div#boxes div.section_heading[id^="box-score-basic-"] h2',
     "home_steal_percentage": 'tfoot td[data-stat="stl_pct"]',
     "home_steals": 'tfoot td[data-stat="stl"]',
     "home_three_point_attempt_rate": 'tfoot td[data-stat="fg3a_per_fga_pct"]',
@@ -302,18 +306,20 @@ PLAYER_SCHEME = {
     "win_shares": 'td[data-stat="ws"]',
 }
 
-BASIC_STATS_URL = "https://www.sports-reference.com/cbb/seasons/%s-school-stats.html"
-BASIC_OPPONENT_STATS_URL = "https://www.sports-reference.com/cbb/seasons/%s-opponent-stats.html"
-ADVANCED_STATS_URL = "https://www.sports-reference.com/cbb/seasons/%s-advanced-school-stats.html"
+BASIC_STATS_URL = "https://www.sports-reference.com/cbb/seasons/men/%s-school-stats.html"
+BASIC_OPPONENT_STATS_URL = "https://www.sports-reference.com/cbb/seasons/men/%s-opponent-stats.html"
+ADVANCED_STATS_URL = (
+    "https://www.sports-reference.com/cbb/seasons/men/%s-advanced-school-stats.html"
+)
 ADVANCED_OPPONENT_STATS_URL = (
-    "https://www.sports-reference.com/cbb/seasons/%s-advanced-opponent-stats.html"
+    "https://www.sports-reference.com/cbb/seasons/men/%s-advanced-opponent-stats.html"
 )
 
 SCHEDULE_URL = "https://www.sports-reference.com/cbb/schools/%s/%s-schedule.html"
 BOXSCORE_URL = "https://www.sports-reference.com/cbb/boxscores/%s.html"
 BOXSCORES_URL = "https://www.sports-reference.com/cbb/boxscores/index.cgi?month=%s&day=%s&year=%s"
-RANKINGS_URL = "https://www.sports-reference.com/cbb/seasons/%s-polls-old.html"
-CONFERENCES_URL = "https://www.sports-reference.com/cbb/seasons/%s.html"
+RANKINGS_URL = "https://www.sports-reference.com/cbb/seasons/men/%s-polls-old.html"
+CONFERENCES_URL = "https://www.sports-reference.com/cbb/seasons/men/%s.html"
 CONFERENCE_URL = "https://www.sports-reference.com/cbb/conferences/%s/%s.html"
 PLAYER_URL = "https://www.sports-reference.com/cbb/players/%s.html"
 ROSTER_URL = "https://www.sports-reference.com/cbb/schools/%s/%s.html"

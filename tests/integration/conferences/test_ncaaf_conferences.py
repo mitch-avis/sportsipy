@@ -1,8 +1,8 @@
+"""Provide utilities for test ncaaf conferences."""
+
 from os.path import dirname, join
 
-import mock
 import pytest
-from flexmock import flexmock
 
 from sportsipy import utils
 from sportsipy.ncaaf.conferences import Conference, Conferences
@@ -11,11 +11,14 @@ YEAR = 2018
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = join(dirname(__file__), "ncaaf", filename)
-    return open(filepath, "r", encoding="utf8").read()
+    return open(filepath, encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents, status_code=200):
             self.url = url
@@ -41,6 +44,8 @@ def mock_pyquery(url, timeout=None):
 
 
 def mock_request(url, timeout=None):
+    """Return mock request."""
+
     class MockRequest:
         def __init__(self, html_contents, status_code=200):
             self.status_code = status_code
@@ -53,7 +58,10 @@ def mock_request(url, timeout=None):
 
 
 class TestNCAAFConferences:
+    """Represent TestNCAAFConferences."""
+
     def setup_method(self):
+        """Return setup method."""
         team_conference = {
             "florida-state": "acc",
             "boston-college": "acc",
@@ -127,65 +135,62 @@ class TestNCAAFConferences:
         self.team_conference = team_conference
         self.conferences_result = conferences_result
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    def test_conferences_integration(self, *args, **kwargs):
-        flexmock(utils).should_receive("find_year_for_season").and_return(YEAR)
+    def test_conferences_integration(self, monkeypatch, *args, **kwargs):
+        """Return test conferences integration."""
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: YEAR)
 
         conferences = Conferences()
 
         assert conferences.team_conference == self.team_conference
         assert conferences.conferences == self.conferences_result
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conferences_integration_bad_url(self, *args, **kwargs):
+        """Return test conferences integration bad url."""
         with pytest.raises(ValueError):
             Conferences("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conference_integration_bad_url(self, *args, **kwargs):
+        """Return test conference integration bad url."""
         with pytest.raises(ValueError):
             Conference("BAD")
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    def test_conference_with_no_names_is_empty(self, *args, **kwargs):
-        flexmock(Conference).should_receive("_get_team_abbreviation").and_return("")
+    def test_conference_with_no_names_is_empty(self, monkeypatch, *args, **kwargs):
+        """Return test conference with no names is empty."""
+        monkeypatch.setattr(Conference, "_get_team_abbreviation", lambda *_args, **_kwargs: "")
 
         conference = Conference("acc")
 
         assert len(conference._teams) == 0
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
-    def test_invalid_default_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
+    def test_invalid_default_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
+        """Return test invalid default year reverts to previous year."""
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2019)
 
         conferences = Conferences()
 
         assert conferences.team_conference == self.team_conference
         assert conferences.conferences == self.conferences_result
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
-    def test_invalid_conference_year_reverts_to_previous_year(self, *args, **kwargs):
-        flexmock(utils).should_receive("find_year_for_season").and_return(2019)
+    def test_invalid_conference_year_reverts_to_previous_year(self, monkeypatch, *args, **kwargs):
+        """Return test invalid conference year reverts to previous year."""
+        monkeypatch.setattr(utils, "find_year_for_season", lambda _league: 2019)
 
         conference = Conference("acc")
 
         assert len(conference._teams) == 14
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
-    @mock.patch("requests.head", side_effect=mock_request)
     def test_invalid_conference_page_skips_error(self, *args, **kwargs):
+        """Return test invalid conference page skips error."""
         Conference("BAD", ignore_missing=True)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conferences_string_representation(self, *args, **kwargs):
+        """Return test conferences string representation."""
         conferences = Conferences()
 
         assert repr(conferences) == "NCAAF Conferences"
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_conference_string_representation(self, *args, **kwargs):
+        """Return test conference string representation."""
         conference = Conference("acc")
 
         assert repr(conference) == "acc - NCAAF"

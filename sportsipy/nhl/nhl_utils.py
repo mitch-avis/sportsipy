@@ -1,11 +1,18 @@
+"""Provide utilities for nhl utils."""
+
+from __future__ import annotations
+
+from typing import Any
+
 from sportsipy import utils
+from sportsipy.nhl.constants import SEASON_PAGE_URL
 
-from .constants import SEASON_PAGE_URL
 
-
-def _retrieve_all_teams(year, season_page=None):
-    """
-    Find and create Team instances for all teams in the given season.
+def _retrieve_all_teams(
+    year: int | str | None,
+    season_page: str | None = None,
+) -> tuple[Any | None, int | str | None]:
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified NHL stats table and finds all
     requested stats. Each team then has a Team instance created which includes
@@ -19,7 +26,7 @@ def _retrieve_all_teams(year, season_page=None):
     ----------
     year : string
         The requested year to pull stats from.
-    teams_file : string (optional)
+    season_page : string (optional)
         Link with filename to the local season page.
 
     Returns
@@ -28,16 +35,11 @@ def _retrieve_all_teams(year, season_page=None):
         Returns a ``tuple`` in the format of (teams_list, year) where the
         teams_list is the PyQuery data for every team in the given season, and
         the year is the request year for the season.
+
     """
     if not year:
         year = utils.find_year_for_season("nhl")
-        # If stats for the requested season do not exist yet (as is the case
-        # right before a new season begins), attempt to pull the previous
-        # year's stats. If it exists, use the previous year instead.
-        if not utils.url_exists(SEASON_PAGE_URL % year) and utils.url_exists(
-            SEASON_PAGE_URL % str(int(year) - 1)
-        ):
-            year = str(int(year) - 1)
+        year = utils.resolve_year_for_url(year, lambda y: SEASON_PAGE_URL % y)
     doc = utils.pull_page(SEASON_PAGE_URL % year, season_page)
     teams_list = utils.get_stats_table(doc, "div#all_stats")
     if not teams_list:

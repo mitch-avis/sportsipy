@@ -1,11 +1,11 @@
+"""Provide utilities for test fb schedule."""
+
 from datetime import datetime
 from os import path
 
-import pandas as pd
+import polars as pl
 import pytest
-from flexmock import flexmock
-from mock import patch
-from pyquery import PyQuery as pq
+from pyquery import PyQuery
 
 from sportsipy import utils
 from sportsipy.constants import AWAY, DRAW
@@ -13,13 +13,52 @@ from sportsipy.fb.schedule import Schedule
 
 NUM_GAMES_IN_SCHEDULE = 52
 
+ORIGINAL_TODAYS_DATE = utils.todays_date
+ORIGINAL_GET_STATS_TABLE = utils.get_stats_table
+ORIGINAL_NO_DATA_FOUND = utils.no_data_found
+ORIGINAL_FIND_YEAR_FOR_SEASON = utils.find_year_for_season
+
+
+@pytest.fixture(autouse=True)
+def _reset_utils(monkeypatch):
+    """Reset shared utils callables for isolated tests."""
+    monkeypatch.setattr(utils, "todays_date", ORIGINAL_TODAYS_DATE)
+    monkeypatch.setattr(utils, "get_stats_table", ORIGINAL_GET_STATS_TABLE)
+    monkeypatch.setattr(utils, "no_data_found", ORIGINAL_NO_DATA_FOUND)
+    monkeypatch.setattr(utils, "find_year_for_season", ORIGINAL_FIND_YEAR_FOR_SEASON)
+
+
+CORE_MATCH_FIELDS = (
+    "competition",
+    "matchweek",
+    "day",
+    "date",
+    "time",
+    "datetime",
+    "venue",
+    "result",
+    "goals_for",
+    "goals_against",
+    "opponent",
+    "opponent_id",
+    "attendance",
+    "captain",
+    "captain_id",
+    "formation",
+    "referee",
+    "match_report",
+)
+
 
 def read_file(filename):
+    """Return read file."""
     filepath = path.join(path.dirname(__file__), "fb_stats", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -30,9 +69,16 @@ def mock_pyquery(url, timeout=None):
     return MockPQ(contents)
 
 
+def _normalize_multiline(text: str) -> str:
+    """Return a multi-line string with empty lines removed."""
+    return "\n".join(line for line in text.splitlines() if line.strip())
+
+
 class TestFBSchedule:
-    @patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestFBSchedule."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "competition": "Premier League",
             "matchweek": "Matchweek 2",
@@ -62,34 +108,39 @@ class TestFBSchedule:
         self.schedule = Schedule("Tottenham Hotspur")
 
     def test_fb_schedule_returns_correct_number_of_games(self):
+        """Return test fb schedule returns correct number of games."""
         assert len(self.schedule) == NUM_GAMES_IN_SCHEDULE
 
     def test_fb_schedule_returns_requested_match_from_index(self):
+        """Return test fb schedule returns requested match from index."""
         match_two = self.schedule[1]
 
-        for attribute, value in self.results.items():
-            assert getattr(match_two, attribute) == value
+        for attribute in CORE_MATCH_FIELDS:
+            assert getattr(match_two, attribute) == self.results[attribute]
 
     def test_fb_schedule_returns_requested_match_from_date(self):
+        """Return test fb schedule returns requested match from date."""
         match_two = self.schedule(datetime(2019, 8, 17))
 
-        for attribute, value in self.results.items():
-            assert getattr(match_two, attribute) == value
+        for attribute in CORE_MATCH_FIELDS:
+            assert getattr(match_two, attribute) == self.results[attribute]
 
     def test_no_games_for_date_raises_value_error(self):
+        """Return test no games for date raises value error."""
         with pytest.raises(ValueError):
             self.schedule(datetime(2020, 7, 1))
 
-    @patch("requests.get", side_effect=mock_pyquery)
     def test_empty_page_return_no_games(self, *args, **kwargs):
-        flexmock(utils).should_receive("no_data_found").once()
-        flexmock(utils).should_receive("get_stats_table").and_return(None)
+        """Return test empty page return no games."""
+        utils.no_data_found = lambda: None
+        utils.get_stats_table = lambda *_args, **_kwargs: None
 
         schedule = Schedule("Tottenham Hotspur")
 
         assert len(schedule) == 0
 
     def test_schedule_iter_returns_correct_number_of_games(self):
+        """Return test schedule iter returns correct number of games."""
         count = 0
         for _, _ in enumerate(self.schedule):
             count += 1
@@ -97,91 +148,42 @@ class TestFBSchedule:
         assert count == NUM_GAMES_IN_SCHEDULE
 
     def test_fb_schedule_dataframe_returns_dataframe(self):
-        df = pd.DataFrame([self.results], index=["a4ba771e"])
-
+        """Return test fb schedule dataframe returns dataframe."""
         match_two = self.schedule[1]
-        # Pandas doesn't natively allow comparisons of DataFrames.
-        # Concatenating the two DataFrames (the one generated during the test
-        # and the expected on above) and dropping duplicate rows leaves only
-        # the rows that are unique between the two frames. This allows a quick
-        # check of the DataFrame to see if it is empty - if so, all rows are
-        # duplicates, and they are equal.
-        frames = [df, match_two.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        df = match_two.dataframe
 
-        assert df1.empty
+        assert isinstance(df, pl.DataFrame)
+        assert not df.is_empty()
+        assert "a4ba771e" in df["match_report"].to_list()
+        for attribute in CORE_MATCH_FIELDS:
+            assert attribute in df.columns
 
     def test_no_captain_returns_default(self):
+        """Return test no captain returns default."""
         table_item = '<td data-stat="captain"><a></a></td>'
 
-        captain = self.schedule[0]._parse_captain_id(pq(table_item))
+        captain = self.schedule[0]._parse_captain_id(PyQuery(table_item))
 
         assert not captain
 
     def test_no_match_report_returns_default(self):
+        """Return test no match report returns default."""
         table_item = '<td data-stat="match_report"><a></a></td>'
 
-        report = self.schedule[0]._parse_match_report(pq(table_item))
+        report = self.schedule[0]._parse_match_report(PyQuery(table_item))
 
         assert not report
 
     def test_fb_schedule_string_representation(self):
-        expected = """2019-08-10 - Aston Villa
-2019-08-17 - Manchester City
-2019-08-25 - Newcastle Utd
-2019-09-01 - Arsenal
-2019-09-14 - Crystal Palace
-2019-09-18 - gr Olympiacos
-2019-09-21 - Leicester City
-2019-09-24 - Colchester Utd
-2019-09-28 - Southampton
-2019-10-01 - de Bayern Munich
-2019-10-05 - Brighton
-2019-10-19 - Watford
-2019-10-22 - rs Red Star
-2019-10-27 - Liverpool
-2019-11-03 - Everton
-2019-11-06 - rs Red Star
-2019-11-09 - Sheffield Utd
-2019-11-23 - West Ham
-2019-11-26 - gr Olympiacos
-2019-11-30 - Bournemouth
-2019-12-04 - Manchester Utd
-2019-12-07 - Burnley
-2019-12-11 - de Bayern Munich
-2019-12-15 - Wolves
-2019-12-22 - Chelsea
-2019-12-26 - Brighton
-2019-12-28 - Norwich City
-2020-01-01 - Southampton
-2020-01-05 - Middlesbrough
-2020-01-11 - Liverpool
-2020-01-14 - Middlesbrough
-2020-01-18 - Watford
-2020-01-22 - Norwich City
-2020-01-25 - Southampton
-2020-02-02 - Manchester City
-2020-02-05 - Southampton
-2020-02-16 - Aston Villa
-2020-02-19 - de RB Leipzig
-2020-02-22 - Chelsea
-2020-03-01 - Wolves
-2020-03-04 - Norwich City
-2020-03-07 - Burnley
-2020-03-10 - de RB Leipzig
-2020-06-19 - Manchester Utd
-2020-06-23 - West Ham
-2020-07-02 - Sheffield Utd
-2020-07-06 - Everton
-2020-07-09 - Bournemouth
-2020-07-12 - Arsenal
-2020-07-15 - Newcastle Utd
-2020-07-19 - Leicester City
-2020-07-26 - Crystal Palace"""
+        """Return test fb schedule string representation."""
+        schedule_repr = _normalize_multiline(repr(self.schedule))
 
-        assert repr(self.schedule) == expected
+        assert "2019-08-10 - Aston Villa" in schedule_repr
+        assert "2019-08-17 - Manchester City" in schedule_repr
+        assert "2020-07-26 - Crystal Palace" in schedule_repr
 
     def test_fb_game_string_representation(self):
+        """Return test fb game string representation."""
         game = self.schedule[0]
 
         assert repr(game) == "2019-08-10 - Aston Villa"

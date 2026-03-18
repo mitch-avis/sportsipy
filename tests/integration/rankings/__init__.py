@@ -1,0 +1,1 @@
+"""Initialize the rankings package."""

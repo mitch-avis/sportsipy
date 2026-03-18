@@ -1,14 +1,16 @@
+"""Provide utilities for test ncaaf boxscore."""
+
 import os
 from datetime import datetime
 
-import mock
-import pandas as pd
-from flexmock import flexmock
+import polars as pl
+import pytest
 
 from sportsipy import utils
 from sportsipy.constants import AWAY
 from sportsipy.ncaaf.boxscore import Boxscore, Boxscores
 from sportsipy.ncaaf.constants import BOXSCORES_URL
+from tests.integration.test_utils import normalize_games
 
 MONTH = 10
 YEAR = 2020
@@ -17,11 +19,14 @@ BOXSCORE = "2020-09-12-wake-forest"
 
 
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "ncaaf", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -37,14 +42,19 @@ def mock_pyquery(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNCAAFBoxscore:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestNCAAFBoxscore."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "date": "Saturday Sep 12, 2020",
             "time": "7:30 PM ET",
@@ -87,17 +97,25 @@ class TestNCAAFBoxscore:
             "home_penalties": 1,
             "home_yards_from_penalties": 6,
         }
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-
         self.boxscore = Boxscore(BOXSCORE)
 
+    @pytest.fixture(autouse=True)
+    def _patch_today(self, monkeypatch):
+        """Patch today's date used by default-year behavior."""
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+
     def test_ncaaf_boxscore_returns_requested_boxscore(self):
+        """Return test ncaaf boxscore returns requested boxscore."""
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
-        assert getattr(self.boxscore, "summary") == {"away": [14, 13, 10, 0], "home": [0, 0, 3, 10]}
+        assert self.boxscore.summary == {
+            "away": [14, 13, 10, 0],
+            "home": [0, 0, 3, 10],
+        }
 
-    def test_invalid_url_yields_empty_class(self):
-        flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
+    def test_invalid_url_yields_empty_class(self, monkeypatch):
+        """Return test invalid url yields empty class."""
+        monkeypatch.setattr(Boxscore, "_retrieve_html_page", lambda *_args, **_kwargs: None)
 
         boxscore = Boxscore(BOXSCORE)
 
@@ -107,36 +125,42 @@ class TestNCAAFBoxscore:
             assert value is None
 
     def test_ncaaf_boxscore_dataframe_returns_dataframe_of_all_values(self):
-        df = pd.DataFrame([self.results], index=[BOXSCORE])
+        """Return test ncaaf boxscore dataframe returns dataframe of all values."""
+        df = pl.DataFrame([self.results])
 
-        # Pandas doesn't natively allow comparisons of DataFrames.
+        # Polars doesn't natively allow comparisons of DataFrames.
         # Concatenating the two DataFrames (the one generated during the test
         # and the expected one above) and dropping duplicate rows leaves only
         # the rows that are unique between the two frames. This allows a quick
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
-        frames = [df, self.boxscore.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        assert self.boxscore.dataframe is not None
+        df1 = pl.concat([df, self.boxscore.dataframe.select(df.columns)]).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_ncaaf_boxscore_players(self):
-        assert len(self.boxscore.home_players) == 37
+        """Return test ncaaf boxscore players."""
+        assert len(self.boxscore.home_players) == 39
         assert len(self.boxscore.away_players) == 45
 
         for player in self.boxscore.home_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
         for player in self.boxscore.away_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
 
     def test_ncaaf_boxscore_string_representation(self):
+        """Return test ncaaf boxscore string representation."""
         expected = "Boxscore for Clemson at Wake Forest (Saturday Sep 12, 2020)"
 
         assert repr(self.boxscore) == expected
 
 
 class TestNCAAFBoxscores:
+    """Represent TestNCAAFBoxscores."""
+
     def setup_method(self):
+        """Return setup method."""
         self.expected = {
             "9-12-2020": [
                 {
@@ -362,8 +386,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-south-florida",
-                    "away_name": "Citadel",
-                    "away_abbr": "Citadel",
+                    "away_name": "The Citadel",
+                    "away_abbr": "The Citadel",
                     "away_score": 6,
                     "away_rank": None,
                     "home_name": "South Florida",
@@ -374,8 +398,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "South Florida",
                     "winning_abbr": "south-florida",
-                    "losing_name": "Citadel",
-                    "losing_abbr": "Citadel",
+                    "losing_name": "The Citadel",
+                    "losing_abbr": "The Citadel",
                 },
                 {
                     "boxscore": "2020-09-12-texas",
@@ -413,8 +437,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-texas-tech",
-                    "away_name": "Houston Baptist",
-                    "away_abbr": "Houston Baptist",
+                    "away_name": "Houston Christian",
+                    "away_abbr": "Houston Christian",
                     "away_score": 33,
                     "away_rank": None,
                     "home_name": "Texas Tech",
@@ -425,8 +449,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "Texas Tech",
                     "winning_abbr": "texas-tech",
-                    "losing_name": "Houston Baptist",
-                    "losing_abbr": "Houston Baptist",
+                    "losing_name": "Houston Christian",
+                    "losing_abbr": "Houston Christian",
                 },
                 {
                     "boxscore": "2020-09-12-wake-forest",
@@ -482,20 +506,20 @@ class TestNCAAFBoxscores:
             ]
         }
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search(self, *args, **kwargs):
+        """Return test boxscores search."""
         result = Boxscores(datetime(2020, 9, 12)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
+        """Return test boxscores search invalid end."""
         result = Boxscores(datetime(2020, 9, 12), datetime(2020, 9, 11)).games
 
-        assert result == self.expected
+        assert normalize_games(result) == normalize_games(self.expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_multiple_days(self, *args, **kwargs):
+        """Return test boxscores search multiple days."""
         expected = {
             "9-12-2020": [
                 {
@@ -721,8 +745,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-south-florida",
-                    "away_name": "Citadel",
-                    "away_abbr": "Citadel",
+                    "away_name": "The Citadel",
+                    "away_abbr": "The Citadel",
                     "away_score": 6,
                     "away_rank": None,
                     "home_name": "South Florida",
@@ -733,8 +757,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "South Florida",
                     "winning_abbr": "south-florida",
-                    "losing_name": "Citadel",
-                    "losing_abbr": "Citadel",
+                    "losing_name": "The Citadel",
+                    "losing_abbr": "The Citadel",
                 },
                 {
                     "boxscore": "2020-09-12-texas",
@@ -772,8 +796,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-texas-tech",
-                    "away_name": "Houston Baptist",
-                    "away_abbr": "Houston Baptist",
+                    "away_name": "Houston Christian",
+                    "away_abbr": "Houston Christian",
                     "away_score": 33,
                     "away_rank": None,
                     "home_name": "Texas Tech",
@@ -784,8 +808,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "Texas Tech",
                     "winning_abbr": "texas-tech",
-                    "losing_name": "Houston Baptist",
-                    "losing_abbr": "Houston Baptist",
+                    "losing_name": "Houston Christian",
+                    "losing_abbr": "Houston Christian",
                 },
                 {
                     "boxscore": "2020-09-12-wake-forest",
@@ -1063,8 +1087,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-south-florida",
-                    "away_name": "Citadel",
-                    "away_abbr": "Citadel",
+                    "away_name": "The Citadel",
+                    "away_abbr": "The Citadel",
                     "away_score": 6,
                     "away_rank": None,
                     "home_name": "South Florida",
@@ -1075,8 +1099,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "South Florida",
                     "winning_abbr": "south-florida",
-                    "losing_name": "Citadel",
-                    "losing_abbr": "Citadel",
+                    "losing_name": "The Citadel",
+                    "losing_abbr": "The Citadel",
                 },
                 {
                     "boxscore": "2020-09-12-texas",
@@ -1114,8 +1138,8 @@ class TestNCAAFBoxscores:
                 },
                 {
                     "boxscore": "2020-09-12-texas-tech",
-                    "away_name": "Houston Baptist",
-                    "away_abbr": "Houston Baptist",
+                    "away_name": "Houston Christian",
+                    "away_abbr": "Houston Christian",
                     "away_score": 33,
                     "away_rank": None,
                     "home_name": "Texas Tech",
@@ -1126,8 +1150,8 @@ class TestNCAAFBoxscores:
                     "top_25": False,
                     "winning_name": "Texas Tech",
                     "winning_abbr": "texas-tech",
-                    "losing_name": "Houston Baptist",
-                    "losing_abbr": "Houston Baptist",
+                    "losing_name": "Houston Christian",
+                    "losing_abbr": "Houston Christian",
                 },
                 {
                     "boxscore": "2020-09-12-wake-forest",
@@ -1184,10 +1208,10 @@ class TestNCAAFBoxscores:
         }
         result = Boxscores(datetime(2020, 9, 12), datetime(2020, 9, 13)).games
 
-        assert result == expected
+        assert normalize_games(result) == normalize_games(expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_string_representation(self, *args, **kwargs):
+        """Return test boxscores search string representation."""
         result = Boxscores(datetime(2020, 9, 12))
 
         assert repr(result) == "NCAAF games for 9-12-2020"

@@ -1,2 +1,102 @@
-[tool.black]
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sportsipy"
+dynamic = ["version"]
+authors = [{ name = "Robert Clark", email = "robdclark@outlook.com" }]
+description = "A free sports API written for python"
+readme = "README.md"
+requires-python = ">=3.12"
+keywords = ["stats", "sports", "api", "sportsipy", "machine learning"]
+license = { text = "MIT" }
+urls = { "Homepage" = "https://github.com/mitch-avis/sportsipy" }
+dependencies = ["numpy", "polars", "pyquery", "requests"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+]
+
+[project.optional-dependencies]
+bot-evasion = ["curl_cffi", "playwright", "camoufox"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sportsipy"]
+
+[tool.hatch.version]
+path = "VERSION"
+
+[tool.ruff]
 line-length = 100
+target-version = "py312"
+extend-exclude = [
+    ".venv",
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "B",   # flake8-bugbear rules
+    "C4",  # flake8-comprehensions rules
+    "D",   # pydocstyle rules
+    "E",   # pycodestyle errors
+    "F",   # pyflakes rules
+    "I",   # isort rules
+    "N",   # pep8-naming rules
+    "S",   # bandit security rules
+    "SIM", # flake8-simplify rules
+    "UP",  # pyupgrade rules
+    "W",   # pycodestyle warnings
+    "NPY", # numpy docstring rules
+    "PGH", # pygrep-hooks rules
+]
+ignore = [
+    "D203", # Conflicts with D211 (no-blank-line-before-class)
+    "D213", # Conflicts with D212 (multi-line-summary-first-line)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"] # Use of assert is standard in pytest
+
+[tool.ruff.lint.isort]
+known-first-party = ["sportsipy"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+reportMissingImports = true
+reportMissingTypeStubs = false
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = [
+    "-ra",                       # show extra summary for (s)kipped, (x)failed
+    "--strict-markers",
+    "--cov=sportsipy",
+    "--cov-report=term-missing",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+branch = true
+source = ["sportsipy"]
+omit = ["config.py", "config-*.py", "*/config.py", "*/config-*.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = ["pragma: no cover", "if __name__ == \"__main__\":"]

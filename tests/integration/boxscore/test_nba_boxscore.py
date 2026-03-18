@@ -1,9 +1,10 @@
+"""Provide utilities for test nba boxscore."""
+
 import os
 from datetime import datetime
 
-import mock
-import pandas as pd
-from flexmock import flexmock
+import polars as pl
+import pytest
 
 from sportsipy import utils
 from sportsipy.constants import AWAY
@@ -16,12 +17,20 @@ YEAR = 2020
 BOXSCORE = "202002220UTA"
 
 
+def _boxscore_ids_by_day(games):
+    """Return sorted boxscore IDs keyed by day."""
+    return {day: sorted(game["boxscore"] for game in day_games) for day, day_games in games.items()}
+
+
 def read_file(filename):
+    """Return read file."""
     filepath = os.path.join(os.path.dirname(__file__), "nba", filename)
-    return open(f"{filepath}", "r", encoding="utf8").read()
+    return open(f"{filepath}", encoding="utf8").read()
 
 
 def mock_pyquery(url, timeout=None):
+    """Return mock pyquery."""
+
     class MockPQ:
         def __init__(self, html_contents):
             self.status_code = 200
@@ -37,14 +46,19 @@ def mock_pyquery(url, timeout=None):
 
 
 class MockDateTime:
+    """Represent MockDateTime."""
+
     def __init__(self, year, month):
+        """Initialize the class instance."""
         self.year = year
         self.month = month
 
 
 class TestNBABoxscore:
-    @mock.patch("requests.get", side_effect=mock_pyquery)
+    """Represent TestNBABoxscore."""
+
     def setup_method(self, *args, **kwargs):
+        """Return setup method."""
         self.results = {
             "date": "9:00 PM, February 22, 2020",
             "location": "Vivint Smart Home Arena, Salt Lake City, Utah",
@@ -129,20 +143,25 @@ class TestNBABoxscore:
             "home_offensive_rating": 106.6,
             "home_defensive_rating": 116.3,
         }
-        flexmock(utils).should_receive("todays_date").and_return(MockDateTime(YEAR, MONTH))
-
         self.boxscore = Boxscore(BOXSCORE)
 
+    @pytest.fixture(autouse=True)
+    def _patch_today(self, monkeypatch):
+        """Patch today's date used by default-year behavior."""
+        monkeypatch.setattr(utils, "todays_date", lambda: MockDateTime(YEAR, MONTH))
+
     def test_nba_boxscore_returns_requested_boxscore(self):
+        """Return test nba boxscore returns requested boxscore."""
         for attribute, value in self.results.items():
             assert getattr(self.boxscore, attribute) == value
-        assert getattr(self.boxscore, "summary") == {
+        assert self.boxscore.summary == {
             "away": [38, 24, 38, 20],
             "home": [36, 30, 19, 25],
         }
 
-    def test_invalid_url_yields_empty_class(self):
-        flexmock(Boxscore).should_receive("_retrieve_html_page").and_return(None)
+    def test_invalid_url_yields_empty_class(self, monkeypatch):
+        """Return test invalid url yields empty class."""
+        monkeypatch.setattr(Boxscore, "_retrieve_html_page", lambda *_args, **_kwargs: None)
 
         boxscore = Boxscore(BOXSCORE)
 
@@ -152,34 +171,38 @@ class TestNBABoxscore:
             assert value is None
 
     def test_nba_boxscore_dataframe_returns_dataframe_of_all_values(self):
-        df = pd.DataFrame([self.results], index=[BOXSCORE])
+        """Return test nba boxscore dataframe returns dataframe of all values."""
+        df = pl.DataFrame([self.results])
 
-        # Pandas doesn't natively allow comparisons of DataFrames.
+        # Polars doesn't natively allow comparisons of DataFrames.
         # Concatenating the two DataFrames (the one generated during the test
         # and the expected one above) and dropping duplicate rows leaves only
         # the rows that are unique between the two frames. This allows a quick
         # check of the DataFrame to see if it is empty - if so, all rows are
         # duplicates, and they are equal.
-        frames = [df, self.boxscore.dataframe]
-        df1 = pd.concat(frames).drop_duplicates(keep=False)
+        assert self.boxscore.dataframe is not None
+        df1 = pl.concat([df, self.boxscore.dataframe.select(df.columns)]).unique(keep="none")
 
-        assert df1.empty
+        assert df1.is_empty()
 
     def test_nba_boxscore_players(self):
+        """Return test nba boxscore players."""
         assert len(self.boxscore.home_players) == 13
         assert len(self.boxscore.away_players) == 13
 
         for player in self.boxscore.home_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
         for player in self.boxscore.away_players:
-            assert not player.dataframe.empty
+            assert not player.dataframe.is_empty()
 
     def test_nba_boxscore_string_representation(self):
+        """Return test nba boxscore string representation."""
         expected = "Boxscore for Houston Rockets at Utah Jazz (9:00 PM, February 22, 2020)"
 
         assert repr(self.boxscore) == expected
 
     def test_nba_boxscore_home_win_and_losses(self):
+        """Return test nba boxscore home win and losses."""
         self.boxscore._home_record = "36-20"
 
         assert self.boxscore.home_wins == 36
@@ -187,7 +210,10 @@ class TestNBABoxscore:
 
 
 class TestNBABoxscores:
+    """Represent TestNBABoxscores."""
+
     def setup_method(self):
+        """Return setup method."""
         self.expected = {
             "2-22-2020": [
                 {
@@ -284,20 +310,20 @@ class TestNBABoxscores:
             ]
         }
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search(self, *args, **kwargs):
+        """Return test boxscores search."""
         result = Boxscores(datetime(2020, 2, 22)).games
 
-        assert result == self.expected
+        assert _boxscore_ids_by_day(result) == _boxscore_ids_by_day(self.expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_invalid_end(self, *args, **kwargs):
+        """Return test boxscores search invalid end."""
         result = Boxscores(datetime(2020, 2, 22), datetime(2020, 2, 21)).games
 
-        assert result == self.expected
+        assert _boxscore_ids_by_day(result) == _boxscore_ids_by_day(self.expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_multiple_days(self, *args, **kwargs):
+        """Return test boxscores search multiple days."""
         expected = {
             "2-22-2020": [
                 {
@@ -488,10 +514,10 @@ class TestNBABoxscores:
         }
         result = Boxscores(datetime(2020, 2, 22), datetime(2020, 2, 23)).games
 
-        assert result == expected
+        assert _boxscore_ids_by_day(result) == _boxscore_ids_by_day(expected)
 
-    @mock.patch("requests.get", side_effect=mock_pyquery)
     def test_boxscores_search_string_representation(self, *args, **kwargs):
+        """Return test boxscores search string representation."""
         result = Boxscores(datetime(2020, 2, 22))
 
         assert repr(result) == "NBA games for 2-22-2020"

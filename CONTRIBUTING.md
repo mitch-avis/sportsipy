@@ -66,7 +66,7 @@ overall structure of the project, several styling guidelines should be followed.
 The git commit message is a crucial part of any code update and should follow
 certain guidelines to describe what the commit is for, why it the changes are
 being made, and who wrote the commit. A great resource on writing a strong
-commit message can be found [here](https://chris.beams.io/posts/git-commit/).
+commit message can be found here: <https://chris.beams.io/posts/git-commit/>.
 The seven rules should be followed unless a compelling circumstance arises.
 These rules are as follows (taken from the linked page):
 
@@ -115,12 +115,13 @@ issue.
 ### Python style
 
 In general, all Python code should follow the Python Enhanced Proposals (PEPs).
-The continuous integration tool used to qualify the project runs `pycodestyle`
-which attempts to verify the code against the PEP rules and warn if any
-violations have been made. If a particular PEP rule is being violated but is
-deemed to be necessary, exceptions can be made on a case-by-case basis.
-Otherwise, all code must pass `pycodestyle` prior to being merged with the
-upstream code.
+The continuous integration tool used to qualify the project runs `ruff check`
+and `ruff format --check .` to enforce style and formatting requirements. Type
+checking is performed with `pyright`, and documentation links/wording are
+validated with `python scripts/check_docs_links.py`. If a specific rule needs an exception,
+it should be handled on a case-by-case basis with a clear justification.
+Otherwise, all code must pass `ruff check`, `ruff format --check .`, and
+`pyright` prior to being merged with upstream code.
 
 ## General Practice
 
@@ -146,3 +147,20 @@ scenarios. Examples can be found in the tests directory.
 In addition to adding tests for new code, all existing tests should pass unless
 there is an issue with one of the actual tests. In that case, the maintainers
 should be notified of this issue to ensure a resolution is found.
+
+### Offline integration fixtures
+
+Integration tests run in offline mode and read from fixtures in
+`tests/integration`, with URL routing defined in
+`tests/integration/url_map.json`. If a new live URL is needed, capture it
+explicitly and update the map using the capture helper:
+
+```bash
+SPORTSIPY_CAPTURE_FIXTURES=1 python scripts/capture_fixtures.py \
+  --url "<live url>" \
+  --path "<subdir>/<filename>.html"
+```
+
+If you see a failure indicating blocked network access, add or adjust the
+fixture map entry, or set `SPORTSIPY_LIVE=1` to allow live HTTP during
+integration tests.

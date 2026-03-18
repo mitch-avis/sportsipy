@@ -1,11 +1,18 @@
+"""Provide utilities for mlb utils."""
+
+from __future__ import annotations
+
+from typing import Any
+
 from sportsipy import utils
+from sportsipy.mlb.constants import PARSING_SCHEME, STANDINGS_URL, TEAM_STATS_URL
 
-from .constants import PARSING_SCHEME, STANDINGS_URL, TEAM_STATS_URL
 
-
-def _add_stats_data(teams_list, team_data_dict):
-    """
-    Add a team's stats row to a dictionary.
+def _add_stats_data(
+    teams_list: Any,
+    team_data_dict: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Add a team's stats row to a dictionary.
 
     Pass table contents and a stats dictionary of all teams to accumulate all
     stats for each team in a single variable.
@@ -25,14 +32,19 @@ def _add_stats_data(teams_list, team_data_dict):
     dictionary
         An updated version of the team_data_dict with the passed table row
         information included.
+
     """
     # Teams are listed in terms of rank with the first team being #1
     rank = 1
+    if teams_list is None:
+        return team_data_dict
     for team_data in teams_list:
         # Skip the league average row
         if 'class="league_average_table"' in str(team_data):
             continue
         abbr = utils.parse_field(PARSING_SCHEME, team_data, "abbreviation")
+        if not isinstance(abbr, str):
+            continue
         try:
             team_data_dict[abbr]["data"] += team_data
         except KeyError:
@@ -41,9 +53,12 @@ def _add_stats_data(teams_list, team_data_dict):
     return team_data_dict
 
 
-def _retrieve_all_teams(year, standings_file=None, teams_file=None):
-    """
-    Find and create Team instances for all teams in the given season.
+def _retrieve_all_teams(
+    year: int | str | None,
+    standings_file: str | None = None,
+    teams_file: str | None = None,
+) -> tuple[dict[str, dict[str, Any]] | None, int | str | None]:
+    """Find and create Team instances for all teams in the given season.
 
     For a given season, parses the specified MLB stats table and finds all
     requested stats. Each team then has a Team instance created which includes
@@ -65,18 +80,13 @@ def _retrieve_all_teams(year, standings_file=None, teams_file=None):
         Returns a ``tuple`` of the team_data_dict and year which represent all
         stats for all teams, and the given year that should be used to pull
         stats from, respectively.
+
     """
     team_data_dict = {}
 
     if not year:
         year = utils.find_year_for_season("mlb")
-        # If stats for the requested season do not exist yet (as is the case
-        # right before a new season begins), attempt to pull the previous
-        # year's stats. If it exists, use the previous year instead.
-        if not utils.url_exists(STANDINGS_URL % year) and utils.url_exists(
-            STANDINGS_URL % str(int(year) - 1)
-        ):
-            year = str(int(year) - 1)
+        year = utils.resolve_year_for_url(year, lambda y: STANDINGS_URL % y)
     doc = utils.pull_page(STANDINGS_URL % year, standings_file)
     div_prefix = "div#all_expanded_standings_overall"
     standings = utils.get_stats_table(doc, div_prefix)
