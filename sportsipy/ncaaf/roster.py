@@ -286,11 +286,17 @@ class Player(AbstractPlayer):
 
         for table_id in [
             "passing",
+            "passing_standard",
             "rushing",
+            "rushing_standard",
             "defense",
+            "defense_standard",
             "scoring",
+            "scoring_standard",
             "receiving",
+            "receiving_standard",
             "kicking",
+            "kicking_standard",
         ]:
             table_items = utils.get_stats_table(player_info, f"table#{table_id}")
             career_items = utils.get_stats_table(player_info, f"table#{table_id}", footer=True)
