@@ -34,6 +34,7 @@ import shutil
 import sqlite3
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
@@ -270,11 +271,15 @@ def chrome_cookies_for_domain(
         conn = sqlite3.connect(str(tmp_path))
         try:
             placeholders = ",".join("?" for _ in cookie_names)
+            # Chrome stores expires_utc as microseconds since 1601-01-01.
+            # Filter out expired cookies (expires_utc=0 means session cookie).
+            now_chrome = int(time.time() * 1_000_000) + 11_644_473_600_000_000
             query = (
                 f"SELECT name, encrypted_value, value FROM cookies "  # noqa: S608
-                f"WHERE host_key = ? AND name IN ({placeholders})"
+                f"WHERE host_key = ? AND name IN ({placeholders}) "
+                f"AND (expires_utc = 0 OR expires_utc > ?)"
             )
-            cursor = conn.execute(query, (domain, *cookie_names))
+            cursor = conn.execute(query, (domain, *cookie_names, now_chrome))
             for name, encrypted_value, plain_value in cursor.fetchall():
                 # Prefer the plaintext value column if populated.
                 if plain_value:
@@ -394,3 +399,57 @@ def get_domain_for_url(url: str) -> str | None:
         if hostname == bare or hostname.endswith(domain):
             return domain
     return None
+
+
+def detect_chrome_user_agent() -> str | None:
+    """Detect the installed Google Chrome version and return a matching User-Agent.
+
+    Reads the ``google-chrome --version`` output on Linux and constructs the
+    standard Chrome User-Agent string.  This is critical for Cloudflare cookie
+    validity — ``cf_clearance`` is bound to the exact User-Agent that was
+    present when the challenge was solved.
+
+    Returns
+    -------
+    str or None
+        A User-Agent string like ``Mozilla/5.0 ... Chrome/146.0.7680.80
+        Safari/537.36``, or ``None`` if Chrome's version cannot be determined.
+
+    """
+    if sys.platform != "linux":
+        return None
+
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["google-chrome", "--version"],  # noqa: S603, S607
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        # Output looks like: "Google Chrome 146.0.7680.80\n"
+        match = re.search(r"(\d+(?:\.\d+){2,3})", result.stdout)
+        if not match:
+            _LOGGER.debug("Could not parse Chrome version from: %r", result.stdout.strip())
+            return None
+        version = match.group(1)
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as exc:
+        _LOGGER.debug("Could not detect Chrome version: %s", exc)
+        return None
+
+    # Chrome 107+ uses a "reduced" User-Agent where the minor/build/patch
+    # are frozen to 0.0.0.  Cloudflare binds cf_clearance to the exact UA
+    # the browser sent, so we must replicate the reduced form.
+    # See https://www.chromium.org/updates/ua-reduction/
+    parts = version.split(".")
+    major = parts[0]
+    ua_version = f"{major}.0.0.0" if int(major) >= 107 else version
+
+    ua = (
+        f"Mozilla/5.0 (X11; Linux x86_64) "
+        f"AppleWebKit/537.36 (KHTML, like Gecko) "
+        f"Chrome/{ua_version} Safari/537.36"
+    )
+    _LOGGER.debug("Detected Chrome UA: %s", ua)
+    return ua
