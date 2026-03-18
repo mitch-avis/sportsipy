@@ -270,7 +270,7 @@ PLAYER_SCHEME = {
     "kickoff_return_touchdowns": 'td[data-stat="td_kick_ret"]',
     "kickoff_return_yards": 'td[data-stat="kick_ret_yds"]',
     "kickoff_returns": 'td[data-stat="kick_ret"]',
-    "name": 'h1[itemprop="name"]',
+    "name": "h1",
     "other_touchdowns": 'td[data-stat="td_other"]',
     "pass_attempts": 'td[data-stat="pass_att"]',
     "pass_yards_per_attempt": 'td[data-stat="pass_yds_per_att"]',
