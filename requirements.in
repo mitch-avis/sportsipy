@@ -1,5 +1,6 @@
 certifi
 charset-normalizer
+cryptography
 cssselect
 curl_cffi
 idna
@@ -7,13 +8,14 @@ jinja2
 lxml
 markupsafe
 numpy
-polars
 playwright
+polars
 py-cpuinfo
 pyquery
 python-dateutil
 pytz
 requests
+secretstorage
 six
 tzdata
 urllib3
