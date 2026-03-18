@@ -82,9 +82,12 @@ playwright install chromium
 
 | Variable | Effect |
 | -------- | ------ |
+| `SPORTSIPY_CHROME_COOKIES=1` | Enable Chrome cookie extraction for library requests so Cloudflare clearance cookies can be reused |
+| `SPORTSIPY_CHROME_PROFILE=Default` | Select which Chrome profile directory to read cookies from |
 | `SPORTSIPY_ENABLE_PLAYWRIGHT=1` | Enable Playwright for *every* request (full-browser mode; slower but most compatible) |
 | `SPORTSIPY_DISABLE_PLAYWRIGHT=1` | Suppress Playwright even when a Cloudflare JS-challenge is detected (useful in CI or restricted environments) |
 | `SPORTSIPY_PLAYWRIGHT_HEADLESS=0` | Run Playwright in headed mode for manual challenge solving and visual debugging |
+| `SPORTSIPY_PLAYWRIGHT_CHANNEL=chrome` | Use the installed Google Chrome binary for Playwright fallbacks; set to an empty string to fall back to bundled Chromium |
 | `SPORTSIPY_PLAYWRIGHT_WAIT_UNTIL=networkidle` | Navigation wait mode (`load`, `domcontentloaded`, `networkidle`, or `commit`) |
 | `SPORTSIPY_PLAYWRIGHT_SETTLE_MS=2500` | Additional wait after navigation before reading HTML |
 | `SPORTSIPY_PLAYWRIGHT_TIMEOUT_MS=90000` | Per-navigation timeout in milliseconds |
@@ -94,21 +97,29 @@ playwright install chromium
 | `SPORTSIPY_BOT_DEBUG_HTML_DIR=/path/debug-html` | Save fetched Playwright HTML pages for challenge diagnostics |
 | `SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR=/path/debug-shots` | Save Playwright screenshots for challenge diagnostics |
 
-With neither env var set, Playwright is used *automatically* only when
-`curl_cffi` still receives a bot-challenge HTTP response.
+With neither `SPORTSIPY_ENABLE_PLAYWRIGHT` nor `SPORTSIPY_DISABLE_PLAYWRIGHT`
+set, Playwright is used *automatically* only when `curl_cffi` still receives a
+bot-challenge HTTP response.
+
+Chrome cookie extraction remains opt-in for library usage. Set
+`SPORTSIPY_CHROME_COOKIES=1` before importing sportsipy, or pass
+`--chrome-cookies` to `scripts/live_site_audit.py`.
 
 Recommended troubleshooting flow for Cloudflare-gated pages:
 
-1. Start in headed mode (`SPORTSIPY_PLAYWRIGHT_HEADLESS=0`) and verify whether a manual challenge appears.
-2. If a challenge can be solved manually, persist and reuse session state via
- `SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR` or `SPORTSIPY_PLAYWRIGHT_STORAGE_STATE`.
-3. Enable debug dumps (`SPORTSIPY_BOT_DEBUG_HTML_DIR`,
- `SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR`) to inspect what content is actually
- returned when parsing fails.
-4. If the site works in your normal Chrome session but not in automated
- Chrome windows, start Chrome with remote debugging enabled and point
- `SPORTSIPY_PLAYWRIGHT_CDP_URL` at it so sportsipy can reuse the live,
- already-trusted browser session.
+1. Enable Chrome cookie extraction first (`SPORTSIPY_CHROME_COOKIES=1` or
+   `--chrome-cookies`) so sportsipy can reuse your current Cloudflare session.
+2. Start in headed mode (`SPORTSIPY_PLAYWRIGHT_HEADLESS=0`) and verify whether
+   a manual challenge appears.
+3. If a challenge can be solved manually, persist and reuse session state via
+   `SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR` or `SPORTSIPY_PLAYWRIGHT_STORAGE_STATE`.
+4. Enable debug dumps (`SPORTSIPY_BOT_DEBUG_HTML_DIR`,
+   `SPORTSIPY_BOT_DEBUG_SCREENSHOT_DIR`) to inspect what content is actually
+   returned when parsing fails.
+5. If the site works in your normal Chrome session but not in automated
+   Chrome windows, point `SPORTSIPY_PLAYWRIGHT_CDP_URL` at a Chrome instance
+   started with remote debugging enabled so sportsipy can attach to that live
+   browser as a last-resort fallback.
 
 ## Credits
 

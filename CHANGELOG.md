@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.2] — 2026-03-18
+
+### Fixed in 0.8.2
+
+- Hardened the Playwright Cloudflare fallback to launch Chrome with
+  `--disable-blink-features=AutomationControlled`, which prevents
+  `navigator.webdriver` from being exposed and restores FBref live scraping.
+- Corrected browser-cookie injection for Playwright and Camoufox by attaching
+  cookies to a concrete request URL instead of a generic domain/path pair,
+  restoring successful Cloudflare clearance reuse on NFL/NCAAF/FBref pages.
+- Added an optional `SPORTSIPY_PLAYWRIGHT_CDP_URL` escape hatch for cases
+  where a site trusts only an already-running local Chrome session.
+
+### Documentation in 0.8.2
+
+- Clarified that `SPORTSIPY_CHROME_COOKIES` remains opt-in for library usage
+  and documented the Playwright/Chrome environment controls used for
+  Cloudflare-protected sites.
+
+---
+
 ## [0.8.1] — 2026-03-18
 
 ### Fixed in 0.8.1

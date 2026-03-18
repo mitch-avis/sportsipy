@@ -218,23 +218,26 @@ bot protection. Requests from automated tools will typically receive a 403
 response or a Cloudflare challenge page instead of real stats data.
 
 Sportsipy can work around this by injecting Cloudflare session cookies from
-your local Google Chrome browser. The workflow is:
+your local Google Chrome browser and, when needed, falling back to Playwright
+using the real Chrome channel. The workflow is:
 
 1. **Visit the site in Chrome** — open a page such as
    `https://www.pro-football-reference.com/` in Google Chrome and let the
    Cloudflare challenge resolve (you may need to click a Turnstile checkbox).
-2. **Run the audit** — the live audit script automatically reads the
+2. **Enable Chrome cookie reuse** — set `SPORTSIPY_CHROME_COOKIES=1` for
+  library usage, or pass `--chrome-cookies` to the live audit script.
+3. **Run the audit** — sportsipy reads the
    Cloudflare cookies (`cf_clearance` and `__cf_bm`) from Chrome's local
-   cookie database and injects them into its HTTP requests (Chrome cookie
-   extraction is enabled by default).
+  cookie database, injects them into HTTP requests, and automatically falls
+  back to Playwright when an HTTP client still receives a challenge page.
 
 ### Using the live audit script
 
-Chrome cookie extraction is enabled by default, so a bare invocation works:
+Chrome cookie extraction is opt-in. Enable it explicitly:
 
 ```bash
-python scripts/live_site_audit.py
-python scripts/live_site_audit.py --sport nfl
+python scripts/live_site_audit.py --chrome-cookies
+python scripts/live_site_audit.py --sport nfl --chrome-cookies
 ```
 
 To disable it for a particular run:
@@ -245,8 +248,7 @@ python scripts/live_site_audit.py --no-chrome-cookies
 
 ### Using the library programmatically
 
-Set the `SPORTSIPY_CHROME_COOKIES` environment variable before importing
-sportsipy:
+Set `SPORTSIPY_CHROME_COOKIES=1` before importing sportsipy:
 
 ```bash
 export SPORTSIPY_CHROME_COOKIES=1
@@ -262,6 +264,11 @@ os.environ["SPORTSIPY_CHROME_COOKIES"] = "1"
 from sportsipy.nfl.teams import Teams
 teams = Teams(2024)
 ```
+
+If a challenged page still requires a browser, sportsipy automatically retries
+with Playwright. By default it uses your installed Google Chrome binary rather
+than Playwright's bundled Chromium, and it suppresses Chrome's automation
+signals so Cloudflare does not see `navigator.webdriver`.
 
 ### Non-default Chrome profile
 
@@ -308,6 +315,8 @@ python scripts/live_site_audit.py \
 | `SPORTSIPY_CHROME_COOKIES` | `0` | Set to `1` to enable Chrome cookie extraction |
 | `SPORTSIPY_CHROME_PROFILE` | `Default` | Chrome profile directory name |
 | `SPORTSIPY_EXTRA_COOKIES` | _(empty)_ | JSON object of manual cookies, e.g. `{"cf_clearance": "..."}` |
+| `SPORTSIPY_PLAYWRIGHT_CHANNEL` | `chrome` | Browser channel used for Playwright fallbacks; set to an empty string to use bundled Chromium |
+| `SPORTSIPY_PLAYWRIGHT_CDP_URL` | _(empty)_ | Optional Chrome DevTools endpoint to attach Playwright to an already-running browser |
 | `SPORTSIPY_USER_AGENT` | _(built-in)_ | Override User-Agent for all requests |
 
 ### Requirements
