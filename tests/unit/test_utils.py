@@ -1158,12 +1158,13 @@ class TestBotDetectionLayer:
 
         cffi_calls = []
         requests_calls = []
+        expected_target = utils._best_impersonate_target()
 
         class FakeCffiRequests:
             @staticmethod
             def get(url, **kwargs):
                 cffi_calls.append(url)
-                assert kwargs.get("impersonate") == "chrome124"
+                assert kwargs.get("impersonate") == expected_target
                 return FakeCffiResponse()
 
         monkeypatch.setattr(utils, "_CURL_CFFI_AVAILABLE", True)
@@ -1346,3 +1347,255 @@ class TestBotDetectionLayer:
 
         monkeypatch.setattr(utils, "get_page_source", raise_runtime)
         assert not utils.url_exists("https://example.com/error")
+
+    # ------------------------------------------------------------------
+    # Camoufox tier — get_page_source() pipeline
+    # ------------------------------------------------------------------
+
+    def test_get_page_source_challenge_triggers_camoufox_fallback(self, monkeypatch):
+        """When curl_cffi returns a challenge and camoufox is available, camoufox is tried."""
+        camoufox_called = []
+
+        class ChallengeResponse:
+            status_code = 200
+            text = _CHALLENGE_BODIES["just_a_moment"]
+
+        def fake_camoufox(_url):
+            camoufox_called.append(_url)
+            return _CLEAN_HTML
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_cache_write", lambda *_a, **_kw: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: ChallengeResponse())
+        monkeypatch.setattr(utils, "_CAMOUFOX_AVAILABLE", True)
+        monkeypatch.setattr(utils, "_fetch_with_camoufox", fake_camoufox)
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result == _CLEAN_HTML
+        assert camoufox_called == ["https://example.com"]
+
+    def test_get_page_source_camoufox_success_skips_playwright(self, monkeypatch):
+        """When camoufox succeeds, Playwright is not tried."""
+        playwright_called = []
+
+        class ChallengeResponse:
+            status_code = 200
+            text = _CHALLENGE_BODIES["just_a_moment"]
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_cache_write", lambda *_a, **_kw: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: ChallengeResponse())
+        monkeypatch.setattr(utils, "_CAMOUFOX_AVAILABLE", True)
+        monkeypatch.setattr(utils, "_fetch_with_camoufox", lambda _url: _CLEAN_HTML)
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(
+            utils,
+            "_fetch_with_playwright",
+            lambda _url: playwright_called.append(1) or _CLEAN_HTML,
+        )
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result == _CLEAN_HTML
+        assert playwright_called == []
+
+    def test_get_page_source_camoufox_challenge_falls_through_to_playwright(self, monkeypatch):
+        """When camoufox returns a challenge, Playwright is tried next."""
+        playwright_called = []
+
+        class ChallengeResponse:
+            status_code = 200
+            text = _CHALLENGE_BODIES["just_a_moment"]
+
+        def fake_playwright(_url):
+            playwright_called.append(_url)
+            return _CLEAN_HTML
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setenv("SPORTSIPY_DISABLE_PLAYWRIGHT", "")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_cache_write", lambda *_a, **_kw: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: ChallengeResponse())
+        monkeypatch.setattr(utils, "_CAMOUFOX_AVAILABLE", True)
+        # Camoufox returns a challenge body — cannot bypass
+        monkeypatch.setattr(
+            utils,
+            "_fetch_with_camoufox",
+            lambda _url: _CHALLENGE_BODIES["just_a_moment"],
+        )
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(utils, "sync_playwright", lambda: None)  # truthy
+        monkeypatch.setattr(utils, "_fetch_with_playwright", fake_playwright)
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result == _CLEAN_HTML
+        assert playwright_called == ["https://example.com"]
+
+    def test_get_page_source_disable_camoufox_suppresses_tier2(self, monkeypatch):
+        """SPORTSIPY_DISABLE_CAMOUFOX=1 prevents the camoufox tier."""
+        camoufox_called = []
+
+        class ChallengeResponse:
+            status_code = 200
+            text = _CHALLENGE_BODIES["just_a_moment"]
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setenv("SPORTSIPY_DISABLE_CAMOUFOX", "1")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: ChallengeResponse())
+        monkeypatch.setattr(utils, "_CAMOUFOX_AVAILABLE", True)
+        monkeypatch.setattr(
+            utils,
+            "_fetch_with_camoufox",
+            lambda _url: camoufox_called.append(1) or _CLEAN_HTML,
+        )
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", False)
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result is None
+        assert camoufox_called == []
+
+    def test_get_page_source_camoufox_not_tried_when_clean_html(self, monkeypatch):
+        """Camoufox is not triggered when Tier 1 returns clean HTML."""
+        camoufox_called = []
+
+        class Response:
+            status_code = 200
+            text = _CLEAN_HTML
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_cache_write", lambda *_a, **_kw: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: Response())
+        monkeypatch.setattr(utils, "_CAMOUFOX_AVAILABLE", True)
+        monkeypatch.setattr(
+            utils,
+            "_fetch_with_camoufox",
+            lambda _url: camoufox_called.append(1) or _CLEAN_HTML,
+        )
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result == _CLEAN_HTML
+        assert camoufox_called == []
+
+    def test_get_page_source_enable_playwright_skips_camoufox(self, monkeypatch):
+        """SPORTSIPY_ENABLE_PLAYWRIGHT=1 skips both Tier 1 and Tier 2 (camoufox)."""
+        camoufox_called = []
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setenv("SPORTSIPY_ENABLE_PLAYWRIGHT", "1")
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_cache_write", lambda *_a, **_kw: None)
+        monkeypatch.setattr(utils, "_CAMOUFOX_AVAILABLE", True)
+        monkeypatch.setattr(
+            utils,
+            "_fetch_with_camoufox",
+            lambda _url: camoufox_called.append(1) or _CLEAN_HTML,
+        )
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(utils, "sync_playwright", lambda: None)
+        monkeypatch.setattr(utils, "_fetch_with_playwright", lambda _url: _CLEAN_HTML)
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result == _CLEAN_HTML
+        assert camoufox_called == []
+
+    def test_fetch_with_camoufox_returns_none_when_not_installed(self, monkeypatch):
+        """_fetch_with_camoufox() returns None when _CamoufoxContext is None."""
+        monkeypatch.setattr(utils, "_CamoufoxContext", None)
+        assert utils._fetch_with_camoufox("https://example.com") is None
+
+    def test_get_page_source_skips_browser_fallback_when_sync_browser_disabled(self, monkeypatch):
+        """When sync browser fallback is disabled, camoufox/playwright tiers are skipped."""
+        camoufox_called = []
+        playwright_called = []
+
+        class ChallengeResponse:
+            status_code = 200
+            text = _CHALLENGE_BODIES["just_a_moment"]
+
+        monkeypatch.setenv("SPORTSIPY_OFFLINE", "0")
+        monkeypatch.setattr(utils, "_SYNC_BROWSER_FALLBACK_DISABLED", True)
+        monkeypatch.setattr(utils, "_cache_read", lambda _url: None)
+        monkeypatch.setattr(utils, "_request_with_retries", lambda *_a, **_kw: ChallengeResponse())
+        monkeypatch.setattr(utils, "_CAMOUFOX_AVAILABLE", True)
+        monkeypatch.setattr(utils, "_PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(utils, "sync_playwright", lambda: None)
+        monkeypatch.setattr(
+            utils,
+            "_fetch_with_camoufox",
+            lambda _url: camoufox_called.append(_url) or _CLEAN_HTML,
+        )
+        monkeypatch.setattr(
+            utils,
+            "_fetch_with_playwright",
+            lambda _url: playwright_called.append(_url) or _CLEAN_HTML,
+        )
+
+        result = utils.get_page_source("https://example.com")
+
+        assert result is None
+        assert camoufox_called == []
+        assert playwright_called == []
+
+    def test_disable_sync_browser_fallback_if_loop_error_sets_global_flag(self, monkeypatch):
+        """Loop-incompat sync API errors disable future sync browser fallbacks."""
+        monkeypatch.setattr(utils, "_SYNC_BROWSER_FALLBACK_DISABLED", False)
+
+        loop_error = RuntimeError(
+            "It looks like you are using Playwright Sync API inside the asyncio loop."
+        )
+        disabled = utils._disable_sync_browser_fallback_if_loop_error(loop_error)
+
+        assert disabled
+        assert utils._SYNC_BROWSER_FALLBACK_DISABLED
+
+    def test_fetch_with_camoufox_geoip_default_is_disabled(self, monkeypatch):
+        """Camoufox launch defaults geoip to False unless explicitly enabled."""
+        captured_kwargs = {}
+
+        class _Page:
+            url = "https://example.com"
+
+            def goto(self, *_a, **_kw):
+                return None
+
+            def content(self):
+                return _CLEAN_HTML
+
+            def wait_for_timeout(self, *_a, **_kw):
+                return None
+
+        class _Context:
+            def __init__(self, **kwargs):
+                captured_kwargs.update(kwargs)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_a):
+                return False
+
+            @property
+            def pages(self):
+                return []
+
+            def new_page(self):
+                return _Page()
+
+        monkeypatch.delenv("SPORTSIPY_CAMOUFOX_GEOIP", raising=False)
+        monkeypatch.setenv("SPORTSIPY_PLAYWRIGHT_SETTLE_MS", "0")
+        monkeypatch.setattr(utils, "_CamoufoxContext", _Context)
+        monkeypatch.setattr(utils, "_resolve_cookies", lambda _url: {})
+
+        html = utils._fetch_with_camoufox("https://example.com")
+
+        assert html == _CLEAN_HTML
+        assert captured_kwargs.get("geoip") is False
