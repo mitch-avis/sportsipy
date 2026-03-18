@@ -14,7 +14,7 @@ import warnings
 from collections.abc import Callable, Generator
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -31,6 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 _RATE_LIMIT_LOCK = threading.Lock()
 _LAST_REQUEST_TIME = 0.0
 _FIXTURE_MAP: dict | list | None = None
+_CHROME_COOKIE_CACHE: dict[str, dict[str, str]] | None = None
 
 # ---------------------------------------------------------------------------
 # Optional curl_cffi import — provides TLS fingerprint spoofing to bypass
@@ -87,11 +88,70 @@ _BROWSER_HEADERS: dict[str, str] = {
 # suppress the most common headless-browser detection signals.
 # ---------------------------------------------------------------------------
 _PLAYWRIGHT_STEALTH_SCRIPT = """
+// Remove the primary webdriver signal.
 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+
+// Delete CDP-injected window markers that Cloudflare Turnstile probes for.
+// These are injected by Chrome DevTools when a CDP session is active.
+(function() {
+    const cdcRe = /^cdc_[a-z0-9]+_/;
+    for (const key of Object.getOwnPropertyNames(window)) {
+        if (cdcRe.test(key)) {
+            try { delete window[key]; } catch(e) {}
+        }
+    }
+    // Also delete the specific well-known markers by name pattern.
+    const known = [
+        'cdc_adoQpoasnfa76pfcZLmcfl_Array',
+        'cdc_adoQpoasnfa76pfcZLmcfl_Promise',
+        'cdc_adoQpoasnfa76pfcZLmcfl_Symbol',
+    ];
+    for (const k of known) { try { delete window[k]; } catch(e) {} }
+})();
+
+// Realistic language and plugin arrays.
 Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-window.chrome = { runtime: {} };
-Object.defineProperty(Notification, 'permission', { get: () => 'default' });
+Object.defineProperty(navigator, 'plugins', {
+  get: () => {
+    const arr = [{ name: 'Chrome PDF Plugin' }, { name: 'Chrome PDF Viewer' },
+                 { name: 'Native Client' }];
+    arr.__proto__ = PluginArray.prototype;
+    return arr;
+  },
+});
+
+// Make window.chrome look genuine.
+window.chrome = {
+  app: { isInstalled: false },
+  runtime: {
+    onConnect: null, onMessage: null,
+    connect: function(){}, sendMessage: function(){},
+  },
+  loadTimes: function() {},
+  csi: function() {},
+};
+
+// Notifications default to 'default', not 'denied'.
+try {
+  Object.defineProperty(Notification, 'permission', { get: () => 'default' });
+} catch(e) {}
+
+// Permissions API — return a realistic 'prompt' state for notifications.
+const origQuery = window.navigator.permissions.query.bind(navigator.permissions);
+navigator.permissions.query = (params) =>
+  params.name === 'notifications'
+    ? Promise.resolve({ state: Notification.permission, onchange: null })
+    : origQuery(params);
+
+// Mask hardware concurrency / memory as plausible desktop values.
+Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
+try {
+  Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 });
+} catch(e) {}
+
+// Timezone, platform, vendor.
+Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+Object.defineProperty(navigator, 'vendor', { get: () => 'Google Inc.' });
 """
 
 
@@ -257,7 +317,7 @@ def _playwright_headless() -> bool:
 
 def _playwright_wait_until() -> Literal["load", "domcontentloaded", "networkidle", "commit"]:
     """Return Playwright navigation wait mode with validation."""
-    wait_until = os.environ.get("SPORTSIPY_PLAYWRIGHT_WAIT_UNTIL", "networkidle")
+    wait_until = os.environ.get("SPORTSIPY_PLAYWRIGHT_WAIT_UNTIL", "domcontentloaded")
     if wait_until == "load":
         return "load"
     if wait_until == "domcontentloaded":
@@ -265,6 +325,186 @@ def _playwright_wait_until() -> Literal["load", "domcontentloaded", "networkidle
     if wait_until == "commit":
         return "commit"
     return "networkidle"
+
+
+def _playwright_channel() -> str:
+    """Return the Playwright browser channel to use.
+
+    Uses ``SPORTSIPY_PLAYWRIGHT_CHANNEL`` when set.  Defaults to ``"chrome"``
+    so that the real Google Chrome binary is used instead of Playwright's
+    bundled Chromium.  This avoids Cloudflare Turnstile bot-detection that
+    triggers on Playwright's Chromium fingerprint even in headed mode.  Set
+    the variable to an empty string (``""``) to fall back to bundled Chromium.
+    """
+    return os.environ.get("SPORTSIPY_PLAYWRIGHT_CHANNEL", "chrome")
+
+
+def _playwright_stealth_enabled() -> bool:
+    """Return whether Playwright stealth init-script should be injected.
+
+    Defaults to off because aggressive spoofing can create inconsistent
+    fingerprints (UA/client-hints/platform/plugins) that make Cloudflare
+    Turnstile more likely to loop.  Set
+    ``SPORTSIPY_PLAYWRIGHT_STEALTH=1`` to force-enable.
+    """
+    value = os.environ.get("SPORTSIPY_PLAYWRIGHT_STEALTH", "0")
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _extra_cookies_from_env() -> dict[str, str]:
+    """Return optional extra request cookies from env.
+
+    Reads ``SPORTSIPY_EXTRA_COOKIES`` as a JSON object mapping cookie names to
+    values, for example ``{"cf_clearance": "..."}``.
+    """
+    raw = os.environ.get("SPORTSIPY_EXTRA_COOKIES")
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        _LOGGER.warning("Invalid SPORTSIPY_EXTRA_COOKIES JSON: %s", exc)
+        return {}
+    if not isinstance(parsed, dict):
+        _LOGGER.warning("SPORTSIPY_EXTRA_COOKIES must be a JSON object")
+        return {}
+    cookies: dict[str, str] = {}
+    for name, value in parsed.items():
+        if isinstance(name, str) and value is not None:
+            cookies[name] = str(value)
+    return cookies
+
+
+def _chrome_cookies_enabled() -> bool:
+    """Return whether automatic Chrome cookie extraction is enabled.
+
+    Controlled by ``SPORTSIPY_CHROME_COOKIES``.  Defaults to ``"0"`` (off).
+    Set to ``"1"`` to auto-extract Cloudflare cookies from Chrome's local
+    cookie store when no manual cookies are provided via ``--cookie`` or
+    ``SPORTSIPY_EXTRA_COOKIES``.
+    """
+    value = os.environ.get("SPORTSIPY_CHROME_COOKIES", "0")
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _load_chrome_cookies() -> dict[str, dict[str, str]]:
+    """Load and cache Cloudflare cookies from Chrome's cookie store.
+
+    Returns a domain-keyed dict (e.g. ``{".pro-football-reference.com": {"cf_clearance": "..."}}``).
+    Results are cached for the lifetime of the process to avoid repeated SQLite reads.
+    """
+    global _CHROME_COOKIE_CACHE  # noqa: PLW0603
+    if _CHROME_COOKIE_CACHE is not None:
+        return _CHROME_COOKIE_CACHE
+
+    try:
+        from sportsipy.chrome_cookies import get_cloudflare_cookies
+
+        profile = os.environ.get("SPORTSIPY_CHROME_PROFILE", "Default")
+        _CHROME_COOKIE_CACHE = get_cloudflare_cookies(profile=profile)
+        if _CHROME_COOKIE_CACHE:
+            domains_found = list(_CHROME_COOKIE_CACHE.keys())
+            cookie_count = sum(len(v) for v in _CHROME_COOKIE_CACHE.values())
+            _LOGGER.info(
+                "Auto-extracted %d Cloudflare cookie(s) from Chrome for: %s",
+                cookie_count,
+                ", ".join(d.lstrip(".") for d in domains_found),
+            )
+        else:
+            _LOGGER.info(
+                "No Cloudflare cookies found in Chrome. Visit a protected site "
+                "(e.g. pro-football-reference.com) in Chrome and solve the "
+                "Cloudflare challenge first."
+            )
+    except Exception:
+        _LOGGER.debug("Chrome cookie extraction failed", exc_info=True)
+        _CHROME_COOKIE_CACHE = {}
+
+    return _CHROME_COOKIE_CACHE
+
+
+def _resolve_cookies(url: str) -> dict[str, str]:
+    """Return cookies for a request URL, combining manual and Chrome sources.
+
+    Priority order:
+
+    1. Manual cookies from ``SPORTSIPY_EXTRA_COOKIES`` (always applied).
+    2. Chrome-extracted cookies for the URL's domain (when
+       ``SPORTSIPY_CHROME_COOKIES=1`` and no manual Cloudflare cookies exist).
+
+    Parameters
+    ----------
+    url : str
+        The request URL.  Used to determine the Cloudflare cookie domain.
+
+    Returns
+    -------
+    dict of str to str
+        Merged cookie name-to-value mapping.
+
+    """
+    manual = _extra_cookies_from_env()
+
+    if not _chrome_cookies_enabled():
+        return manual
+
+    # If manual cookies already include Cloudflare tokens, skip Chrome lookup.
+    if "cf_clearance" in manual or "__cf_bm" in manual:
+        _LOGGER.debug("Using manual Cloudflare cookies; skipping Chrome extraction")
+        return manual
+
+    try:
+        from sportsipy.chrome_cookies import get_domain_for_url
+
+        domain = get_domain_for_url(url)
+    except Exception:
+        return manual
+
+    if not domain:
+        _LOGGER.debug("URL %s is not a Cloudflare-protected domain; no Chrome cookies needed", url)
+        return manual
+
+    chrome_all = _load_chrome_cookies()
+    domain_cookies = chrome_all.get(domain, {})
+    if not domain_cookies:
+        _LOGGER.warning(
+            "No Chrome cookies found for %s. Open %s in Chrome, solve the "
+            "Cloudflare challenge, then re-run. Cookies are short-lived: "
+            "cf_clearance lasts hours to ~1 day; __cf_bm lasts ~30 minutes.",
+            domain,
+            domain.lstrip("."),
+        )
+        return manual
+
+    _LOGGER.debug(
+        "Injecting %d Chrome cookie(s) for %s: %s",
+        len(domain_cookies),
+        domain,
+        ", ".join(domain_cookies.keys()),
+    )
+    # Chrome cookies as base, manual cookies override.
+    merged = dict(domain_cookies)
+    merged.update(manual)
+    return merged
+
+
+def _browser_headers() -> dict[str, str]:
+    """Return browser-like headers with optional user-agent override.
+
+    When ``SPORTSIPY_USER_AGENT`` is set, the header bundle is reduced to
+    standard browser headers only and drops static client-hint fields to avoid
+    mismatches with the supplied UA/version.
+    """
+    headers = dict(_BROWSER_HEADERS)
+    user_agent = os.environ.get("SPORTSIPY_USER_AGENT")
+    if not user_agent:
+        return headers
+
+    headers["User-Agent"] = user_agent
+    headers.pop("Sec-CH-UA", None)
+    headers.pop("Sec-CH-UA-Mobile", None)
+    headers.pop("Sec-CH-UA-Platform", None)
+    return headers
 
 
 def _playwright_debug_path(dir_env_var: str, url: str, suffix: str) -> Path | None:
@@ -834,9 +1074,20 @@ def _http_get(
         The HTTP response, or ``None`` on fatal error.
 
     """
-    merged_headers = dict(_BROWSER_HEADERS)
+    merged_headers = _browser_headers()
     if "headers" in kwargs:
         merged_headers.update(kwargs.pop("headers"))
+
+    request_cookies = kwargs.pop("cookies", None)
+    merged_cookies = _resolve_cookies(url)
+    if isinstance(request_cookies, dict):
+        for name, value in request_cookies.items():
+            if value is not None:
+                merged_cookies[str(name)] = str(value)
+    elif request_cookies is not None:
+        kwargs["cookies"] = request_cookies
+    if merged_cookies:
+        kwargs["cookies"] = merged_cookies
 
     if _CURL_CFFI_AVAILABLE and _cffi_requests is not None:
         try:
@@ -869,7 +1120,7 @@ def _request_with_retries(method: str, url: str, **kwargs):
             elif method.upper() == "HEAD":
                 # Prefer GET over HEAD — HEAD requests are blocked more aggressively
                 # by Cloudflare; the response body is discarded by callers anyway.
-                merged_headers = dict(_BROWSER_HEADERS)
+                merged_headers = _browser_headers()
                 if "headers" in request_kwargs:
                     merged_headers.update(request_kwargs.pop("headers"))
                 response = requests.head(
@@ -1400,27 +1651,56 @@ def _fetch_with_playwright(url: str) -> str | None:
     if sync_playwright is None:
         return None
     settle_ms = _env_int("SPORTSIPY_PLAYWRIGHT_SETTLE_MS", 2500, minimum=0)
-    timeout_ms = _env_int("SPORTSIPY_PLAYWRIGHT_TIMEOUT_MS", 90000, minimum=1000)
+    timeout_ms = _env_int("SPORTSIPY_PLAYWRIGHT_TIMEOUT_MS", 30000, minimum=1000)
     wait_until = _playwright_wait_until()
+    channel = _playwright_channel()
     storage_state_path = os.environ.get("SPORTSIPY_PLAYWRIGHT_STORAGE_STATE")
     user_data_dir = os.environ.get("SPORTSIPY_PLAYWRIGHT_USER_DATA_DIR")
     try:
         with sync_playwright() as pw:
             browser = None
             context = None
+            _launch_args: list[str] = []
+            # Suppress both automation-advertisement flags.  --no-sandbox is
+            # added by Playwright in sandboxed/WSL environments; it shows a
+            # warning banner inside Chrome that is itself a Cloudflare signal.
+            _ignore_default = ["--enable-automation", "--no-sandbox"]
             if user_data_dir:
-                context = pw.chromium.launch_persistent_context(
-                    user_data_dir,
-                    headless=_playwright_headless(),
-                    viewport={"width": 1280, "height": 800},
-                    user_agent=_BROWSER_HEADERS["User-Agent"],
-                    locale="en-US",
-                )
+                if channel:
+                    context = pw.chromium.launch_persistent_context(
+                        user_data_dir,
+                        channel=channel,
+                        headless=_playwright_headless(),
+                        args=_launch_args,
+                        ignore_default_args=_ignore_default,
+                        viewport={"width": 1280, "height": 800},
+                        locale="en-US",
+                    )
+                else:
+                    context = pw.chromium.launch_persistent_context(
+                        user_data_dir,
+                        headless=_playwright_headless(),
+                        args=_launch_args,
+                        ignore_default_args=_ignore_default,
+                        viewport={"width": 1280, "height": 800},
+                        locale="en-US",
+                    )
             else:
-                browser = pw.chromium.launch(headless=_playwright_headless())
+                if channel:
+                    browser = pw.chromium.launch(
+                        channel=channel,
+                        headless=_playwright_headless(),
+                        args=_launch_args,
+                        ignore_default_args=_ignore_default,
+                    )
+                else:
+                    browser = pw.chromium.launch(
+                        headless=_playwright_headless(),
+                        args=_launch_args,
+                        ignore_default_args=_ignore_default,
+                    )
                 context_kwargs: dict[str, Any] = {
                     "viewport": {"width": 1280, "height": 800},
-                    "user_agent": _BROWSER_HEADERS["User-Agent"],
                     "locale": "en-US",
                 }
                 if storage_state_path and Path(storage_state_path).exists():
@@ -1428,10 +1708,53 @@ def _fetch_with_playwright(url: str) -> str | None:
                 context = browser.new_context(**context_kwargs)
 
             try:
+                extra_cookies = _resolve_cookies(url)
+                host = urlparse(url).hostname
+                if extra_cookies and host and hasattr(context, "add_cookies"):
+                    cookie_items = [
+                        {
+                            "name": name,
+                            "value": value,
+                            "domain": host,
+                            "path": "/",
+                            "secure": url.startswith("https://"),
+                            "httpOnly": False,
+                        }
+                        for name, value in extra_cookies.items()
+                    ]
+                    context.add_cookies(cast(Any, cookie_items))
+
                 existing_pages = getattr(context, "pages", None)
                 page = existing_pages[0] if existing_pages else context.new_page()
-                _apply_playwright_stealth(page)
-                page.goto(url, timeout=timeout_ms, wait_until=wait_until)
+                if _playwright_stealth_enabled():
+                    _apply_playwright_stealth(page)
+                wait_modes: list[Literal["load", "domcontentloaded", "networkidle", "commit"]] = []
+                for mode in (wait_until, "domcontentloaded", "load", "commit"):
+                    if mode not in wait_modes:
+                        wait_modes.append(mode)
+
+                last_goto_error: Exception | None = None
+                for mode in wait_modes:
+                    try:
+                        page.goto(url, timeout=timeout_ms, wait_until=mode)
+                        last_goto_error = None
+                        break
+                    except Exception as exc:
+                        last_goto_error = exc
+                        _LOGGER.debug(
+                            "Playwright goto failed for %s with wait_until=%s: %s",
+                            url,
+                            mode,
+                            exc,
+                        )
+
+                if last_goto_error is not None:
+                    _LOGGER.warning(
+                        "Playwright navigation timed out for %s; "
+                        "using current page content. Error: %s",
+                        url,
+                        last_goto_error,
+                    )
                 if settle_ms and hasattr(page, "wait_for_timeout"):
                     page.wait_for_timeout(settle_ms)
                 content = page.content()
@@ -1440,6 +1763,42 @@ def _fetch_with_playwright(url: str) -> str | None:
                     page_title = page.title()
                 except Exception:
                     page_title = ""
+
+                if _is_bot_challenge(content) and not _playwright_headless():
+                    challenge_timeout_ms = _env_int(
+                        "SPORTSIPY_PLAYWRIGHT_CHALLENGE_TIMEOUT_MS", 120000, minimum=0
+                    )
+                    _LOGGER.info(
+                        "Bot challenge detected in headed mode for %s — "
+                        "solve the challenge in the browser window. "
+                        "Waiting up to %ds...",
+                        url,
+                        challenge_timeout_ms // 1000,
+                    )
+                    print(
+                        f"\n>>> Bot challenge detected. Solve the CAPTCHA/checkbox "
+                        f"in the browser window for:\n    {url}\n"
+                        f"    (waiting up to {challenge_timeout_ms // 1000}s)\n",
+                        flush=True,
+                    )
+                    try:
+                        page.wait_for_function(
+                            "(function() {"
+                            "  var t = document.title || '';"
+                            "  return t.length > 0"
+                            "      && t.toLowerCase().indexOf('just a moment') === -1;"
+                            "})()",
+                            timeout=challenge_timeout_ms,
+                        )
+                        content = page.content()
+                        page_title = page.title()
+                    except Exception as challenge_exc:
+                        _LOGGER.warning(
+                            "Challenge not resolved within %dms for %s: %s",
+                            challenge_timeout_ms,
+                            url,
+                            challenge_exc,
+                        )
 
                 if _is_bot_challenge(content):
                     _LOGGER.warning(
