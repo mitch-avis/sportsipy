@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-bot-evasion = ["curl_cffi", "playwright", "camoufox"]
+bot-evasion = ["curl_cffi", "playwright", "camoufox", "cryptography", "secretstorage"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["sportsipy"]
