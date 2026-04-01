@@ -431,6 +431,8 @@ class Player(AbstractPlayer):
             "defense",
             "returns",
             "kicking",
+            "punting",
+            "games_played",
         ]:
             table_items = utils.get_stats_table(player_info, f"table#{table_id}")
             career_items = utils.get_stats_table(player_info, f"table#{table_id}", footer=True)
