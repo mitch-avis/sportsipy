@@ -1500,9 +1500,7 @@ def remove_html_comment_tags(html: str | PyQuery) -> str:
     return str(html).replace("<!--", "").replace("-->", "")
 
 
-def get_stats_table(
-    html_page, div: str, footer: bool = False
-) -> Generator[PyQuery, None, None] | None:
+def get_stats_table(html_page, div: str, footer: bool = False) -> Generator[PyQuery] | None:
     """Return a generator of PyQuery rows (<tr>...</tr>) for the requested table.
 
     When given a PyQuery HTML object and a requested div, this function creates
