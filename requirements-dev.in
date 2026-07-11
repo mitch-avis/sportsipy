@@ -9,3 +9,4 @@ pytest-metadata
 pytest-sugar
 pytest-xdist
 ruff
+ty
