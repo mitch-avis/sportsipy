@@ -8,19 +8,25 @@ dynamic = ["version"]
 authors = [{ name = "Robert Clark", email = "robdclark@outlook.com" }]
 description = "A free sports API written for python"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 keywords = ["stats", "sports", "api", "sportsipy", "machine learning"]
 license = { text = "MIT" }
 urls = { "Homepage" = "https://github.com/mitch-avis/sportsipy" }
 dependencies = ["numpy", "polars", "pyquery", "requests"]
 classifiers = [
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
 ]
 
 [project.optional-dependencies]
-bot-evasion = ["curl_cffi", "playwright", "camoufox", "cryptography", "secretstorage"]
+bot-evasion = [
+    "curl_cffi",
+    "playwright",
+    "camoufox",
+    "cryptography",
+    "secretstorage",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["sportsipy"]
@@ -30,7 +36,7 @@ path = "VERSION"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py313"
 extend-exclude = [
     ".venv",
     ".git",
@@ -72,7 +78,7 @@ known-first-party = ["sportsipy"]
 docstring-code-format = true
 
 [tool.pyright]
-pythonVersion = "3.12"
+pythonVersion = "3.13"
 typeCheckingMode = "standard"
 reportMissingImports = true
 reportMissingTypeStubs = false
